@@ -78,6 +78,7 @@ function imageForSubject(slug: string): string {
         <CardVideo v-else-if="subject.slug === 'nature'" src="/videos/Deer_and_fox_in_landscape_d0932100.mp4" poster="/images/optimized/natural_science-c20c5b483b.webp" />
         <CardVideo v-else-if="subject.slug === 'history'" src="/videos/Ancient_monuments_under_drifting…_8c16c027.mp4" poster="/images/optimized/history-bc707c9d4b.webp" />
         <CardVideo v-else-if="subject.slug === 'linguistics'" src="/videos/Magical_tree_sprouting_from_book_cd6c5146.mp4" poster="/images/optimized/language-1ebd4747fa.webp" />
+        <CardVideo v-else-if="subject.slug === 'technology'" src="/videos/Cyberpunk_city_lights_at_night_6d880cd4.mp4" poster="/images/optimized/technology-art-1c0313cbd8.webp" />
         <CardVideo v-else-if="subject.slug === 'space'" src="/videos/Planets_orbit_the_sun_bd41aa81.mp4" poster="/images/optimized/solar_system-2a149a2be2.webp" />
         <img
           v-else
