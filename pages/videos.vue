@@ -1,0 +1,1 @@
+<template><main class="shell py-10"><h1 class="heading">🎬 FACTUM Video</h1><div class="panel p-8"><h2 class="text-xl font-bold">Կրթական տեսանյութեր</h2><p class="muted mt-3">Այս բաժինը պատրաստ է հետագա ինտեգրման համար։ Այժմ տեսանյութեր չեն հրապարակվել։ CMS-ից հնարավոր կլինի ավելացնել տեսանյութի վերնագիր, նկարագրություն, հղում, ենթագրեր և թեմա։</p></div></main></template>

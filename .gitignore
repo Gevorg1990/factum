@@ -1,0 +1,11 @@
+.nuxt
+.output
+node_modules
+.env
+.env.*
+!.env.example
+.idea/
+.data/
+.DS_Store
+*.log
+.data/bible-source-debug.html

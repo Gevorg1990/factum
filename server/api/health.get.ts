@@ -1,0 +1,1 @@
+export default defineEventHandler(() => ({ ok: true, app: 'FACTUM', mode: 'starter' }))

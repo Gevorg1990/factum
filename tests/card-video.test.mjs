@@ -1,0 +1,66 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
+import {createRequire} from 'node:module'
+const require=createRequire(import.meta.url),ts=require('typescript'),{parse,compileScript}=require('@vue/compiler-sfc')
+const vueUrl=new URL('file://'+require.resolve('vue')).href
+const {nextTick}=await import(vueUrl)
+const {descriptor}=parse(readFileSync(new URL('../components/CardVideo.vue',import.meta.url),'utf8'))
+const source=compileScript(descriptor,{id:'card-video-test'}).content.replaceAll("from 'vue'",`from '${vueUrl}'`)
+const code=`import {ref} from '${vueUrl}';const onMounted=fn=>globalThis.__cardVideo.mounted.push(fn);const onBeforeUnmount=fn=>globalThis.__cardVideo.unmounted.push(fn);`+source
+const js=ts.transpileModule(code,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
+const component=(await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'))).default
+
+function setup(t,deferred=false){
+ const old={window:globalThis.window,document:globalThis.document,IntersectionObserver:globalThis.IntersectionObserver}
+ const mounted=[],unmounted=[],plays=[]
+ let observe
+ globalThis.__cardVideo={mounted,unmounted}
+ globalThis.window={IntersectionObserver:true,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})}
+ globalThis.document={hidden:false,addEventListener(){},removeEventListener(){}}
+ globalThis.IntersectionObserver=class{constructor(fn){observe=fn}observe(){}disconnect(){}}
+ const card={addEventListener(){},removeEventListener(){},contains(){return false}}
+ const video={src:'',currentTime:0,closest:()=>card,getAttribute(){return this.src},pause(){},play(){
+  let resolve,reject
+  const promise=deferred?new Promise((yes,no)=>{resolve=yes;reject=no}):Promise.resolve()
+  plays.push({resolve,reject});return promise
+ }}
+ const reader=component.setup({src:'/videos/test.mp4',poster:'/images/test.jpg'},{expose(){}})
+ reader.video.value=video
+ mounted.forEach(fn=>fn())
+ observe([{isIntersecting:true,intersectionRatio:1}])
+ t.after(()=>{unmounted.forEach(fn=>fn());Object.assign(globalThis,old);delete globalThis.__cardVideo})
+ return {reader,video,plays}
+}
+
+test('each new hover restarts both an interrupted and completed clip without looping',async t=>{
+ const {reader,video,plays}=setup(t)
+ assert.equal(plays.length,0)
+ reader.pointerEnter({pointerType:'mouse'});await nextTick()
+ video.currentTime=1.8
+ reader.pointerLeave()
+ reader.pointerEnter({pointerType:'mouse'});await nextTick()
+ assert.equal(video.currentTime,0)
+ assert.equal(plays.length,2)
+ video.currentTime=4
+ reader.finishPlayback()
+ reader.pointerLeave()
+ assert.equal(video.currentTime,4)
+ assert.equal(reader.previewing.value,true)
+ reader.pointerEnter({pointerType:'mouse'});await nextTick()
+ assert.equal(video.currentTime,0)
+ assert.equal(reader.completed.value,false)
+ assert.equal(plays.length,3)
+ assert.doesNotMatch(descriptor.template.content,/<video[^>]*\bloop\b/)
+})
+
+test('an old interrupted play promise cannot hide the new hover preview',async t=>{
+ const {reader,plays}=setup(t,true)
+ reader.pointerEnter({pointerType:'mouse'})
+ reader.pointerLeave()
+ reader.pointerEnter({pointerType:'mouse'})
+ plays[1].resolve();await nextTick();await nextTick()
+ assert.equal(reader.previewing.value,true)
+ plays[0].reject(new Error('interrupted by pause'));await nextTick();await nextTick()
+ assert.equal(reader.previewing.value,true)
+})

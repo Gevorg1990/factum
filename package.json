@@ -1,0 +1,32 @@
+{
+  "name": "factum",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "voice:prepare": "node scripts/prepare-biography-audio.mjs",
+    "test:speech": "node --test tests/biography-speech.test.mjs tests/game-speech.test.mjs tests/game-speech-player.test.mjs tests/voice-answers.test.mjs tests/game-feedback-audio.test.mjs tests/biography-player.test.mjs",
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
+    "test:bible-reader": "node --test tests/bible-reader.test.mjs",
+    "test:save-animation": "node --test tests/save-animation.test.mjs",
+    "test:facts": "node --test tests/facts.test.mjs",
+    "test:encyclopedia": "node --test tests/encyclopedia.test.mjs",
+    "test:people": "node --test tests/people.test.mjs",
+    "test:monuments": "node --test tests/monuments.test.mjs"
+  },
+  "dependencies": {
+    "nuxt": "^3.17.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0",
+    "@pinia/nuxt": "^0.11.0",
+    "pinia": "^3.0.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "lucide-vue-next": "^0.468.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

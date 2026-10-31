@@ -1,0 +1,2 @@
+import type { Config } from 'tailwindcss'
+export default { content: ['./components/**/*.{vue,js,ts}', './pages/**/*.{vue,js,ts}', './app.vue'], theme: { extend: { colors: { midnight:'#020c1f', navy:'#07172e', gold:'#f4c46c' }, fontFamily:{sans:['Arial','Noto Sans Armenian','sans-serif']} } }, plugins: [] } satisfies Config

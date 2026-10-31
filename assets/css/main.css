@@ -1,0 +1,1339 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap');
+@tailwind base;@tailwind components;@tailwind utilities;
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#030b19;color:#eef4ff;font-family:'Noto Sans Armenian',Arial,sans-serif}a{text-decoration:none}button,input{font:inherit}.shell{max-width:1320px;margin:auto;padding:0 24px}.panel{background:linear-gradient(145deg,#10243c,#071528);border:1px solid #294565;border-radius:18px}.gold{color:#f4c46c}.btn{background:linear-gradient(120deg,#ffe2a2,#f0b54e);color:#071327;padding:11px 22px;border-radius:999px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}.btn-secondary{border:1px solid #c99e53;border-radius:999px;padding:10px 18px;color:#f4c46c}.muted{color:#a9bbd4}.input{background:#091a32;border:1px solid #42607c;border-radius:12px;padding:12px 16px;color:white;width:100%}.card-hover{transition:transform .2s,border-color .2s}.card-hover:hover{transform:translateY(-3px);border-color:#f4c46c}.tag{font-size:12px;border:1px solid #31516e;background:#0a2540;border-radius:999px;padding:5px 10px}.heading{font-size:clamp(24px,3vw,32px);font-weight:800;margin-bottom:20px}
+/* Deep navy nebula gradients, not the screenshot or a repeated star tile. */
+.factum-app{position:relative;isolation:isolate;background:radial-gradient(ellipse 80% 38% at 87% 9%,rgba(19,51,102,.30),transparent 75%),radial-gradient(ellipse 65% 45% at 4% 62%,rgba(23,32,81,.28),transparent 75%),linear-gradient(170deg,#020917 0%,#061328 46%,#030b19 100%)}
+.factum-app>*:not(.shooting-sky,.factum-header){position:relative;z-index:1}
+.shooting-sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.meteor{position:absolute;display:block;width:155px;height:2px;opacity:0;background:linear-gradient(90deg,transparent,rgba(142,193,255,.55),#fff4d5);filter:drop-shadow(0 0 5px #7daeff);transform-origin:right center;animation:shoot linear forwards}
+@keyframes shoot{0%{opacity:0;translate:0 0}12%{opacity:.9}70%{opacity:.85}100%{opacity:0;translate:220px 140px}}
+@media(prefers-reduced-motion:reduce){.meteor{display:none}.card-hover{transition:none}}
+
+/* Screenshot-matched FACTUM home: all words, links and cards remain real DOM elements. */
+.factum-header{position:relative;z-index:60;background:#030b1b;border-bottom:1px solid rgba(54,84,129,.26);height:73px}.header-inner{max-width:1280px;margin:auto;height:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 16px}.brand{display:flex;align-items:center;gap:8px;flex-shrink:0;color:#fff}.brand-icon{color:#f1bf6d;filter:drop-shadow(0 0 5px #b8782a)}.brand strong{display:block;font-family:Arial,sans-serif;font-size:30px;letter-spacing:3px;line-height:1;font-weight:900}.brand small{display:block;font-size:8px;letter-spacing:4px;margin-top:4px}.desktop-nav{display:flex;align-items:center;gap:27px;height:100%;white-space:nowrap}.desktop-nav a{font-size:12px;font-weight:800;position:relative}.desktop-nav a:hover,.desktop-nav .nav-active{color:#f7d59b}.desktop-nav .nav-active:after{content:'';height:2px;background:#f7d59b;position:absolute;left:0;right:0;bottom:-17px;box-shadow:0 0 10px #f7d59b}.header-actions{display:flex;align-items:center;gap:15px}.icon-link{display:flex}.theme-pill,.lang-pill{display:flex;align-items:center;gap:5px;border:1px solid #243651;background:#101d34;border-radius:22px;padding:6px 9px;font-size:12px}.theme-pill{color:#f3c568}.sun-dot{height:14px;width:14px;border-radius:50%;background:#f5d58c}.sign-in{display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:28px;border:1px solid #f6c46c;box-shadow:0 0 10px #d9a45170;color:#f6d08c;font-weight:800;font-size:12px}.mobile-menu{display:none}.mobile-nav{background:#06142a;display:flex;flex-wrap:wrap;gap:18px;padding:14px 24px}.mobile-nav a{font-size:13px}
+.factum-home{background:linear-gradient(180deg,#030c21,#04142a 62%,#030b1b)}.cosmic-hero{height:279px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 85% 78%,#164678 0%,transparent 52%),#030c20}.hero-earth{position:absolute;inset:0 0 0 43%;background-image:linear-gradient(90deg,#030c20 0%,transparent 28%),url('/images/earth-horizon.jpg');background-size:cover;background-position:center 54%;opacity:.93}.hero-nebula{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 28% 20%,rgba(0,15,44,.75),transparent 48%),linear-gradient(0deg,#030d20 0%,transparent 24%)}.hero-content{height:100%;position:relative;display:flex;align-items:flex-start;justify-content:space-between;padding-top:24px}.hero-copy{width:min(630px,62%);position:relative;z-index:2}.hero-copy h1{font-size:clamp(25px,2.7vw,35px);line-height:1.22;font-weight:900;letter-spacing:-.6px;text-shadow:0 2px 10px #000}.hero-copy h1 span{color:#f6d8a5;text-shadow:0 0 15px #ecad6c66}.hero-copy>p{margin-top:11px;font-size:15px;font-weight:650}.hero-search{display:flex;align-items:center;gap:16px;height:57px;margin-top:20px;padding:5px 6px 5px 16px;border:1px solid #9bc1de;border-radius:32px;background:#041126eb;box-shadow:0 2px 12px #0008}.hero-search input{background:none;outline:none;border:0;min-width:0;flex:1;color:#fff;font-size:14px}.hero-search input::placeholder{color:#9eb3d3}.hero-search button{background:linear-gradient(#ffe5a8,#efb44f);border-radius:50%;height:43px;width:43px;color:#07142a;display:grid;place-items:center;flex-shrink:0}.quick-queries{display:flex;gap:8px;align-items:center;margin-top:13px;white-space:nowrap}.quick-queries span{font-size:10px;font-weight:800}.quick-queries button{border:1px solid #1d3553;border-radius:22px;padding:6px 10px;font-size:10px;background:#08213c;color:#d8e7ff}.quick-queries button:hover{border-color:#f3c26e}.hero-quote{font-size:13px;color:#c7d8ef;line-height:1.7;text-align:right;margin:13px 6px 0 0;text-shadow:0 2px 6px #000}.home-content{position:relative}.subject-section{margin-top:-1px;padding:0 0 18px}.subject-scroll{display:flex;align-items:stretch;gap:13px;overflow-x:auto;padding:0 0 6px;scrollbar-width:thin}.subject-tile{position:relative;flex:1 0 109px;min-width:109px;max-width:150px;height:124px;border:1px solid #3a6b9e;border-radius:12px;overflow:hidden;background:#07142a;text-align:center;transition:transform .2s,border-color .2s}.subject-tile:hover{transform:translateY(-3px);border-color:#efc16d}.subject-tile :is(img,video,.card-video){width:100%;height:100%;object-fit:cover}.subject-tile:after{content:'';position:absolute;inset:55% 0 0;background:linear-gradient(transparent,#031023 80%)}.subject-tile strong{position:absolute;bottom:9px;left:3px;right:3px;z-index:2;font-size:10px;line-height:1.3;text-shadow:0 1px 5px #000}.subject-emblem{position:absolute;bottom:29px;left:50%;transform:translateX(-50%);z-index:2;border:1px solid #a57e41;border-radius:50%;color:#f3cc7b;background:#051329b8;width:23px;height:23px;font-size:16px}.subject-more{align-self:center;display:grid;place-items:center;flex:0 0 31px;height:31px;border:1px solid #35587e;border-radius:50%;background:#0c2444}.games-section{border-top:1px solid #203652;padding:14px 0 21px}.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px;min-height:31px}.section-title h2{display:flex;align-items:center;gap:10px;font-size:clamp(16px,1.7vw,24px);font-weight:850}.section-title h2 svg{color:#ffd282;filter:drop-shadow(0 0 8px #ffb954)}.section-title>a{font-size:12px;color:#f7c66d;display:flex;align-items:center;gap:6px;white-space:nowrap}.games-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.game-card{position:relative;min-height:184px;border:1px solid #f5bd5f;border-radius:16px;overflow:hidden;box-shadow:0 0 13px #dba55a40;background:#0a1831}.game-card>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.game-card:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 20%,rgba(9,12,32,.62) 43%,rgba(10,11,31,.91) 100%)}.game-card .game-copy{position:relative;z-index:1;margin-left:44%;padding:24px 12px 12px 0}.game-card h3{font-family:Arial,sans-serif;font-size:clamp(17px,2vw,25px);color:#ffda8b;white-space:nowrap}.game-card p{font-size:12px;line-height:1.65;margin:12px 0 15px;min-height:40px}.game-play{display:flex;align-items:center;justify-content:center;gap:9px;width:137px;max-width:100%;border-radius:30px;padding:10px 12px;background:linear-gradient(#ffe5a3,#f6b955);color:#0b1430;font-weight:900;font-size:13px}.game-blue{border-color:#48a6ff;box-shadow:0 0 12px #358bff44}.game-blue h3{color:#69baff}.game-blue .game-play{background:linear-gradient(#79d5ff,#328aff)}.game-purple{border-color:#bd5af6;box-shadow:0 0 12px #ac4aff44}.game-purple h3{color:#e2a0ff}.game-purple .game-play{background:linear-gradient(#f3b3ff,#a55be8)}.discovery-grid{display:grid;grid-template-columns:1.35fr 1fr .75fr;gap:17px;padding:0 0 13px}.discovery-grid .section-title h2{font-size:18px}.discovery-card,.history-card,.people-card{border:1px solid #234366;background:linear-gradient(150deg,#081b34,#061529);border-radius:16px;overflow:hidden;min-height:264px}.discovery-card>img{height:143px;width:100%;object-fit:cover}.discovery-copy{position:relative;padding:12px 20px 14px}.discovery-copy h3{font-size:17px;font-weight:800}.discovery-copy p{font-size:12px;color:#b9c9df;line-height:1.6;margin-top:8px;padding-right:80px}.discovery-copy a{display:flex;align-items:center;gap:5px;float:right;border:1px solid #dfaa5e;border-radius:20px;padding:6px 10px;color:#f5c979;font-size:11px}.history-card{padding:14px}.history-entry{display:flex;gap:13px;align-items:flex-start;padding:9px 0;border-left:1px solid #426b9b;margin-left:8px}.history-year{font-size:12px;color:#f8cc76;font-weight:800;width:75px;flex-shrink:0;padding-left:9px}.history-entry>div strong{display:block;font-size:12px}.history-entry small{display:block;font-size:10px;color:#9fb3cf;margin-top:4px}.history-more{display:flex;align-items:center;justify-content:flex-end;gap:6px;color:#f4c66b;font-size:11px;margin-top:9px}.people-card{padding:14px}.person-feature{display:flex;gap:12px;align-items:flex-start}.person-feature>img,.person-feature>div:first-child{width:104px;height:180px;flex-shrink:0;object-fit:cover;border-radius:10px}.person-feature>div:last-child{min-width:0}.person-feature h3{font-size:13px;font-weight:800}.person-feature small{font-size:11px;color:#aabed8}.person-feature p{font-size:11px;line-height:1.6;margin-top:13px;color:#d5e2f4}.person-feature a{display:flex;gap:5px;align-items:center;color:#f4c66b;font-size:10px;margin-top:14px}.person-controls{display:flex;justify-content:space-around;align-items:center;margin-top:13px}.person-controls button{display:grid;place-items:center;width:29px;height:29px;border-radius:50%;border:1px solid #37587c}.dots{display:flex;gap:7px}.dots i{height:7px;width:7px;border:1px solid #7da5d3;border-radius:50%}.dots i.on{background:#ffdf98;border-color:#ffdf98}.stats-bar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid #193052;background:linear-gradient(90deg,#0a1530,#041027);border-radius:14px;margin:0 0 8px;min-height:74px;align-items:center}.stats-bar>div{display:grid;grid-template-columns:43px 1fr;grid-template-rows:auto auto;column-gap:9px;align-items:center;padding:8px 12px;border-right:1px solid #355076}.stats-bar>div:last-child{border-right:0}.stats-bar svg{grid-row:span 2;width:34px;height:34px;color:#f8c76e;filter:drop-shadow(0 0 7px #e4a73d)}.stats-bar strong{font-size:15px}.stats-bar small{font-size:10px;color:#b2c5e0}.demo-disclaimer{font-size:10px;color:#7d91af;padding:6px 0 12px}
+@media(max-width:1100px){.desktop-nav{gap:12px}.desktop-nav a{font-size:10px}.discovery-grid{grid-template-columns:1.1fr 1fr}.people-column{grid-column:1/-1}.game-card .game-copy{margin-left:38%}.game-card h3{font-size:17px}}@media(max-width:800px){.factum-header{height:auto;min-height:70px}.desktop-nav,.theme-pill,.lang-pill{display:none}.mobile-menu{display:block}.brand strong{font-size:23px}.header-actions{gap:10px}.hero-content{padding-top:34px}.hero-copy{width:100%}.hero-quote{display:none}.hero-earth{left:20%;opacity:.45}.hero-copy h1{font-size:26px}.quick-queries{overflow-x:auto}.games-grid{grid-template-columns:1fr}.game-card{min-height:190px}.game-card .game-copy{margin-left:43%}.discovery-grid{grid-template-columns:1fr}.people-column{grid-column:auto}.stats-bar{grid-template-columns:repeat(2,1fr)}.stats-bar>div:nth-child(2n){border-right:0}}@media(max-width:480px){.shell{padding:0 14px}.header-inner{padding:0 12px}.sign-in{padding:8px;font-size:0}.sign-in svg{width:19px}.hero-copy h1{font-size:22px}.hero-copy>p{font-size:12px}.hero-search{margin-top:18px}.quick-queries span{display:none}.game-card .game-copy{margin-left:40%}.stats-bar>div{padding:9px 5px}.stats-bar strong{font-size:12px}}@media(prefers-reduced-motion:reduce){.subject-tile{transition:none}}
+
+/* FACTUM v4: expanded portrait column and refined history timeline */
+@media(min-width:1101px){
+  .discovery-grid{grid-template-columns:minmax(0,1.28fr) minmax(0,.99fr) minmax(0,.92fr);gap:16px}
+}
+.people-card{padding:13px;min-height:264px}
+.person-feature{display:grid;grid-template-columns:minmax(116px,43%) minmax(0,1fr);gap:12px;align-items:start}
+.person-feature .person-photo{width:100%;height:191px;min-width:0;overflow:hidden;border:1px solid #35577b;border-radius:11px;background:#0c1d35}
+.person-feature .person-photo>img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.person-feature .person-photo .portrait{width:100%;height:100%;border:0;border-radius:0}
+.person-feature .person-photo .portrait img{width:100%;height:100%;object-fit:cover}
+.person-feature .person-description{min-width:0}
+.person-feature .person-description h3{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.person-feature .person-description small{display:block;line-height:1.5;margin-top:5px}
+.person-feature .person-description p{margin-top:11px;line-height:1.55}
+.person-controls{margin-top:10px;justify-content:space-between;padding:0 16px}
+.history-card{padding:14px 15px;display:flex;flex-direction:column}
+.history-track{position:relative;flex:1;padding-left:7px}
+.history-track:before{content:"";position:absolute;top:16px;bottom:17px;left:11px;width:1px;background:linear-gradient(#f5c36e,#5479a3,#294a73)}
+.history-entry{position:relative;display:grid;grid-template-columns:minmax(67px,25%) minmax(0,1fr);gap:8px;align-items:start;margin:0;padding:10px 0 12px 15px;border:0;border-bottom:1px solid #28436255;text-decoration:none}
+.history-entry:last-child{border-bottom:0}
+.history-entry:before{content:"";position:absolute;left:0;top:16px;width:9px;height:9px;border-radius:50%;border:1px solid #dcae5c;background:#08182c;box-shadow:0 0 9px #e3b66566}
+.history-entry:first-child:before{background:#f7ce80}
+.history-year{width:auto;padding:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.history-event{min-width:0}
+.history-event strong{font-size:12px;line-height:1.5;font-weight:750;overflow-wrap:anywhere}
+.history-event small{font-size:10px;line-height:1.5}
+.history-entry:hover .history-event strong{color:#f6d18a}
+.history-more{margin-top:auto;padding-top:8px}
+@media(max-width:1100px){.people-column{grid-column:1/-1}.person-feature{grid-template-columns:145px minmax(0,1fr)}}
+@media(max-width:800px){.person-feature{grid-template-columns:minmax(110px,38%) minmax(0,1fr)}}
+@media(max-width:400px){.person-feature{grid-template-columns:105px minmax(0,1fr)}.history-entry{grid-template-columns:72px minmax(0,1fr)}}
+
+/* Phase 5: artwork is now text-free; all labels, buttons and borders are HTML/CSS. */
+.subject-tile :is(img,video,.card-video){display:block;width:100%;height:100%;object-fit:cover;object-position:center 28%;border:0;border-radius:0}
+.subject-tile:after{inset:40% 0 0;background:linear-gradient(transparent 0%,rgba(2,9,24,.65) 50%,#020b1d 100%)}
+.game-card>img{object-fit:cover;object-position:left center;border:0;border-radius:0}
+.game-card:after{background:linear-gradient(90deg,transparent 0%,rgba(6,13,33,.12) 28%,rgba(6,12,30,.12) 45%,rgba(6,12,30,.30) 100%)}
+.game-card .game-copy{margin-left:43%;padding:22px 13px 15px 0}
+.game-card h3{position:relative;text-shadow:0 2px 6px #020817}
+@media(max-width:800px){.game-card .game-copy{margin-left:43%}}
+
+/* FACTUM visual fidelity v6 — no rasterized text, borders or controls */
+.cosmic-hero{background:radial-gradient(ellipse at 78% 70%,#12416f 0%,transparent 60%),#030c20}
+.hero-earth{inset:0 0 0 34%;background-image:linear-gradient(90deg,#030c20 0%,rgba(3,12,32,.9) 8%,transparent 42%),url('/images/hero-earth-art.jpg');background-size:cover;background-position:center 55%;opacity:1}
+.hero-nebula{background:radial-gradient(ellipse at 25% 30%,rgba(0,12,37,.35),transparent 48%),linear-gradient(0deg,#030d20 0%,transparent 20%)}
+.subject-tile{height:148px;flex-basis:119px;min-width:111px;max-width:150px;border-radius:11px;box-shadow:inset 0 0 0 1px #2a5885,0 3px 15px #001529}
+.subject-tile :is(img,video,.card-video){object-fit:cover;filter:saturate(1.18) contrast(1.06);border:0}
+.subject-tile:after{inset:42% 0 0;background:linear-gradient(transparent 0%,#031024dd 65%,#020b1d 100%)}
+.subject-tile strong{font-size:11px;bottom:8px}
+.subject-emblem{bottom:34px}
+.game-card{min-height:183px;display:flex;align-items:stretch;background:radial-gradient(ellipse at 22% 52%,#2e1d42 0%,#090d23 74%);isolation:isolate}
+.game-blue{background:radial-gradient(ellipse at 25% 50%,#073b75,#061229 76%)}
+.game-purple{background:radial-gradient(ellipse at 25% 50%,#422058,#120b27 76%)}
+.game-card>img{position:absolute;left:0;top:0;bottom:0;width:48%;height:100%;object-fit:cover;object-position:center 47%;border:0;filter:saturate(1.2) contrast(1.07)}
+.game-card:after{background:linear-gradient(90deg,transparent 0%,rgba(8,10,29,.1) 26%,rgba(8,11,31,.78) 47%,rgba(8,11,31,.15) 100%);pointer-events:none}
+.game-card .game-copy{margin-left:43%;padding:20px 15px 14px 0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.game-card h3{font-size:clamp(17px,1.9vw,24px);line-height:1.2}
+.game-card p{font-size:12px;margin:10px 0 14px;min-height:34px}
+.game-play{min-width:128px}
+.people-card{min-height:264px}
+.person-feature .person-photo{height:194px}
+.person-feature .person-photo>img{object-position:center 15%}
+@media(max-width:800px){.hero-earth{left:20%;opacity:.55}.subject-tile{height:135px}.game-card .game-copy{margin-left:43%}}
+@media(max-width:480px){.game-card>img{width:46%}.game-card .game-copy{margin-left:43%;padding-right:8px}.game-card h3{font-size:17px}.game-card p{font-size:11px}}
+
+/* v7: genuine standalone text-free assets; avoid clipping subject artwork. */
+.subject-tile{background:radial-gradient(circle at 50% 40%,#193c68,#041127 85%);isolation:isolate}
+.subject-tile :is(img,video,.card-video){display:block;width:100%;height:100%;object-fit:cover;}
+.subject-tile:after{background:linear-gradient(0deg,#020b1d 0%,rgba(2,11,29,.88) 17%,transparent 52%)}
+.subject-tile strong{bottom:8px}
+.game-card{isolation:isolate}
+.game-card>img{inset:0 auto 0 0;width:59%;height:100%;object-fit:cover;object-position:center center;
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 64%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0%,#000 64%,transparent 100%)}
+.game-card:after{background:linear-gradient(90deg,transparent 0%,rgba(6,14,33,.08) 32%,rgba(7,14,33,.48) 50%,rgba(7,14,33,.16) 100%);pointer-events:none}
+.game-gold{background:radial-gradient(ellipse at 25% 55%,#61341c,#120d29 70%)}
+.game-blue{background:radial-gradient(ellipse at 25% 55%,#083a77,#08142d 70%)}
+.game-purple{background:radial-gradient(ellipse at 25% 55%,#49205e,#150d29 70%)}
+.game-card .game-copy{margin-left:45%;padding-right:13px}
+.game-card h3,.game-card p,.game-play{position:relative;z-index:2}
+.discovery-card>img{object-fit:cover;object-position:center 52%}
+@media(max-width:680px){.game-card>img{width:57%}.game-card .game-copy{margin-left:43%}}
+
+
+/* Phase 9 — encyclopedia images and larger featured people section.
+   These rules are intentionally expanded and readable for easy editing. */
+.encyclopedia-page {
+  position: relative;
+}
+
+.encyclopedia-heading {
+  margin-bottom: 22px;
+}
+
+.encyclopedia-eyebrow {
+  color: #f6c979;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+
+.encyclopedia-heading .heading {
+  margin-bottom: 10px;
+}
+
+.encyclopedia-search {
+  width: min(100%, 640px);
+}
+
+.encyclopedia-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.encyclopedia-tile {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: 215px;
+  overflow: hidden;
+  border: 1px solid #366da2;
+  border-radius: 16px;
+  background: #081b35;
+  box-shadow: 0 8px 26px #0005;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.encyclopedia-tile:hover {
+  transform: translateY(-4px);
+  border-color: #f4c779;
+}
+
+.encyclopedia-tile :is(img,video,.card-video) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: filter 400ms ease;
+}
+
+.encyclopedia-tile-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, #031025 0%, #031025d9 14%, transparent 62%);
+  transition: opacity 400ms ease;
+}
+
+.encyclopedia-tile:is(:hover, :focus-visible) .encyclopedia-tile-shade {
+  opacity: 0;
+}
+
+.encyclopedia-tile-name {
+  position: absolute;
+  z-index: 1;
+  bottom: 16px;
+  left: 17px;
+  right: 17px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  text-shadow: 0 2px 8px #000;
+}
+
+.encyclopedia-subject-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  min-height: 362px;
+  overflow: hidden;
+  border: 1px solid #356b9d;
+  border-radius: 20px;
+  background: #09172d;
+}
+
+.encyclopedia-subject-hero > :is(img,video,.card-video) {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.encyclopedia-subject-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(3, 16, 39, .6), rgba(3, 16, 39, .12) 45%, transparent 70%);
+}
+
+.encyclopedia-subject-hero-content {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  z-index: 1;
+  padding: 32px;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, .8);
+}
+
+/* The scientists/people column gets a larger share of the discovery row. */
+@media (min-width: 1181px) {
+  .discovery-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1.25fr);
+    gap: 17px;
+  }
+
+  .people-column {
+    min-width: 0;
+  }
+
+  .person-feature {
+    grid-template-columns: minmax(145px, 46%) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .person-feature .person-photo {
+    height: 215px;
+  }
+}
+
+.people-card {
+  min-height: 275px;
+}
+
+.person-feature .person-photo > img {
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+@media (max-width: 1180px) {
+  .discovery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .people-column {
+    grid-column: 1 / -1;
+  }
+
+  .person-feature {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 850px) {
+  .encyclopedia-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .discovery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .people-column {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 500px) {
+  .encyclopedia-grid {
+    gap: 11px;
+  }
+
+  .encyclopedia-tile {
+    height: 170px;
+  }
+
+  .encyclopedia-tile-name {
+    left: 11px;
+    right: 11px;
+    bottom: 12px;
+    font-size: 13px;
+  }
+
+  .encyclopedia-subject-hero {
+    min-height: 220px;
+  }
+
+  .encyclopedia-subject-hero-content {
+    padding: 22px;
+  }
+
+  .person-feature {
+    grid-template-columns: minmax(115px, 42%) minmax(0, 1fr);
+  }
+}
+
+
+/* Phase 10: interesting facts card. Button stays at the bottom-right,
+   regardless of text length or responsive column width. */
+.discovery-grid .discovery-column { min-width: 0; }
+.fact-highlight { display: flex; flex-direction: column; height: 100%; }
+.fact-highlight > img {
+  display: block;
+  width: 100%;
+  height: 148px;
+  object-fit: cover;
+  object-position: center;
+}
+.fact-highlight .discovery-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 147px;
+  padding: 15px 18px 16px;
+}
+.fact-highlight .fact-eyebrow {
+  color: #f6ca79;
+  font-size: 11px;
+  font-weight: 750;
+  margin-bottom: 8px;
+}
+.fact-highlight .discovery-copy h3 { font-size: 16px; line-height: 1.45; }
+.fact-highlight .discovery-copy p {
+  padding-right: 0;
+  margin-bottom: 18px;
+  line-height: 1.65;
+}
+.fact-highlight .discovery-copy .discovery-read-more {
+  float: none;
+  align-self: flex-end;
+  margin-top: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-decoration: none;
+  background: #081a31;
+  transition: background 180ms ease, transform 180ms ease;
+}
+.fact-highlight .discovery-copy .discovery-read-more:hover {
+  background: #173451;
+  transform: translateY(-2px);
+}
+
+
+/* ============================================================
+   FACTUM Phase 12 — Discovery cards: stable, equal-height layout
+   The grid row grows with its tallest card; no overlapping stats.
+   ============================================================ */
+.discovery-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.94fr) minmax(0, 1.25fr);
+  gap: 18px;
+  align-items: stretch;
+  height: auto;
+  min-height: 0;
+  padding-bottom: 22px;
+  margin-bottom: 0;
+}
+
+.discovery-grid > .discovery-column,
+.discovery-grid > .history-column,
+.discovery-grid > .people-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+}
+
+.discovery-grid > div > .section-title {
+  flex: 0 0 auto;
+  min-height: 45px;
+  margin-bottom: 12px;
+}
+
+.discovery-grid > div > .section-title h2 {
+  min-width: 0;
+  font-size: clamp(15px, 1.35vw, 19px);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.discovery-grid .discovery-card,
+.discovery-grid .history-card,
+.discovery-grid .people-card {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 330px;
+  max-height: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.discovery-grid .fact-highlight {
+  display: flex;
+  flex-direction: column;
+}
+
+.discovery-grid .fact-highlight > img {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+}
+
+.discovery-grid .fact-highlight .discovery-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 0;
+  padding: 15px 17px 17px;
+}
+
+.discovery-grid .fact-highlight .discovery-copy p {
+  padding: 0;
+  margin-bottom: 18px;
+  overflow-wrap: anywhere;
+}
+
+.discovery-grid .fact-highlight .discovery-read-more {
+  float: none;
+  align-self: flex-end;
+  margin-top: auto;
+  position: static;
+  flex: 0 0 auto;
+}
+
+.discovery-grid .history-card,
+.discovery-grid .people-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.discovery-grid .history-more,
+.discovery-grid .person-controls {
+  margin-top: auto;
+}
+
+.discovery-grid .person-feature,
+.discovery-grid .person-description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Below desktop width the people panel spans a separate full-width row. */
+@media (min-width: 851px) and (max-width: 1180px) {
+  .discovery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .discovery-grid > .people-column {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 850px) {
+  .discovery-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+  .discovery-grid > .people-column {
+    grid-column: auto;
+  }
+  .discovery-grid .discovery-card,
+  .discovery-grid .history-card,
+  .discovery-grid .people-card {
+    min-height: 0;
+  }
+}
+
+
+/* Phase 15 — maximize portrait space without overlapping adjacent cards.
+   The card uses the available height; the image fills its own column. */
+@media (min-width: 1181px) {
+  .discovery-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.5fr);
+  }
+}
+.discovery-grid .people-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+.discovery-grid .person-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 50%) minmax(0, 1fr);
+  gap: 13px;
+  flex: 1 1 auto;
+  align-items: stretch;
+}
+.discovery-grid .person-feature .person-photo {
+  width: 100%;
+  height: 100%;
+  min-height: 245px;
+  max-height: none;
+  overflow: hidden;
+  border-radius: 11px;
+}
+.discovery-grid .person-feature .person-photo > img,
+.discovery-grid .person-feature .person-photo .portrait,
+.discovery-grid .person-feature .person-photo .portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+.discovery-grid .person-description {
+  min-width: 0;
+  align-self: start;
+}
+.discovery-grid .person-controls {
+  flex: 0 0 auto;
+  padding-top: 10px;
+}
+@media (max-width: 850px) {
+  .discovery-grid .person-feature {
+    grid-template-columns: minmax(0, 48%) minmax(0, 1fr);
+  }
+  .discovery-grid .person-feature .person-photo {
+    min-height: 215px;
+  }
+}
+@media (max-width: 430px) {
+  .discovery-grid .person-feature {
+    grid-template-columns: minmax(0, 45%) minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
+
+/* Phase 18 — homepage: four history entries and single-line fact summary.
+   The entire fact remains available through the details link. */
+.discovery-grid .fact-highlight .discovery-copy {
+  min-width: 0;
+  width: 100%;
+}
+
+.discovery-grid .fact-highlight .discovery-copy p {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
+.discovery-grid .history-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #dfc38f88 transparent;
+  scroll-behavior: smooth;
+}
+.discovery-grid .history-scroll:focus-visible { outline: 2px solid #dfc38f; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .discovery-grid .history-scroll { scroll-behavior: auto; }
+}
+
+.discovery-grid .history-entry {
+  min-width: 0;
+}
+
+.discovery-grid .history-event {
+  min-width: 0;
+}
+
+/* Phase 20: keep the original three-column layout from Phase 18.
+   Prevent the "Հետաքրքիր փաստեր" heading from breaking into two lines. */
+.discovery-grid > .discovery-column > .section-title h2 {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: clamp(16px, 1.35vw, 22px);
+  letter-spacing: -0.025em;
+}
+
+.discovery-grid > .discovery-column > .section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.discovery-grid > .discovery-column > .section-title > a {
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 420px) {
+  .discovery-grid > .discovery-column > .section-title h2 {
+    font-size: 16px;
+  }
+}
+
+/* Phase 22: readable highlighted search matches. */
+.search-match {
+  color: #FFFFFF;
+  display: inline;
+  background: #f6c85f;
+  border-radius: 3px;
+  padding: 0 2px;
+  font-weight: 800;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Phase 23: subjects scroll horizontally without the final arrow button. */
+.subject-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.subject-scroll .subject-tile {
+  scroll-snap-align: start;
+}
+
+
+/* Phase 24: Show every encyclopedia subject in one horizontally scrollable row.
+   Each card has a fixed width: adding more cards must never shrink images. */
+.subject-scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 13px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0 12px;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.subject-scroll > .subject-tile {
+  flex: 0 0 150px;
+  width: 150px;
+  min-width: 150px;
+  max-width: 150px;
+  height: 148px;
+  scroll-snap-align: start;
+}
+
+.subject-scroll > .subject-tile :is(img,video,.card-video) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 480px) {
+  .subject-scroll > .subject-tile {
+    flex-basis: 135px;
+    width: 135px;
+    min-width: 135px;
+    max-width: 135px;
+    height: 135px;
+  }
+}
+
+
+/* Phase 25: առարկաների թեմատիկ նշանները՝ նույն կլոր շրջանակի ներսում։ */
+.subject-emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.subject-emblem svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+/* Phase 26 — expanded atom article. All text remains editable HTML. */
+.atom-article {
+  padding: clamp(22px, 4vw, 42px);
+  overflow: hidden;
+}
+
+.atom-article-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
+  gap: 28px;
+  align-items: center;
+}
+
+.atom-article-lead {
+  margin-top: 22px;
+  font-size: clamp(18px, 2vw, 23px);
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.atom-article-hero {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  border: 1px solid rgba(75, 168, 255, 0.35);
+  border-radius: 18px;
+  background: #07142c;
+}
+
+.atom-image-caption {
+  color: #a4b4cd;
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 12px;
+  text-align: right;
+}
+
+.atom-article-section {
+  margin-top: 38px;
+}
+
+.atom-article-section h2 {
+  font-size: clamp(20px, 2.4vw, 27px);
+  font-weight: 750;
+  color: #f5c86c;
+  margin-bottom: 14px;
+}
+
+.atom-article-section > p {
+  line-height: 1.95;
+  margin-top: 13px;
+  color: #dce7fa;
+}
+
+.atom-particles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.atom-particle-card {
+  border: 1px solid rgba(92, 164, 245, 0.32);
+  border-radius: 14px;
+  padding: 20px;
+  background: linear-gradient(150deg, #102749, #071429);
+}
+
+.atom-particle-card h3 {
+  color: #f5c86c;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.atom-particle-card p {
+  line-height: 1.7;
+  margin-top: 8px;
+  color: #dce7fa;
+}
+
+.atom-facts-list {
+  display: grid;
+  gap: 12px;
+  padding-left: 22px;
+  list-style: disc;
+  line-height: 1.8;
+}
+
+@media (max-width: 760px) {
+  .atom-article-intro,
+  .atom-particles-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* Phase 27: երկրորդ նկար՝ հոդվածի մեջ, առանց պատկերի կտրելու։ */
+.atom-article-illustration {
+  margin: 28px 0 6px;
+  padding: 14px;
+  border: 1px solid rgba(86, 169, 252, 0.35);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #0b1f3e, #071329);
+}
+
+.atom-article-illustration img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 440px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.atom-article-illustration figcaption {
+  margin-top: 12px;
+  color: #afc0da;
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+
+/* Floating AI assistant — present on every page, independent of header. */
+.factum-ai-widget {
+  position: fixed;
+  right: clamp(14px, 3vw, 36px);
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+.factum-ai-widget > * { pointer-events: auto; }
+.factum-ai-trigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 19px;
+  border: 1px solid #dcae56;
+  border-radius: 999px;
+  background: linear-gradient(130deg, #17365d, #081429);
+  color: #ffdc8b;
+  font-weight: 750;
+  box-shadow: 0 8px 30px #0009, 0 0 18px #daa94c35;
+  cursor: pointer;
+}
+.factum-ai-trigger:hover { background: #204a79; }
+.factum-ai-panel {
+  width: min(400px, calc(100vw - 28px));
+  height: min(570px, calc(100dvh - 110px));
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+  overflow: hidden;
+  border: 1px solid #5274a1;
+  border-radius: 18px;
+  background: #07162d;
+  box-shadow: 0 18px 55px #000b;
+  color: #e9effb;
+}
+.factum-ai-panel-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  border-bottom: 1px solid #2c4566;
+  background: #0c2240;
+}
+.factum-ai-panel-heading { display: flex; align-items: center; gap: 9px; color: #ffda8a; font-weight: 800; }
+.factum-ai-close { color: #c8d8ef; padding: 4px; }
+.factum-ai-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.factum-ai-welcome { margin: auto 0; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; color: #e8f0ff; }
+.factum-ai-welcome svg { color: #f5c773; }
+.factum-ai-welcome p { color: #aabbd5; font-size: 13px; }
+.factum-ai-message { max-width: 93%; padding: 12px 14px; border-radius: 14px; line-height: 1.65; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.factum-ai-user { align-self: flex-end; background: #214c7d; color: white; border-bottom-right-radius: 4px; }
+.factum-ai-answer { align-self: flex-start; background: #132844; border: 1px solid #2b4b70; border-bottom-left-radius: 4px; }
+.factum-ai-loading { display: flex; align-items: center; gap: 8px; color: #e9c577; font-size: 13px; }
+.factum-ai-form { display: flex; align-items: center; gap: 8px; padding: 12px; border-top: 1px solid #2c4566; }
+.factum-ai-form input { min-width: 0; flex: 1; padding: 11px 13px; border: 1px solid #365579; border-radius: 10px; background: #0d223e; color: white; outline: none; }
+.factum-ai-form input:focus { border-color: #edbf69; }
+.factum-ai-form button { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 10px; background: #e5b760; color: #0c1830; }
+.factum-ai-form button:disabled { opacity: .4; cursor: not-allowed; }
+.factum-ai-disclaimer { padding: 0 12px 11px; text-align: center; font-size: 11px; color: #9eb1cc; }
+@media (max-width: 480px) {
+  .factum-ai-trigger { padding: 13px 15px; }
+  .factum-ai-panel { height: min(510px, calc(100dvh - 100px)); }
+}
+
+
+/* Phase 32: center the AI conversation on screen while keeping its launch button
+   fixed in the bottom-right corner on every route. */
+.factum-ai-widget:has(.factum-ai-panel)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(1, 8, 22, .58);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+.factum-ai-widget .factum-ai-panel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px));
+  height: min(650px, calc(100dvh - 48px));
+  max-height: calc(100dvh - 48px);
+  z-index: 1;
+}
+@media (max-width: 480px) {
+  .factum-ai-widget .factum-ai-panel {
+    width: calc(100vw - 24px);
+    height: min(620px, calc(100dvh - 34px));
+    max-height: calc(100dvh - 34px);
+  }
+}
+
+/* Phase 33: icon-only AI launch control fixed in the center of the viewport. */
+.factum-ai-widget {
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.factum-ai-trigger {
+  width: 62px;
+  height: 62px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+@media (max-width: 480px) {
+  .factum-ai-trigger { width: 56px; height: 56px; padding: 0; }
+}
+
+/* Phase 34: use the viewport as the positioning context.
+   A transform on the widget itself previously made the fixed dialog
+   relative to the tiny centered launcher, clipping the open panel. */
+.factum-ai-widget {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  transform: none;
+  display: block;
+  pointer-events: none;
+  z-index: 1100;
+}
+.factum-ai-widget .factum-ai-trigger {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+.factum-ai-widget .factum-ai-panel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 24px));
+  height: min(650px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+  min-height: 0;
+  pointer-events: auto;
+  z-index: 2;
+}
+.factum-ai-widget:has(.factum-ai-panel)::before {
+  pointer-events: auto;
+}
+@media (max-width: 480px) {
+  .factum-ai-widget .factum-ai-panel {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+}
+
+/* Phase 35: a right-edge, vertically centered launcher. The closed widget
+   has no viewport-sized box, so it cannot create page scrollbars. */
+.factum-ai-widget {
+  position: fixed;
+  inset: auto 0 auto auto;
+  top: 0;
+  right: 0;
+  left: auto;
+  bottom: auto;
+  width: 0;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+  transform: none;
+  display: block;
+  pointer-events: none;
+  z-index: 1100;
+}
+.factum-ai-widget .factum-ai-trigger {
+  position: fixed;
+  left: auto;
+  right: max(16px, env(safe-area-inset-right));
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+.factum-ai-widget .factum-ai-panel {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  top: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+.factum-ai-widget:has(.factum-ai-panel)::before {
+  position: fixed;
+  inset: 0;
+  pointer-events: auto;
+}
+@media (max-width: 480px) {
+  .factum-ai-widget .factum-ai-trigger {
+    right: max(12px, env(safe-area-inset-right));
+  }
+}
+
+
+/* Phase 39: accessible, persistent light/dark switch. */
+.theme-pill{cursor:pointer;transition:background .2s,border-color .2s;min-width:55px;justify-content:center}
+.theme-pill:focus-visible{outline:2px solid #f4c46c;outline-offset:3px}
+html.factum-light{color-scheme:light}
+html.factum-light body{background:#f4f7fd;color:#182940}
+html.factum-light .factum-app{background:radial-gradient(ellipse 70% 35% at 85% 12%,#dbeafe,transparent 78%),linear-gradient(165deg,#f7faff,#eaf1fa 60%,#f8faff);color:#182940}
+html.factum-light .factum-header{background:#fff;border-bottom-color:#d4dfed}
+html.factum-light .brand{color:#142640}
+html.factum-light .desktop-nav a,html.factum-light .mobile-nav a{color:#263e5b}
+html.factum-light .desktop-nav a:hover,html.factum-light .desktop-nav .nav-active{color:#946117}
+html.factum-light .theme-pill{background:#e8f0fc;border-color:#b8cce4;color:#9c6517}
+html.factum-light .theme-pill .sun-dot{background:#9db5d4}
+html.factum-light .mobile-nav{background:#f0f5fd}
+html.factum-light .panel{background:linear-gradient(145deg,#fff,#eef4fc);border-color:#c8d7e9;color:#1a2d46}
+html.factum-light .muted{color:#536a85}
+html.factum-light .input{background:#fff;border-color:#aebfd4;color:#1b2c44}
+html.factum-light .tag{background:#e7f0fc;border-color:#c3d5e9;color:#2b4869}
+html.factum-light .btn-secondary{color:#805415}
+html.factum-light .sign-in{color:#885b17;border-color:#c89d53;box-shadow:none}
+html.factum-light .gold{color:#986316}
+html.factum-light footer{color:#526983;border-color:#cbd9e9}
+/* Ensure common utility-driven dark surfaces remain readable in light mode. */
+html.factum-light .bg-slate-900,html.factum-light .bg-slate-950,html.factum-light .bg-gray-900{background-color:#fff!important}
+html.factum-light .text-white,html.factum-light .text-slate-100,html.factum-light .text-slate-200{color:#182940}
+html.factum-light .text-slate-300,html.factum-light .text-slate-400{color:#526983}
+html.factum-light .border-slate-700,html.factum-light .border-slate-800{border-color:#cbd9e9}
+@media(max-width:800px){.theme-pill{display:flex!important}}
+
+/* Phase 41: complete light appearance for the homepage, not just the header. */
+html.factum-light .factum-home{background:linear-gradient(180deg,#eef5ff,#f8fbff 60%,#eaf2fc);color:#192d48}
+html.factum-light .cosmic-hero{background:radial-gradient(ellipse at 80% 75%,#c5ddf8,transparent 55%),#e7f2ff}
+html.factum-light .hero-earth{opacity:.25;filter:saturate(.75)}
+html.factum-light .hero-nebula{background:linear-gradient(90deg,#e7f2ff 0%,rgba(231,242,255,.6) 54%,transparent 100%)}
+html.factum-light .hero-copy h1{color:#162c4c;text-shadow:none}
+html.factum-light .hero-copy h1 span{color:#94621e;text-shadow:none}
+html.factum-light .hero-copy>p,html.factum-light .hero-quote{color:#405b79;text-shadow:none}
+html.factum-light .hero-search{background:#fff;border-color:#adc5e1;box-shadow:0 5px 20px #7b9dc326}
+html.factum-light .hero-search input{color:#152a44}
+html.factum-light .hero-search input::placeholder{color:#6a809a}
+html.factum-light .quick-queries button{background:#e3eefb;color:#234563;border-color:#b5cbe5}
+html.factum-light .games-section{border-color:#d0deed}
+html.factum-light .game-card{box-shadow:0 5px 22px #56799c1a}
+html.factum-light .discovery-grid .panel,html.factum-light .facts-card,html.factum-light .history-card,html.factum-light .people-card{background:linear-gradient(145deg,#fff,#eef5fe);border-color:#c4d6eb;color:#1b304c}
+html.factum-light .section-title h2,html.factum-light .history-entry strong,html.factum-light .person-feature h3{color:#1a304d}
+html.factum-light .section-title>a,html.factum-light .history-more,html.factum-light .person-feature a{color:#956119}
+html.factum-light .person-feature p,html.factum-light .person-feature small,html.factum-light .history-entry small{color:#4e6681}
+html.factum-light .history-entry{border-bottom-color:#d4e0ef}
+html.factum-light .history-track:before{background:linear-gradient(#c89b54,#9db4d0)}
+html.factum-light .stats-bar{background:linear-gradient(100deg,#fff,#e9f2fe);border-color:#c9d9eb;color:#1b304b}
+html.factum-light .stats-bar>div{border-right-color:#d0dfef}
+html.factum-light .stats-bar small,html.factum-light .demo-disclaimer{color:#546c86}
+html.factum-light .person-controls button{border-color:#a9bed7;color:#274668}
+html.factum-light .subject-more{background:#fff;color:#254463;border-color:#b9cde4}
+html.factum-light .shooting-sky{opacity:.12}
+/* Keep illustrated game cards and subject photos legible on either theme. */
+html.factum-light .game-card,html.factum-light .subject-tile{color:#fff}
+
+/* Phase 42 — readable article typography in both themes.
+   Dark is the default; the light palette is applied only when enabled. */
+.atom-article-section > p {
+  color: #e5edfc;
+}
+
+html.factum-light .atom-article-section > p {
+  color: #243b58;
+}
+
+html.factum-light .atom-article-section h2,
+html.factum-light .atom-particle-card h3 {
+  color: #87570f;
+}
+
+html.factum-light .atom-particle-card {
+  background: #ffffff;
+  border-color: #c4d5e8;
+  color: #243b58;
+}
+
+html.factum-light .atom-image-caption,
+html.factum-light .atom-article-illustration figcaption {
+  color: #4d6480;
+}
+
+/* Prevent hard-coded pale article text from becoming invisible on light cards. */
+html.factum-light .atom-article-section p,
+html.factum-light .atom-particle-card p {
+  color: #243b58;
+}
+
+/* History timeline: anchored, expandable articles */
+.history-detail-entry { scroll-margin-top: 110px; }
+.history-detail-toggle { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; cursor: pointer; }
+.history-detail-heading { font-size: 1.1rem; font-weight: 750; margin-top: 8px; }
+.history-detail-content { margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(214, 175, 93, .28); }
+.history-detail-intro, .history-detail-section p { color: #e5edfc; line-height: 1.9; }
+.history-detail-section { margin-top: 22px; }
+.history-detail-section h3, .history-detail-facts h3 { color: #f2c778; font-weight: 750; font-size: 1.1rem; margin-bottom: 8px; }
+.history-detail-facts { margin-top: 22px; padding: 18px; border: 1px solid rgba(214,175,93,.25); border-radius: 14px; background: rgba(214,175,93,.07); }
+.history-detail-facts ul { padding-left: 20px; list-style: disc; color: #e5edfc; line-height: 1.85; }
+
+/* Phase 46: illustrated historical timeline. Images stay fully visible. */
+.history-event-figure { margin: 0 0 22px; border: 1px solid rgba(214,175,93,.3); border-radius: 16px; overflow: hidden; background: #0b203a; }
+.history-event-figure img { display: block; width: 100%; height: auto; max-height: 360px; object-fit: contain; }
+.history-event-figure figcaption { padding: 9px 14px; color: #b9cbe1; font-size: .82rem; }
+
+.history-event-sources { margin-top: 24px; border-top: 1px solid rgba(214,175,93,.28); padding-top: 16px; }
+.history-event-sources h3 { color: #f2ce82; font-weight: 700; margin-bottom: 9px; }
+.history-event-sources ul { padding-left: 22px; list-style: disc; margin-top: 10px; }
+.history-event-sources li { margin: 8px 0; }
+.history-event-sources a { color: #b8d9ff; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Preserve page spacing when shell padding overrides utility classes. */
+main.shell { padding-top: 40px; padding-bottom: 40px; }
+
+.history-detail-entry { transition: border-color .2s ease; }
+.history-detail-entry.history-detail-entry-open { border-color: #4ade80; }
+@media (prefers-reduced-motion: reduce) {
+  .history-detail-entry { transition: none; }
+}
+
+/* Shared starry background across pages. */
+html:not(.factum-light) .factum-app {
+  background: #030b19;
+}
+html:not(.factum-light) .factum-app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(rgba(3, 11, 25, .2), rgba(3, 11, 25, .35)), url('/images/starry_night_sky.jpg') center / cover no-repeat;
+}
+html:not(.factum-light) .factum-home {
+  background: transparent;
+}
+
+/* Night palette: shared translucent surfaces and restrained accents. */
+html:not(.factum-light) {
+  --night-surface: linear-gradient(145deg, rgba(19, 28, 52, .94), rgba(10, 17, 35, .92));
+  --night-border: rgba(137, 151, 192, .28);
+  --night-accent: #dfc38f;
+}
+html:not(.factum-light) .factum-header {
+  background: #080e1e;
+  border-bottom-color: var(--night-border);
+}
+html:not(.factum-light) .cosmic-hero {
+  background: transparent;
+}
+html:not(.factum-light) .hero-earth {
+  background-image: linear-gradient(90deg, #10152b 0%, transparent 40%), url('/images/earth-horizon.jpg');
+  opacity: .62;
+  -webkit-mask-image: linear-gradient(0deg, transparent, #000 45%);
+  mask-image: linear-gradient(0deg, transparent, #000 45%);
+}
+html:not(.factum-light) .hero-nebula {
+  background: linear-gradient(90deg, rgba(8, 14, 30, .45), transparent 75%);
+}
+html:not(.factum-light) :is(.panel, .discovery-card, .history-card, .people-card, .stats-bar) {
+  background: var(--night-surface);
+  border-color: var(--night-border);
+  box-shadow: 0 8px 24px rgba(2, 5, 16, .18);
+}
+html:not(.factum-light) .history-detail-entry.history-detail-entry-open {
+  border-color: #4ade80;
+}
+html:not(.factum-light) :is(.subject-tile, .encyclopedia-tile) {
+  border-color: var(--night-border);
+  background: #10192e;
+  box-shadow: 0 4px 12px rgba(2, 5, 16, .22);
+}
+html:not(.factum-light) :is(.subject-tile:hover, .encyclopedia-tile:hover, .card-hover:hover) {
+  border-color: var(--night-accent);
+}
+html:not(.factum-light) :is(.subject-tile :is(img,video,.card-video), .encyclopedia-tile > :is(img,video,.card-video), .discovery-card > img, .game-card > img) {
+  filter: saturate(.83) brightness(.9);
+}
+html:not(.factum-light) .subject-tile::after {
+  background: linear-gradient(0deg, #0b1228, rgba(11, 18, 40, .85) 20%, rgba(33, 37, 71, .08) 75%);
+}
+html:not(.factum-light) .encyclopedia-tile-shade {
+  background: linear-gradient(0deg, #0b1228, rgba(11, 18, 40, .75) 20%, rgba(33, 37, 71, .08) 75%);
+}
+html:not(.factum-light) .subject-emblem {
+  background: rgba(13, 20, 40, .85);
+  border-color: rgba(223, 195, 143, .45);
+  color: var(--night-accent);
+}
+html:not(.factum-light) .game-card {
+  border-color: var(--night-border);
+  box-shadow: 0 6px 20px rgba(2, 5, 16, .25);
+}
+html:not(.factum-light) .game-gold { background: radial-gradient(ellipse at 20% 50%, #393044, #11192f 75%); }
+html:not(.factum-light) .game-blue { background: radial-gradient(ellipse at 20% 50%, #1b3457, #11192f 75%); }
+html:not(.factum-light) .game-purple { background: radial-gradient(ellipse at 20% 50%, #35274d, #11192f 75%); }
+html:not(.factum-light) .game-card:hover { border-color: var(--night-accent); }
+html:not(.factum-light) .gold { color: var(--night-accent); }
+html:not(.factum-light) .muted { color: #b0b9d1; }
+html:not(.factum-light) .section-title h2 svg,
+html:not(.factum-light) .stats-bar svg {
+  color: var(--night-accent);
+  filter: none;
+}
+html:not(.factum-light) .hero-copy h1 span { color: #ead8b7; text-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+html:not(.factum-light) .btn,
+html:not(.factum-light) .game-gold .game-play {
+  background: linear-gradient(120deg, #eed8b0, #c9a56a);
+}
+html:not(.factum-light) .game-blue .game-play { background: linear-gradient(120deg, #a4caed, #729aca); }
+html:not(.factum-light) .game-purple .game-play { background: linear-gradient(120deg, #d0b7e7, #a382c7); }
+html:not(.factum-light) .game-gold h3 { color: #ead3a7; }
+html:not(.factum-light) .game-blue h3 { color: #a7caec; }
+html:not(.factum-light) .game-purple h3 { color: #d0b7e7; }
+html:not(.factum-light) .games-section { border-top-color: var(--night-border); }
+html:not(.factum-light) .encyclopedia-subject-hero { border-color: var(--night-border); }
+
+/* Shared gold focus state for form fields in both themes. */
+html .factum-app :is(input, textarea, select):focus {
+  outline: none;
+  border-color: #f4c46c;
+  box-shadow: none;
+}
+html .factum-app .hero-search:focus-within,
+html .factum-app .periodic-search:focus-within {
+  outline: none;
+  border-color: #f4c46c;
+}
+
+.saved-destination { scroll-margin-top: 24px; }
+.saved-destination[tabindex='-1']:focus { outline: none; }
+
+.encyclopedia-heading-link { display: inline-flex; align-items: center; gap: 10px; }
+.encyclopedia-heading-link:hover { color: #dfc38f; }
+
+html:not(.factum-light) .encyclopedia-tile:is(:hover, :focus-visible) > :is(img,video,.card-video) {
+  filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .encyclopedia-tile :is(img,video,.card-video), .encyclopedia-tile-shade { transition: none; }
+}
+
+/* One shared accent per topic, including hover and both color themes. */
+html .factum-app :is(.subject-tile,.encyclopedia-tile,.game-card) {
+  border-color: var(--card-accent, #dfc38f);
+  transition: transform .2s ease, border-color .2s ease, box-shadow .3s ease;
+}
+html .factum-app :is(.subject-tile,.encyclopedia-tile,.game-card):is(:hover,:focus-visible) {
+  border-color: var(--card-accent, #dfc38f);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--card-accent, #dfc38f) 45%, transparent), 0 6px 24px color-mix(in srgb, var(--card-accent, #dfc38f) 22%, transparent);
+}
+html .factum-app :is(.subject-emblem,.encyclopedia-emblem) {
+  color: var(--card-accent, #dfc38f);
+  border: 1px solid var(--card-accent, #dfc38f);
+  background: #0b1428e6;
+}
+.encyclopedia-emblem {
+  position: absolute; top: 14px; left: 14px; z-index: 1;
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+}
+@media (prefers-reduced-motion: reduce) {
+  html .factum-app :is(.subject-tile,.encyclopedia-tile,.game-card) { transition: none; }
+}
+
+/* Keep the facts carousel independent of slide text and neighboring cards. */
+.discovery-grid .fact-highlight {
+  flex: 0 0 420px;
+  height: 420px;
+  min-height: 420px;
+  max-height: 420px;
+}
+.discovery-grid .fact-highlight .discovery-copy {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Clean backdrop derived from the supplied reference: both planets remain visible. */
+.factum-home { position: relative; isolation: isolate; }
+.home-cosmic-backdrop {
+  position: fixed; inset: 73px 0 auto; z-index: -1; pointer-events: none;
+  height: clamp(420px, 37.5vw, 720px);
+  background: url('/images/cosmic-hero-background.webp') center top / 100% auto no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+}
+html .factum-app .cosmic-hero { background: transparent; }
+@media (max-width: 800px) {
+  .home-cosmic-backdrop {
+    top: calc(70px + env(safe-area-inset-top, 0px));
+    height: 460px;
+    background-size: auto 460px;
+    background-position: 66% top;
+  }
+  .home-cosmic-backdrop::before {
+    content: ''; position: absolute; inset: 0 auto 0 0; width: 76px;
+    background: url('/images/cosmic-hero-background.webp') left top / auto 460px no-repeat;
+    -webkit-mask-image: linear-gradient(to right, #000 45%, transparent);
+    mask-image: linear-gradient(to right, #000 45%, transparent);
+  }
+}
+html.factum-light .home-cosmic-backdrop { opacity: .4; }
+
+/* Let quick search results extend above the homepage cards. */
+.factum-home .cosmic-hero { overflow: visible; z-index: 5; }
