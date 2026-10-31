@@ -19,7 +19,7 @@
     "test:monuments": "node --test tests/monuments.test.mjs"
   },
   "dependencies": {
-    "nuxt": "^3.17.0",
+    "nuxt": "^4.6.3",
     "vue": "^3.5.0",
     "vue-router": "^4.5.0",
     "@pinia/nuxt": "^0.11.0",
