@@ -9,6 +9,7 @@ const { parse, compileScript, compileTemplate } = require('@vue/compiler-sfc')
 const { people, armenianPeople } = await import(contentUrl)
 const { armenianPortraits } = await import(moduleUrl(new URL('../data/personPortraits.ts', import.meta.url)))
 const { additionalArmenianPeople } = await import(moduleUrl(new URL('../data/armenianPeople.ts', import.meta.url)))
+const { biographies: archivedBiographies } = await import(moduleUrl(new URL('../data/biographies/index.ts', import.meta.url)))
 const { workDetails } = await import(moduleUrl(new URL('../data/peopleWorks.ts', import.meta.url)))
 const vueUrl = new URL('file://' + require.resolve('vue')).href
 const encodeModule = source => 'data:text/javascript;base64,' + Buffer.from(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText).toString('base64')
@@ -98,7 +99,8 @@ test('portrait lookup uses each person’s actual reference title and language',
 
 
 test('unpublished Vazgen Sargsyan source retains the supplied document', () => {
-  const person = additionalArmenianPeople.find(person => person.id === 'vazgen-sargsyan')
+  const source = additionalArmenianPeople.find(person => person.id === 'vazgen-sargsyan')
+  const person = { ...source, ...archivedBiographies[source.id] }
   assert.ok(!people.some(item => item.id === person.id))
   assert.equal(person.name, 'Վազգեն Սարգսյան')
   assert.equal(person.years, '1959–1999')
@@ -111,7 +113,8 @@ test('unpublished Vazgen Sargsyan source retains the supplied document', () => {
 })
 
 test('unpublished Babajanyan source retains the uploaded biography and original work order', () => {
-  const person = additionalArmenianPeople.find(person => person.id === 'babajanyan')
+  const source = additionalArmenianPeople.find(person => person.id === 'babajanyan')
+  const person = { ...source, ...archivedBiographies[source.id] }
   assert.ok(!people.some(item => item.id === person.id))
   assert.ok(person.biographyDocument.url.endsWith('Arno_Babajanyan_Biography.docx'))
   assert.ok(existsSync(new URL('../public' + person.biographyDocument.url, import.meta.url)))

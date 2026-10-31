@@ -1,5 +1,5 @@
 import { armenianPortraits } from './personPortraits'
-import { biographies } from './biographies'
+import { publishedBiographies as biographies } from './publishedBiographies'
 import { hambardzumyanBiography } from './biographies/Viktor_Hambardzumyan_Biography'
 import { komitasBiography } from './biographies/Komitas_Biography'
 import { tumanyanBiography, tumanyanAdditionalWorks } from './biographies/Hovhannes_Tumanyan_Biography'

@@ -2,11 +2,13 @@
   "name": "factum",
   "private": true,
   "type": "module",
+  "engines": { "node": "24.x" },
   "scripts": {
     "voice:prepare": "node scripts/prepare-biography-audio.mjs",
     "test:speech": "node --test tests/biography-speech.test.mjs tests/game-speech.test.mjs tests/game-speech-player.test.mjs tests/voice-answers.test.mjs tests/game-feedback-audio.test.mjs tests/biography-player.test.mjs",
     "dev": "nuxt dev",
     "build": "nuxt build",
+    "build:vercel": "NITRO_PRESET=vercel nuxt build",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
     "test:bible-reader": "node --test tests/bible-reader.test.mjs",

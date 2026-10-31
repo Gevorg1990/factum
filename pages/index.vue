@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { subjects, collectionSubjects, armenianPeople, timeline, questions, facts } from '~/data/content'
+import { optimizedImage } from '~/data/optimizedImages'
+import { subjects, collectionSubjects, armenianPeople, timeline, facts } from '~/data/content'
 import { armenianPortraits } from '~/data/personPortraits'
 import { selectHomeFacts } from '~/utils/homeFacts'
 import { cardTheme, gameAccents } from '~/data/cardThemes'
@@ -75,17 +76,17 @@ const chosenPerson=computed(()=>featuredPeople.value[personIndex.value])
 // Ցուցադրել հանրագիտարանի բոլոր հասանելի բաժինները՝ առանց քանակի սահմանափակման։
 // Հերթականությունը խառնում ենք client-ում՝ hydration-ից հետո։
 const subjectImages: Record<string, string> = {
-  bible: '/images/bible.jpg',
-  people: '/images/historical_figures.jpg',
-  nature: '/images/natural_science.jpg',
-  history: '/images/history.jpg',
-  space: '/images/solar_system.jpg',
-  physics: '/images/glowing_atomic.jpg',
-  biology: '/images/butterfly-poster.jpg',
-  mathematics: '/images/mathematics-poster.jpg',
-  linguistics: '/images/language.jpg',
-  cinema: '/images/film.jpg',
-  music: '/images/musical.jpg',
+  bible: '/images/optimized/bible-b846c66c03.webp',
+  people: '/images/optimized/historical_figures-c386436d70.webp',
+  nature: '/images/optimized/natural_science-c20c5b483b.webp',
+  history: '/images/optimized/history-bc707c9d4b.webp',
+  space: '/images/optimized/solar_system-2a149a2be2.webp',
+  physics: '/images/optimized/glowing_atomic-b2b2506372.webp',
+  biology: '/images/optimized/butterfly-poster-ba96016f61.webp',
+  mathematics: '/images/optimized/mathematics-poster-a8b4f5a4be.webp',
+  linguistics: '/images/optimized/language-1ebd4747fa.webp',
+  cinema: '/images/optimized/film-f5f6a80113.webp',
+  music: '/images/optimized/musical-81d16b4b01.webp',
 }
 const homeSubjects = [...subjects, ...collectionSubjects.filter(subject => subject.slug !== 'bible').map(subject => ({ ...subject, img: subject.slug }))]
 const subjectOrder = ref(homeSubjects.map(subject => subject.slug))
@@ -108,7 +109,7 @@ function shuffleSubjects() {
 }
 const tiles = computed(() => subjectOrder.value.slice(0, 8).map(slug => homeSubjects.find(subject => subject.slug === slug)!).map(subject => ({
   ...subject,
-  img: subjectImages[subject.slug] ?? `/images/${subject.img}-art.jpg`,
+  img: optimizedImage(subjectImages[subject.slug] ?? `/images/${subject.img}-art.jpg`),
   icon: cardTheme(subject.slug).icon,
   accent: cardTheme(subject.slug).color,
 })))
@@ -119,11 +120,11 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
 <template><main class="factum-home">
 <div class="home-cosmic-backdrop" aria-hidden="true"></div>
 <section class="cosmic-hero"><div class="shell hero-content"><div class="hero-copy"><h1><span>Աշխարհն ավելի հետաքրքիր է,</span><br/>քան պատկերացնում ես</h1><p>Հարցրու, բացահայտիր, սովորիր և փորձիր քո գիտելիքները։</p><HomeSearch v-model="search" @submit="goSearch" /><div class="quick-queries"><span>Հանրաճանաչ հարցեր՝</span><button v-for="q in popularQuestions" :key="q" @click="search=q;goSearch()">{{q}}</button></div></div><blockquote class="hero-quote">«Գիտելիքը ճանապարհ է,<br/> որը երբեք չի ավարտվում»</blockquote></div></section>
-<div class="shell home-content"><section class="subject-section" aria-labelledby="home-encyclopedia-title"><div class="section-title"><h2 id="home-encyclopedia-title"><NuxtLink to="/subjects" class="encyclopedia-heading-link"><BookOpen :size="23" /> Հանրագիտարան <ArrowRight :size="19" /></NuxtLink></h2></div><div class="home-subject-grid"><NuxtLink v-for="s in tiles" :key="s.slug" :to="'/subjects/'+s.slug" class="subject-tile" :style="{ '--card-accent': s.accent }"><CardVideo v-if="s.slug === 'music'" src="/videos/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/musical.jpg" /><CardVideo v-else-if="s.slug === 'biology'" src="/videos/Glowing_butterfly_on_DNA_strand_929f84ef_t0-6.mp4" poster="/images/butterfly-poster.jpg" /><CardVideo v-else-if="s.slug === 'mathematics'" src="/videos/Owl_blinking_on_stone_pedestal_ee98753c.mp4" poster="/images/mathematics-poster.jpg" /><CardVideo v-else-if="s.slug === 'chemistry'" src="/videos/Molecular_structure_rotating_in_…_654c41f3.mp4" poster="/images/chemistry-art.jpg" /><CardVideo v-else-if="s.slug === 'cinema'" src="/videos/Vintage_film_projector_turning_r…_eb957e93.mp4" poster="/images/film.jpg" /><CardVideo v-else-if="s.slug === 'nature'" src="/videos/Deer_and_fox_in_landscape_d0932100.mp4" poster="/images/natural_science.jpg" /><CardVideo v-else-if="s.slug === 'linguistics'" src="/videos/Magical_tree_sprouting_from_book_cd6c5146.mp4" poster="/images/language.jpg" /><CardVideo v-else-if="s.slug === 'space'" src="/videos/Planets_orbit_the_sun_bd41aa81.mp4" poster="/images/solar_system.jpg" /><img v-else :src="s.img" :alt="s.name"/><span class="subject-emblem" aria-hidden="true"><component :is="s.icon" :size="17" :stroke-width="1.9" /></span><strong>{{s.name}}</strong></NuxtLink></div></section>
-<section class="games-section"><div class="section-title"><h2><Sparkles :size="24"/> Փորձիր քո գիտելիքները</h2></div><div class="games-grid"><NuxtLink v-for="g in games" :key="g.id" :to="'/games/'+g.id" class="game-card" :class="'game-'+g.tone" :style="{ '--card-accent': gameAccents[g.id] }"><img :src="'/images/'+g.id+'-art.jpg'" :alt="g.name"/><div class="game-copy"><h3>{{g.name}}</h3><p>{{g.desc}}</p><span class="game-play">{{g.button}} <ArrowRight :size="17"/></span></div></NuxtLink></div></section>
+<div class="shell home-content"><section class="subject-section" aria-labelledby="home-encyclopedia-title"><div class="section-title"><h2 id="home-encyclopedia-title"><NuxtLink prefetch-on="interaction" to="/subjects" class="encyclopedia-heading-link"><BookOpen :size="23" /> Հանրագիտարան <ArrowRight :size="19" /></NuxtLink></h2></div><div class="home-subject-grid"><NuxtLink prefetch-on="interaction" v-for="s in tiles" :key="s.slug" :to="'/subjects/'+s.slug" class="subject-tile" :style="{ '--card-accent': s.accent }"><CardVideo v-if="s.slug === 'music'" src="/videos/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/optimized/musical-81d16b4b01.webp" /><CardVideo v-else-if="s.slug === 'physics'" src="/videos/Glowing_atom_floating_in_space_12f9fd11.mp4" poster="/images/optimized/glowing_atomic-b2b2506372.webp" /><CardVideo v-else-if="s.slug === 'biology'" src="/videos/Glowing_butterfly_on_DNA_strand_929f84ef_t0-6.mp4" poster="/images/optimized/butterfly-poster-ba96016f61.webp" /><CardVideo v-else-if="s.slug === 'mathematics'" src="/videos/Owl_blinking_on_stone_pedestal_ee98753c.mp4" poster="/images/optimized/mathematics-poster-a8b4f5a4be.webp" /><CardVideo v-else-if="s.slug === 'chemistry'" src="/videos/Molecular_structure_rotating_in_…_654c41f3.mp4" poster="/images/optimized/chemistry-art-68cb23965b.webp" /><CardVideo v-else-if="s.slug === 'cinema'" src="/videos/Vintage_film_projector_turning_r…_eb957e93.mp4" poster="/images/optimized/film-f5f6a80113.webp" /><CardVideo v-else-if="s.slug === 'nature'" src="/videos/Deer_and_fox_in_landscape_d0932100.mp4" poster="/images/optimized/natural_science-c20c5b483b.webp" /><CardVideo v-else-if="s.slug === 'people'" src="/videos/Historical_thinkers_against_cosm…_7be85a42.mp4" poster="/images/optimized/historical_figures-c386436d70.webp" /><CardVideo v-else-if="s.slug === 'history'" src="/videos/Ancient_monuments_under_drifting…_8c16c027.mp4" poster="/images/optimized/history-bc707c9d4b.webp" /><CardVideo v-else-if="s.slug === 'linguistics'" src="/videos/Magical_tree_sprouting_from_book_cd6c5146.mp4" poster="/images/optimized/language-1ebd4747fa.webp" /><CardVideo v-else-if="s.slug === 'space'" src="/videos/Planets_orbit_the_sun_bd41aa81.mp4" poster="/images/optimized/solar_system-2a149a2be2.webp" /><img v-else :src="s.img" :alt="s.name"/><span class="subject-emblem" aria-hidden="true"><component :is="s.icon" :size="17" :stroke-width="1.9" /></span><strong>{{s.name}}</strong></NuxtLink></div></section>
+<section class="games-section"><div class="section-title"><h2><Sparkles :size="24"/> Փորձիր քո գիտելիքները</h2></div><div class="games-grid"><NuxtLink prefetch-on="interaction" v-for="g in games" :key="g.id" :to="'/games/'+g.id" class="game-card" :class="'game-'+g.tone" :style="{ '--card-accent': gameAccents[g.id] }"><img :src="optimizedImage('/images/'+g.id+'-art.jpg')" :alt="g.name"/><div class="game-copy"><h3>{{g.name}}</h3><p>{{g.desc}}</p><span class="game-play">{{g.button}} <ArrowRight :size="17"/></span></div></NuxtLink></div></section>
 <section class="discovery-grid"><div class="discovery-column">
   <div class="section-title">
-    <h2><NuxtLink to="/facts" class="encyclopedia-heading-link"><Sparkles :size="22" /> Հետաքրքիր փաստեր <ArrowRight :size="18" /></NuxtLink></h2>
+    <h2><NuxtLink prefetch-on="interaction" to="/facts" class="encyclopedia-heading-link"><Sparkles :size="22" /> Հետաքրքիր փաստեր <ArrowRight :size="18" /></NuxtLink></h2>
   </div>
   <article class="discovery-card fact-highlight">
     <img src="/images/Earth_floating_with_digital_netw…_f11676c3.jpg" alt="Երկիր մոլորակը՝ թվային ցանցի կապերով" width="1376" height="768" decoding="async" />
@@ -132,14 +133,14 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
       <h3>{{ featuredFact.title }}</h3>
       <p :title="featuredFact.text">{{ featuredFact.text }}</p>
     </div>
-    <NuxtLink :to="{ path: '/facts', query: { fact: featuredFact.id } }" class="fact-read-more" :aria-label="`Կարդալ ավելին․ ${featuredFact.title}`">Կարդալ ավելին <ArrowRight :size="15" aria-hidden="true" /></NuxtLink>
+    <NuxtLink prefetch-on="interaction" :to="{ path: '/facts', query: { fact: featuredFact.id } }" class="fact-read-more" :aria-label="`Կարդալ ավելին․ ${featuredFact.title}`">Կարդալ ավելին <ArrowRight :size="15" aria-hidden="true" /></NuxtLink>
     <div class="person-controls fact-controls" role="group" aria-label="Փաստերի հերթափոխում">
       <button type="button" aria-label="Նախորդ փաստը" :disabled="homeFacts.length < 2" @click="nextFact(-1)"><ChevronLeft :size="18" /></button>
       <span class="muted text-xs" aria-live="polite">{{ featuredFactIndex + 1 }} / {{ homeFacts.length }}</span>
       <button type="button" aria-label="Հաջորդ փաստը" :disabled="homeFacts.length < 2" @click="nextFact(1)"><ChevronRight :size="18" /></button>
     </div>
   </article>
-</div><div class="history-column"><div class="section-title"><h2><NuxtLink to="/history" class="encyclopedia-heading-link">✦ Հայոց պատմություն <ArrowRight :size="18" /></NuxtLink></h2></div><article class="history-card"><div class="history-scroll" tabindex="0" role="region" aria-label="Հայոց պատմության ժամանակագրություն"><div class="history-track"><NuxtLink v-for="e in homeTimeline" :key="e.year" :to="{ path: '/history', query: { event: e.year } }" class="history-entry"><span class="history-year">{{e.year}}</span><div class="history-event"><strong>{{e.title}}</strong><small>{{e.era}}</small></div></NuxtLink></div></div></article></div><div class="people-column"><div class="section-title"><h2><NuxtLink to="/people" class="encyclopedia-heading-link">✦ Հայ հայտնիներ <ArrowRight :size="18" /></NuxtLink></h2></div><article class="people-card"><div class="person-feature"><div class="person-photo"><img v-if="chosenPerson.img" :src="chosenPerson.img" :alt="chosenPerson.name"/><PersonPortrait v-else :key="chosenPerson.id" :person="chosenPerson" size="large"/></div><div class="person-description"><h3>{{chosenPerson.name}}</h3><small>{{chosenPerson.years}} · {{chosenPerson.role}}</small><p>{{chosenPerson.bio}}</p><NuxtLink :to="`/people/${chosenPerson.id}`">Կարդալ ավելին <ArrowRight :size="15"/></NuxtLink></div></div><div class="person-controls"><button aria-label="Նախորդ մարդը" @click="nextPerson(-1)"><ChevronLeft :size="18"/></button><span class="muted text-xs" aria-live="polite">{{ personIndex + 1 }} / {{ featuredPeople.length }}</span><button aria-label="Հաջորդ մարդը" @click="nextPerson(1)"><ChevronRight :size="18"/></button></div></article></div></section>
+</div><div class="history-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/history" class="encyclopedia-heading-link">✦ Հայոց պատմություն <ArrowRight :size="18" /></NuxtLink></h2></div><article class="history-card"><div class="history-scroll" tabindex="0" role="region" aria-label="Հայոց պատմության ժամանակագրություն"><div class="history-track"><NuxtLink prefetch-on="interaction" v-for="e in homeTimeline" :key="e.year" :to="{ path: '/history', query: { event: e.year } }" class="history-entry"><span class="history-year">{{e.year}}</span><div class="history-event"><strong>{{e.title}}</strong><small>{{e.era}}</small></div></NuxtLink></div></div></article></div><div class="people-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/people" class="encyclopedia-heading-link">✦ Հայ հայտնիներ <ArrowRight :size="18" /></NuxtLink></h2></div><article class="people-card"><div class="person-feature"><div class="person-photo"><img v-if="chosenPerson.img" :src="chosenPerson.img" :alt="chosenPerson.name"/><PersonPortrait v-else :key="chosenPerson.id" :person="chosenPerson" size="large"/></div><div class="person-description"><h3>{{chosenPerson.name}}</h3><small>{{chosenPerson.years}} · {{chosenPerson.role}}</small><p>{{chosenPerson.bio}}</p><NuxtLink prefetch-on="interaction" :to="`/people/${chosenPerson.id}`">Կարդալ ավելին <ArrowRight :size="15"/></NuxtLink></div></div><div class="person-controls"><button aria-label="Նախորդ մարդը" @click="nextPerson(-1)"><ChevronLeft :size="18"/></button><span class="muted text-xs" aria-live="polite">{{ personIndex + 1 }} / {{ featuredPeople.length }}</span><button aria-label="Հաջորդ մարդը" @click="nextPerson(1)"><ChevronRight :size="18"/></button></div></article></div></section>
 <div class="stats-bar"><div><BookOpen/><strong>10,000+</strong><small>նախատեսվող հոդվածներ</small></div><div><CircleHelp/><strong>500,000+</strong><small>հարցերի երկարաժամկետ նպատակ</small></div><div><Brain/><strong>3</strong><small>ինտելեկտուալ խաղ</small></div><div><Users/><strong>100%</strong><small>անվճար հասանելիություն</small></div><div><Globe2/><strong>3 լեզու</strong><small>նախատեսված՝ Հայերեն / English / Русский</small></div></div><p class="demo-disclaimer">Ցուցադրական տարբերակ․ հոդվածների և հարցերի նշված քանակները զարգացման նպատակներ են, ոչ հրապարակված բովանդակության փաստացի հաշվարկ։</p>
 </div></main></template>
 
