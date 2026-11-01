@@ -8,6 +8,7 @@ import { additionalArmenianPeople } from './armenianPeople'
 import { collectionQuestions } from './collectionQuestions'
 import { encyclopediaQuestions } from './encyclopediaQuestions'
 import { expandedQuestions } from './encyclopedia'
+import { applyQuestionEnrichments } from './encyclopedia/enrichments'
 export const collectionSubjects = [{ slug: 'bible', name: 'Աստվածաշունչ' }, { slug: 'people', name: 'Նշանավոր մարդիկ' }]
 export type Question = {
   id: string
@@ -21,7 +22,7 @@ export type Question = {
   source?: { name: string; url: string }
 }
 export const subjects=[{slug:'chemistry',name:'Քիմիա',img:'chemistry'},{slug:'physics',name:'Ֆիզիկա',img:'physics'},{slug:'space',name:'Տիեզերք',img:'space'},{slug:'history',name:'Պատմություն',img:'history'},{slug:'nature',name:'Բնագիտություն',img:'nature'},{slug:'technology',name:'Տեխնոլոգիա',img:'technology'},{slug:'art',name:'Արվեստ',img:'art'},{slug:'biology',name:'Կենսաբանություն',img:'brain'},{"slug": "geography", "name": "Աշխարհագրություն", "img": "geography"},{"slug": "mathematics", "name": "Մաթեմատիկա", "img": "logic"},{"slug": "linguistics", "name": "Լեզվաբանություն", "img": "history"},{slug:'cinema',name:'Կինո',img:'cinema'},{slug:'music',name:'Երաժշտություն',img:'music'}]
-export const questions:Question[]=[
+const rawQuestions:Question[]=[
 ...collectionQuestions,
 ...encyclopediaQuestions,
 {id:'c1',subject:'chemistry',title:'Ի՞նչ է ատոմը',answer:'Ատոմը քիմիական տարրի հատկությունները կրող ամենափոքր մասնիկն է։',detail:'Այն բաղկացած է միջուկից և էլեկտրոններից։ Միջուկում կան պրոտոններ և, սովորաբար, նեյտրոններ։'},
@@ -73,11 +74,33 @@ export const questions:Question[]=[
 {"id": "music-intro-3", "subject": "music", "title": "Ինչո՞ւ են գործիքները տարբեր կերպ հնչում", "answer": "Գործիքների հնչերանգը տարբեր է, քանի որ դրանց ձայնը տարբեր բաղադրիչներ և ժամանակային զարգացում ունի։", "detail": "Նույն բարձրության հնչյունը դաշնամուրի և ջութակի վրա տարբեր ենք ճանաչում։ Պատճառը հիմնական տոնի հետ հնչող բաղադրիչների համադրությունն է, ձայնի սկզբի բնույթը և դրա փոփոխությունը ժամանակի ընթացքում։ Հնչերանգի վրա ազդում են գործիքի կառուցվածքն ու նվագելու եղանակը։"},
 {"id": "music-intro-4", "subject": "music", "title": "Ի՞նչ է ակորդը", "answer": "Ակորդը սովորաբար երեք կամ ավելի տարբեր բարձրության հնչյունների համադրություն է։", "detail": "Ակորդի հնչյունները կարող են հնչել միաժամանակ կամ հաջորդաբար՝ պահպանելով նույն ներդաշնակ հիմքը։ Ակորդների հաջորդականությունը օգնում է կառուցել ստեղծագործության ներդաշնակ ընթացքը։ Մեղեդին կարող է հնչել այդ ակորդների ուղեկցությամբ, ինչպես երգչի ձայնը՝ դաշնամուրի կամ կիթառի հետ։"}
 ]
-const existingTitles = new Set(questions.map(question => `${question.subject}:${question.title.normalize('NFC').replace(/[։՞?]/g, '').trim()}`))
-questions.push(...expandedQuestions.filter(question => {
+const existingTitles = new Set(rawQuestions.map(question => `${question.subject}:${question.title.normalize('NFC').replace(/[։՞?]/g, '').trim()}`))
+rawQuestions.push(...expandedQuestions.filter(question => {
   const title = `${question.subject}:${question.title.normalize('NFC').replace(/[։՞?]/g, '').trim()}`
   return !existingTitles.has(title)
 }))
+const allQuestions = applyQuestionEnrichments(rawQuestions)
+
+/** Keep the strongest ten learning articles visible in each field. The full catalog
+ * remains available for saved links and previously shared article URLs.
+ */
+function explanationScore(question: Question): number {
+  return (question.sections?.length || 0) * 100
+    + (question.example ? 45 : 0)
+    + (question.takeaway ? 25 : 0)
+    + Math.min(question.detail.length, 1800) / 18
+    + Math.min(question.answer.length, 500) / 25
+}
+
+export const questions: Question[] = [...new Set(allQuestions.map(question => question.subject))]
+  .flatMap(subject => allQuestions
+    .filter(question => question.subject === subject)
+    .map((question, index) => ({ question, index, score: explanationScore(question) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, 10)
+    .map(entry => entry.question))
+
+export const allEncyclopediaQuestions = allQuestions
 
 const catalogPeople: Person[]=[{"id": "einstein", "name": "Ալբերտ Էյնշտեյն", "years": "1879–1955", "role": "Տեսական ֆիզիկոս", "works": ["Հարաբերականության հատուկ տեսություն", "Հարաբերականության ընդհանուր տեսություն", "Ֆոտոէֆեկտի բացատրություն"], "bio": "Ալբերտ Էյնշտեյնը տեսական ֆիզիկոս էր, որի աշխատանքները փոխեցին տարածության, ժամանակի և ձգողականության մասին պատկերացումները։ 1905 թվականին նա ներկայացրեց հարաբերականության հատուկ տեսությունը, իսկ 1915 թվականին՝ ընդհանուր տեսությունը։ Ֆոտոէֆեկտի օրենքի բացահայտման համար նա արժանացավ 1921 թվականի ֆիզիկայի Նոբելյան մրցանակին։ Նրա գաղափարները կարևոր հիմք դարձան ժամանակակից աստղաֆիզիկայի և քվանտային տեսության զարգացման համար։"},{id:'tumanyan',name:'Հովհաննես Թումանյան',years:'1869–1923',role:'Բանաստեղծ և արձակագիր',works:['Անուշ','Գիքորը','Թմկաբերդի առումը'],bio:'Հովհաննես Թումանյանը հայ բանաստեղծ, արձակագիր և հասարակական գործիչ էր՝ ծնված Դսեղում։ Նրա ստեղծագործություններում կարևոր տեղ ունեն գյուղական կյանքը, մարդկային հարաբերությունները և բարոյական ընտրությունը։ «Անուշ» պոեմն ու «Գիքորը» պատմվածքը սիրո, կարեկցանքի և հասարակական ճնշումների մասին են։ Թումանյանի ստեղծագործությունները դարձել են նաև օպերաների ու բեմադրությունների հիմք։'},{id:'komitas',name:'Կոմիտաս',years:'1869–1935',role:'Կոմպոզիտոր և երաժշտագետ',works:['Պատարագ','Հայ ժողովրդական երգերի մշակումներ'],bio:'Կոմիտասը կոմպոզիտոր, երաժշտագետ և հայ ժողովրդական երգերի հավաքող ու ուսումնասիրող էր։ Նա գրառել և մշակել է աշխատանքային, ծիսական ու քնարական երգեր՝ պահպանելով դրանց մեղեդիական առանձնահատկությունները։ Նրա «Պատարագը» հայկական հոգևոր խմբերգային երաժշտության կարևոր գործերից է։ Կոմիտասի աշխատանքը մեծապես նպաստել է հայկական երաժշտական ժառանգության պահպանմանը և համերգային կյանքին։'},{id:'mashtots',name:'Մեսրոպ Մաշտոց',years:'մոտ 362–440',role:'Հայոց գրերի ստեղծող',works:['Հայոց այբուբենի ստեղծում'],bio:'Մեսրոպ Մաշտոցը հայ գրերի ստեղծող և կրթական գործիչ էր։ Հայոց այբուբենի ստեղծումն ավանդաբար թվագրվում է 405 թվականով։ Նոր գրային համակարգը հնարավորություն տվեց հայերենով գրի առնել և թարգմանել կրոնական, կրթական ու գրական տեքստեր։ Նրա գործունեությունը վճռորոշ դեր ունեցավ հայ գրավոր մշակույթի, կրթության և ազգային ինքնության զարգացման գործում։'},{id:'hambardzumyan',name:'Վիկտոր Համբարձումյան',years:'1908–1996',role:'Աստղաֆիզիկոս',works:['Աստղային ասոցիացիաների հետազոտություններ'],bio:'Վիկտոր Համբարձումյանը հայ աստղաֆիզիկոս էր և Բյուրականի աստղադիտարանի հիմնադիրը։ Նա ուսումնասիրել է աստղային ասոցիացիաները՝ երիտասարդ աստղերի համեմատաբար նոսր խմբավորումները։ Նրա հետազոտությունները ցույց տվեցին, որ աստղառաջացումը շարունակվող գործընթաց է։ Այս աշխատանքները կարևոր ներդրում ունեցան աստղերի առաջացման և աստղային համակարգերի զարգացման մասին պատկերացումների մեջ։'}]
 const tumanyan = catalogPeople.find(person => person.id === 'tumanyan')

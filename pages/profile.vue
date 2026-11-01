@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { questions, people, facts, timeline } from '~/data/content'
+import { allEncyclopediaQuestions, people, facts, timeline } from '~/data/content'
 import { bibleBooks } from '~/data/bible'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
 import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
@@ -26,7 +26,7 @@ function describeEntry(id: string): SavedEntry {
       ? { id, title: question.question, to: `/games/questions/${id}#saved-million-question`, kind: 'Միլիոնատերի հարց', category: 'million', answer: question.answers[question.correct], explanation: question.explanation }
       : { id, title: 'Պահպանված հարցն այլևս հասանելի չէ', to: '/games/million', kind: 'Միլիոնատերի հարց', category: 'million' }
   }
-  const question = questions.find(item => item.id === id)
+  const question = allEncyclopediaQuestions.find(item => item.id === id)
   if (question) return { id, title: question.title, to: `/articles/${id}#saved-article`, kind: 'Հոդված', category: 'encyclopedia' }
 
   const fact = facts.find(item => item.id === id)

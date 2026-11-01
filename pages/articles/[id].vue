@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { questions, subjects, collectionSubjects } from '~/data/content'
+import { allEncyclopediaQuestions, subjects, collectionSubjects } from '~/data/content'
 import { atomFacts, atomParticles, atomSections } from '~/data/atomArticle'
 
 const route = useRoute()
-const question = questions.find(item => item.id === route.params.id)
+const question = allEncyclopediaQuestions.find(item => item.id === route.params.id)
 const subject = [...subjects, ...collectionSubjects].find(item => item.slug === question?.subject)
 const isAtomArticle = computed(() => question?.id === 'c1')
 const { saved, markRead, toggleSaved } = useProgress()
