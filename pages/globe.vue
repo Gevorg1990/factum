@@ -15,7 +15,7 @@ function scrollToSection(id: string) {
 function showOnMap(code: string, returnTarget = 'capital-quiz-title') {
   mapReturnTarget.value = returnTarget
   mapFocus.value = { code, requestId: (mapFocus.value?.requestId ?? 0) + 1 }
-  scrollToSection('interactive-globe')
+  scrollToSection(window.matchMedia('(max-width: 900px)').matches ? 'globe-country-info' : 'interactive-globe')
 }
 useHead({ title: 'Երկրագունդ — FACTUM', meta: [{ name: 'description', content: 'Պտտիր ինտերակտիվ երկրագունդը, բացահայտիր երկրները, մայրաքաղաքները և աշխարհամասերը։' }] })
 </script>

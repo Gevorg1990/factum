@@ -101,7 +101,10 @@ watch([() => props.focusCountry, countries], async ([request]) => {
   zoom.value = 1
   choose(country, true)
   await nextTick()
-  stage.value?.querySelector('svg')?.focus({ preventScroll: true })
+  const target = window.matchMedia('(max-width: 900px)').matches
+    ? document.getElementById('globe-country-info')
+    : stage.value?.querySelector('svg')
+  target?.focus({ preventScroll: true })
 })
 
 async function loadApi(signal: AbortSignal): Promise<GlobeApi> {
@@ -153,6 +156,7 @@ async function load() {
 function choose(country: CountryFeature, center = false) {
   if (selectedContinent.value !== country.properties.CONTINENT) selectedContinent.value = null
   selected.value = country
+  hovered.value = null
   if (center) {
     const coordinates = info(country)?.latlng
     if (coordinates) rotation.value = [-coordinates[1], -coordinates[0], 0]
@@ -213,6 +217,12 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 
 <template>
   <div class="globe-layout">
+      <section class="panel globe-search-panel">
+        <label for="globe-country-search"><Search :size="17" /> Գտիր երկիրը</label>
+        <input id="globe-country-search" v-model="search" class="input" type="search" placeholder="Օրինակ՝ Հայաստան" autocomplete="off" :disabled="loading || error" />
+        <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.properties.ADM0_A3"><button type="button" @click="choose(country, true)">{{ info(country)?.flag }} {{ name(country) }} <MapPin :size="14" /></button></li></ul>
+        <p v-else-if="search.trim()" class="muted globe-no-results" role="status">Երկիր չի գտնվել։ Փորձիր այլ անուն։</p>
+      </section>
     <section class="panel globe-view" aria-label="Ինտերակտիվ երկրագունդ">
       <div class="globe-toolbar">
         <span><Globe2 :size="16" /> Բացահայտիր աշխարհը</span>
@@ -235,11 +245,11 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
           <circle class="globe-ocean" cx="340" cy="340" :r="radius" fill="url(#factum-ocean)" stroke="#80c6e8" stroke-opacity=".6" />
           <g clip-path="url(#factum-globe-clip)">
             <path :d="graticule" fill="none" stroke="#80b3c7" stroke-opacity=".13" stroke-width=".7" pointer-events="none" />
-            <path v-for="item in paths" :key="item.country.properties.ADM0_A3 + item.country.properties.NAME" :d="item.path" :data-country="item.country.properties.ADM0_A3" class="globe-country" :style="{ '--continent-color': continentColors[item.country.properties.CONTINENT] || '#427c79' }" :class="{ 'is-active': active === item.country, 'is-continent-selected': selectedContinent === item.country.properties.CONTINENT, 'is-continent-muted': selectedContinent && selectedContinent !== item.country.properties.CONTINENT }" @pointerenter="!dragging && (hovered = item.country)" @pointerleave="hovered = null" @click="!suppressClick && choose(item.country)"><title>{{ name(item.country) }}</title></path>
+            <path v-for="item in paths" :key="item.country.properties.ADM0_A3 + item.country.properties.NAME" :d="item.path" :data-country="item.country.properties.ADM0_A3" class="globe-country" :style="{ '--continent-color': continentColors[item.country.properties.CONTINENT] || '#427c79' }" :class="{ 'is-active': active === item.country, 'is-continent-selected': selectedContinent === item.country.properties.CONTINENT, 'is-continent-muted': selectedContinent && selectedContinent !== item.country.properties.CONTINENT }" @pointerenter="!dragging && $event.pointerType !== 'touch' && (hovered = item.country)" @pointerleave="hovered = null" @click="!suppressClick && choose(item.country)"><title>{{ name(item.country) }}</title></path>
           </g>
           <circle cx="340" cy="340" :r="radius" fill="url(#factum-globe-shade)" pointer-events="none" />
         </svg>
-        <div v-if="hovered && !dragging" class="globe-tooltip" :style="{ left: `${tip.x}px`, top: `${tip.y}px` }" aria-hidden="true"><strong>{{ info(hovered)?.flag }} {{ name(hovered) }}</strong><small>{{ continents[hovered.properties.CONTINENT] || hovered.properties.CONTINENT }}</small></div>
+        <div v-if="active && !dragging" class="globe-tooltip" :class="{ 'is-selected': !hovered }" :style="hovered ? { left: `${tip.x}px`, top: `${tip.y}px` } : undefined" aria-hidden="true"><strong>{{ info(active)?.flag }} {{ name(active) }}</strong><small>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</small></div>
       </div>
       <ul class="globe-continent-legend" aria-label="Աշխարհամասերի գույները">
         <li v-for="(color, continent) in continentColors" :key="continent">
@@ -254,13 +264,8 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
     </section>
 
     <aside class="globe-sidebar">
-      <section class="panel globe-search-panel">
-        <label for="globe-country-search"><Search :size="17" /> Գտիր երկիրը</label>
-        <input id="globe-country-search" v-model="search" class="input" type="search" placeholder="Օրինակ՝ Հայաստան" autocomplete="off" :disabled="loading || error" />
-        <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.properties.ADM0_A3"><button type="button" @click="choose(country, true)">{{ info(country)?.flag }} {{ name(country) }} <MapPin :size="14" /></button></li></ul>
-        <p v-else-if="search.trim()" class="muted globe-no-results" role="status">Երկիր չի գտնվել։ Փորձիր այլ անուն։</p>
-      </section>
-      <section class="panel globe-info" aria-live="polite" aria-atomic="true">
+
+      <section id="globe-country-info" tabindex="-1" class="panel globe-info" aria-live="polite" aria-atomic="true">
         <template v-if="active">
           <span class="globe-eyebrow">{{ hovered ? 'ԲԱՑԱՀԱՅՏՈՒՄ ԵՍ' : 'ԸՆՏՐՎԱԾ ԵՐԿԻՐ' }}</span>
           <div class="globe-country-title"><span class="globe-flag" aria-hidden="true">{{ activeDetails?.flag || '🌍' }}</span><div><h2>{{ name(active) }}</h2><p>{{ active.properties.NAME }}</p></div></div>
@@ -284,7 +289,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 <style scoped>
 
 .globe-layout { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
-.globe-view { overflow: hidden; background: radial-gradient(ellipse at 45% 45%, #122e4c, #061226 72%); }
+.globe-view { grid-column: 1; grid-row: 1 / span 2; overflow: hidden; background: radial-gradient(ellipse at 45% 45%, #122e4c, #061226 72%); }
 .globe-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 0; }
 .globe-toolbar > span { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #dfc38f; }
 .globe-controls { display: flex; gap: 7px; }
@@ -313,7 +318,10 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 .globe-continent-swatch { width: 11px; height: 11px; border-radius: 3px; border: 1px solid #ffffff55; flex-shrink: 0; }
 .globe-hint { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 0 18px 20px; color: #a9bbd4; font-size: 11px; line-height: 1.8; }
 .globe-hint svg { flex-shrink: 0; }
-.globe-sidebar { display: grid; gap: 18px; }
+.globe-sidebar { display: grid; gap: 18px; grid-column: 2; grid-row: 2; }
+.globe-search-panel { grid-column: 2; grid-row: 1; }
+.globe-info { scroll-margin-top: 110px; }
+.globe-tooltip.is-selected { display: none; left: 50%; top: 12px; transform: translateX(-50%); }
 .globe-search-panel, .globe-info { padding: 22px; }
 .globe-search-panel label { display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 14px; font-size: 14px; }
 .globe-results { list-style: none; margin: 10px 0 0; padding: 0; }
@@ -333,6 +341,12 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 .globe-message { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 28px; color: #dfc38f; text-align: center; font-size: 14px; }
 .globe-empty { display: grid; gap: 15px; padding: 20px 0; color: #a9bbd4; line-height: 1.8; }
 .globe-empty h2 { font-size: 19px; color: #dfc38f; }
-@media (max-width: 900px) { .globe-layout { grid-template-columns: 1fr; }.globe-sidebar { grid-template-columns: 1fr 1fr; }.globe-data-note { grid-column: 1/-1; } }
+@media (max-width: 900px) {
+  .globe-layout { grid-template-columns: 1fr; }
+  .globe-search-panel { grid-column: 1; grid-row: 1; }
+  .globe-view { grid-column: 1; grid-row: 2; }
+  .globe-sidebar { grid-column: 1; grid-row: 3; }
+  .globe-tooltip.is-selected { display: block; }
+}
 @media (max-width: 600px) { .globe-sidebar { grid-template-columns: 1fr; }.globe-toolbar { padding: 14px 12px 0; }.globe-toolbar > span { font-size: 10px; }.globe-layout { gap: 18px; }.globe-search-panel, .globe-info { padding: 18px; } }
 </style>
