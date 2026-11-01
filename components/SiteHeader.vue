@@ -43,7 +43,7 @@ onUnmounted(() => {
 <header class="factum-header"><div class="header-inner">
 <NuxtLink to="/" class="brand" aria-label="FACTUM գլխավոր էջ"><span class="brand-icon"><Brain :size="38" :stroke-width="1.4"/></span><span><strong>FACTUM</strong><small>ԳԻՏԵԼԻՔԻ ԱՇԽԱՐՀ</small></span></NuxtLink>
 <nav class="desktop-nav" aria-label="Հիմնական նավիգացիա"><NuxtLink v-for="item in nav" :key="item[0]" :to="item[0]" active-class="nav-active">{{item[1]}}</NuxtLink></nav>
-<div class="header-actions"><NuxtLink to="/profile" data-save-target class="sign-in" :class="{ 'save-pulse': savePulse }"><UserRound :size="17"/> Իմ FACTUM-ը<span v-if="savePulse" class="save-sparkle" aria-hidden="true">✦</span></NuxtLink><span class="sr-only" role="status">{{ savePulse ? 'Ավելացվեց Իմ FACTUM-ում' : '' }}</span><button class="mobile-menu" aria-label="Բացել ընտրացանկը" @click="mobile=!mobile"><X v-if="mobile"/><Menu v-else/></button></div>
+<div class="header-actions"><NuxtLink to="/profile" aria-label="Իմ FACTUM-ը" data-save-target class="sign-in" :class="{ 'save-pulse': savePulse }"><UserRound :size="17"/> Իմ FACTUM-ը<span v-if="savePulse" class="save-sparkle" aria-hidden="true">✦</span></NuxtLink><span class="sr-only" role="status">{{ savePulse ? 'Ավելացվեց Իմ FACTUM-ում' : '' }}</span><button class="mobile-menu" aria-label="Բացել ընտրացանկը" @click="mobile=!mobile"><X v-if="mobile"/><Menu v-else/></button></div>
 </div><nav v-if="mobile" class="mobile-nav"><NuxtLink v-for="item in nav" :key="item[0]" :to="item[0]" @click="mobile=false">{{item[1]}}</NuxtLink></nav></header>
 </template>
 
@@ -59,6 +59,10 @@ onUnmounted(() => {
   }
 }
 .sign-in { position: relative; }
+@media (max-width: 480px) {
+  .sign-in { justify-content: center; gap: 0; width: 36px; height: 36px; padding: 0; flex-shrink: 0; }
+  .sign-in > svg { flex-shrink: 0; }
+}
 .sign-in.save-pulse { animation: factum-save-pulse .85s ease-out; }
 .save-sparkle {
   position: absolute;
