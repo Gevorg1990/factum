@@ -21,10 +21,6 @@ const results = computed(() => (data.value?.items ?? []).map(item => ({
   ...item, subject: item.subject ?? getSearchSubject(item.url),
 })))
 
-const aiAnswer = ref('')
-const aiMessage = ref('')
-const aiLoading = ref(false)
-
 /**
  * Splits text into safe Vue text nodes and highlighted matches.
  * We intentionally avoid v-html so search results are never treated as HTML.
@@ -59,46 +55,13 @@ function highlightedParts(text: string): HighlightPart[] {
 
 function submit() {
   query.value = term.value.trim()
-  aiAnswer.value = ''
-  aiMessage.value = ''
   navigateTo({ path: '/search', query: { q: query.value } })
 }
 
 watch(() => route.query.q, value => {
   query.value = String(value || '')
   term.value = query.value
-  aiAnswer.value = ''
-  aiMessage.value = ''
 })
-
-async function generate() {
-  if (aiLoading.value || !query.value.trim()) return
-
-  aiLoading.value = true
-  aiMessage.value = ''
-  aiAnswer.value = ''
-
-  try {
-    const response = await $fetch<{
-      available: boolean
-      answer?: string
-      message?: string
-    }>('/api/ai', {
-      method: 'POST',
-      body: { question: query.value },
-    })
-
-    if (response.available) {
-      aiAnswer.value = response.answer || ''
-    } else {
-      aiMessage.value = response.message || 'AI-ն կարգավորված չէ'
-    }
-  } catch {
-    aiMessage.value = 'AI պատասխանը հնարավոր չեղավ ստանալ։'
-  } finally {
-    aiLoading.value = false
-  }
-}
 </script>
 
 <template>
@@ -160,24 +123,8 @@ async function generate() {
       </div>
 
       <div v-if="query.trim() && !data?.items?.length" class="panel p-6">
-        <p class="mb-3">
-          FACTUM-ի նյութերում պատասխան չգտնվեց։ Կարող ես պահանջել AI-ի բացատրություն։
-        </p>
-        <button class="btn" :disabled="aiLoading" @click="generate">
-          {{ aiLoading ? 'Պատրաստվում է...' : 'Ստեղծել AI բացատրություն' }}
-        </button>
+        <p>FACTUM-ի նյութերում այս հարցմամբ պատասխան չգտնվեց։ Փորձիր այլ բառերով որոնել։</p>
       </div>
-
-      <div v-if="aiAnswer" class="panel p-6 mt-6">
-        <h2 class="gold text-xl font-bold mb-3">AI-ի գեներացրած բացատրություն</h2>
-        <p class="whitespace-pre-line leading-8">{{ aiAnswer }}</p>
-        <p class="muted text-sm mt-4">
-          Սա ավտոմատ գեներացված պատասխան է, ոչ FACTUM-ի ստուգված հոդված։
-          Փաստերը ստուգիր վստահելի աղբյուրներով։
-        </p>
-      </div>
-
-      <p v-if="aiMessage" class="muted mt-5">{{ aiMessage }}</p>
     </template>
   </main>
 </template>
