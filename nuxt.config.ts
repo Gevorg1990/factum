@@ -27,6 +27,7 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { prerender: true },
     '/images/optimized/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    '/videos/previews/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
   },
   app: { head: { title: 'FACTUM — Գիտելիքի աշխարհ', meta: [{ name: 'description', content: 'Հայկական կրթական հարթակ՝ հանրագիտարան, խաղեր և պատմություն' }] } },
   runtimeConfig: { azureSpeechKey: '', azureSpeechRegion: '', directusToken: process.env.DIRECTUS_SERVER_TOKEN || '', openaiApiKey: process.env.OPENAI_API_KEY || '', public: { directusUrl: process.env.NUXT_PUBLIC_DIRECTUS_URL || '' } }
