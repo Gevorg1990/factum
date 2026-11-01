@@ -176,4 +176,16 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
 .factum-home .discovery-grid .person-description small { -webkit-line-clamp: 3; }
 .factum-home .discovery-grid .person-description p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; min-height: 0; overflow: hidden; margin-block: 10px; }
 .factum-home .discovery-grid .person-description a { flex-shrink: 0; margin-top: auto; }
+
+@media (max-width: 800px) {
+  .factum-home .cosmic-hero { height: auto; }
+  .factum-home .hero-content { height: auto; padding-top: 54px; padding-bottom: 20px; }
+  .factum-home .discovery-grid .people-card { flex: 0 0 auto; height: auto; min-height: 0; max-height: none; }
+  .factum-home .discovery-grid .person-feature { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; gap: 16px; }
+  .factum-home .discovery-grid .person-feature .person-photo { height: 280px; min-height: 0; }
+  .factum-home .discovery-grid .person-description { padding: 0 6px 8px; }
+  .factum-home .discovery-grid .person-description h3 { font-size: 18px; }
+  .factum-home .discovery-grid .person-description small { font-size: 12px; }
+  .factum-home .discovery-grid .person-description p { font-size: 13px; }
+}
 </style>
