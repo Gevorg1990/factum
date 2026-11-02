@@ -25,6 +25,7 @@ export default defineNuxtConfig({
     prerender: { crawlLinks: false, routes: prerenderedContentRoutes },
   },
   routeRules: {
+    '/games/results/**': { headers: { 'cache-control': 'public, max-age=3600, s-maxage=86400' } },
     '/': { prerender: true },
     '/images/optimized/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/videos/previews/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },

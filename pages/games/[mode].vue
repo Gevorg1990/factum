@@ -156,6 +156,7 @@ useHead({ title: `${title.value} — FACTUM` })
       <p class="text-xl mt-5">Ճիշտ պատասխաններ՝ <strong class="gold">{{ score }} / {{ total }}</strong></p>
       <p v-if="isMillion" class="muted mt-2">Լավագույն արդյունք՝ {{ best }} / 15</p>
       <p class="mt-4">{{ score === total ? 'Գերազանց արդյունք։' : score >= 10 ? 'Շատ լավ արդյունք։' : 'Շարունակիր սովորել և փորձիր կրկին։' }}</p>
+      <GameResultShare v-if="isMillion" mode="million" :score="score" />
       <button class="btn mt-6" type="button" @click="restart">Խաղալ նորից ↻</button>
     </div>
 

@@ -50,6 +50,7 @@ onMounted(newRound)
       <h2 class="text-2xl font-bold">Խաղն ավարտված է</h2>
       <p class="gold text-3xl font-bold my-5">{{ score }} / {{ roundSize }}</p>
       <p class="muted">{{ score === roundSize ? 'Գերազանց է․ բոլոր գլուխկոտրուկները լուծեցիր։' : score >= 3 ? 'Շատ լավ արդյունք։ Շարունակիր բացահայտել նոր գիտելիքներ։' : 'Ամեն փորձ նոր գիտելիք է։ Փորձիր կրկին։' }}</p>
+      <GameResultShare mode="logic" :score="score" />
       <button type="button" class="btn mt-6" @click="newRound">Խաղալ նորից ↻</button>
     </section>
 
