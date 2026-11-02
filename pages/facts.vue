@@ -133,8 +133,8 @@ useSavedScroll(
 .facts-categories button > .facts-category-count { opacity: .65; font-size: 11px; }
 .facts-result-count { margin: 22px 0 16px; font-size: 13px; }
 .facts-category-label { display: flex; align-items: center; gap: 12px; }
-.facts-topic-icon { display: inline-grid; place-items: center; box-sizing: border-box; padding: 0; flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; background: #dfc38f12; border: 1px solid #dfc38f26; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-size: 24px; line-height: 1; }
-.facts-topic-glyph { display: block; width: 1em; height: 1em; line-height: 1; text-align: center; font-weight: 400; font-style: normal; letter-spacing: 0; text-indent: 0; transform: translateY(.04em); }
+.facts-topic-icon { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 0; flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; background: #dfc38f12; border: 1px solid #dfc38f26; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-size: 24px; line-height: 1; }
+.facts-topic-glyph { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; line-height: 1; text-align: center; font-weight: 400; font-style: normal; letter-spacing: 0; text-indent: 0; }
 .facts-topic-icon-card { width: 46px; height: 46px; border-radius: 13px; font-size: 30px; }
 .facts-categories button[aria-pressed="true"] .facts-topic-icon { background: #dfc38f26; border-color: #dfc38f66; }
 :global(html.factum-light) .facts-topic-icon { background: #a87e3a10; border-color: #a87e3a33; }
