@@ -18,7 +18,7 @@ const prerenderedContentRoutes = [
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@vercel/speed-insights/nuxt'],
   css: ['~/assets/css/main.css'],
   nitro: {
     vercel: { functions: { maxDuration: 60 } },
