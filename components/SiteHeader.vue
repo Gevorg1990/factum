@@ -35,7 +35,13 @@ async function handleSaveAnimation(event: Event) {
     return
   }
   const rect = target.getBoundingClientRect()
-  const flight = animateSaveFlight(origin, { x:rect.left + rect.width / 2, y:rect.top + rect.height / 2 })
+  let flight: SaveFlight
+  try {
+    flight = animateSaveFlight(origin, { x:rect.left + rect.width / 2, y:rect.top + rect.height / 2 })
+  } catch {
+    void pulseSavedButton()
+    return
+  }
   flights.add(flight)
   const arrived = await flight.finished
   flights.delete(flight)

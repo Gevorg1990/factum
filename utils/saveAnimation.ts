@@ -28,6 +28,7 @@ export function animateSaveFlight(origin: SaveAnimationOrigin, destination: Save
   }
   const dx = destination.x - origin.x
   const dy = destination.y - origin.y
+  try {
   animations.push(create('factum-save-origin-glow').animate([
     { transform:'translate(-50%, -50%) scale(.3)', opacity:0 },
     { transform:'translate(-50%, -50%) scale(1)', opacity:1, offset:.3 },
@@ -42,6 +43,11 @@ export function animateSaveFlight(origin: SaveAnimationOrigin, destination: Save
       { transform:`translate(calc(-50% + ${dx * .55}px), calc(-50% + ${dy * .65 - 70}px)) scale(.85)`, opacity:.95, offset:.65 },
       { transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.12)`, opacity:0 },
     ], { duration:950 - delay, delay, easing:'cubic-bezier(.25,.1,.3,1)', fill:'both' }))
+  }
+  } catch (error) {
+    animations.forEach(animation => { void animation.finished.catch(() => {}); animation.cancel() })
+    nodes.forEach(node => node.remove())
+    throw error
   }
   const remove = () => { nodes.forEach(node => node.remove()) }
   const finished = Promise.all(animations.map(animation => animation.finished.catch(() => { cancelled = true })))

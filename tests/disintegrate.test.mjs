@@ -5,16 +5,31 @@ import {createRequire} from 'node:module'
 import {runInNewContext} from 'node:vm'
 const require=createRequire(import.meta.url),ts=require('typescript')
 const code=ts.transpileModule(readFileSync(new URL('../utils/disintegrate.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
-function setup({reduced=false,unsupported=false}={}) {
+function setup({reduced=false,unsupported=false,legacyCanvas=false,fallback=false}={}) {
  const frames=new Map(),timers=new Map(),overlays=[]
  let id=0,draws=0
  const context={scale(){},beginPath(){},roundRect(){},fill(){},stroke(){},clearRect(){},save(){},restore(){},translate(){},rotate(){},drawImage(){draws++}}
+ if(legacyCanvas){delete context.roundRect;context.rect=()=>{}}
  const document={documentElement:{classList:{contains:()=>false}},createElement(){return {style:{},setAttribute(){},getContext:()=>unsupported?null:context,remove(){this.removed=true}}},createTreeWalker:()=>({nextNode:()=>null}),createRange:()=>({}),body:{appendChild:el=>overlays.push(el)}}
  const scope={exports:{},document,NodeFilter:{SHOW_TEXT:4},window:{matchMedia:()=>({matches:reduced}),devicePixelRatio:2},getComputedStyle:()=>({borderRadius:'18',borderColor:'#fff'}),requestAnimationFrame(fn){const key=++id;frames.set(key,fn);return key},cancelAnimationFrame:key=>frames.delete(key),setTimeout(fn){const key=++id;timers.set(key,fn);return key},clearTimeout:key=>timers.delete(key)}
  runInNewContext(code,scope)
  const card={style:{opacity:'.9'},querySelectorAll:()=>[],getBoundingClientRect:()=>({left:20,top:40,width:360,height:240})}
- return {effect:scope.exports.disintegrate(card),card,frames,timers,overlays,get draws(){return draws},frame(time){const [key,fn]=frames.entries().next().value;frames.delete(key);fn(time)}}
+ let finishFallback
+ if(fallback) card.animate=()=>({finished:new Promise(resolve=>{finishFallback=resolve}),cancel(){}})
+ return {effect:scope.exports.disintegrate(card),card,frames,timers,overlays,finishFallback:()=>finishFallback(),get draws(){return draws},frame(time){const [key,fn]=frames.entries().next().value;frames.delete(key);fn(time)}}
 }
+test('older canvas APIs still render particles',async()=>{
+ const app=setup({legacyCanvas:true})
+ app.frame(0);assert.ok(app.draws>0)
+ app.effect.cancel();await app.effect.finished
+})
+test('missing canvas uses a short fade and always finishes',async()=>{
+ const app=setup({unsupported:true,fallback:true})
+ assert.equal(app.timers.size,1)
+ app.finishFallback();await app.effect.finished
+ assert.equal(app.timers.size,0)
+ assert.equal(app.card.style.opacity,'.9')
+})
 test('card particles animate, stay bounded and clean up on completion',async()=>{
  const app=setup()
  assert.equal(app.card.style.opacity,'0')
@@ -38,8 +53,19 @@ test('cancellation and stalled frames both finish removal and remove the overlay
   assert.equal(app.card.style.opacity,'.9')
  }
 })
-test('reduced motion and unavailable canvas never block removal',async()=>{
- for(const options of [{reduced:true},{unsupported:true}]){
+test('explicit removal still animates when OS animations are disabled',async()=>{
+ const app=setup({reduced:true})
+ assert.equal(app.overlays.length,1)
+ assert.equal(app.card.style.opacity,'0')
+ app.frame(0)
+ assert.ok(app.draws>0)
+ app.frame(1200)
+ await app.effect.finished
+ assert.equal(app.overlays[0].removed,true)
+ assert.equal(app.card.style.opacity,'.9')
+})
+test('unavailable canvas never blocks removal',async()=>{
+ for(const options of [{unsupported:true}]){
   const app=setup(options)
   await app.effect.finished
   assert.equal(app.overlays.length,0)

@@ -13,7 +13,8 @@ function cardSnapshot(element: HTMLElement, width: number, height: number) {
   const rootStyle = getComputedStyle(element)
   context.fillStyle = document.documentElement.classList.contains('factum-light') ? '#f4f7fc' : '#0b192c'
   context.beginPath()
-  context.roundRect(0, 0, width, height, parseFloat(rootStyle.borderRadius) || 18)
+  if (typeof context.roundRect === 'function') context.roundRect(0, 0, width, height, parseFloat(rootStyle.borderRadius) || 18)
+  else context.rect(0, 0, width, height)
   context.fill()
   context.strokeStyle = rootStyle.borderColor
   context.stroke()
@@ -23,7 +24,8 @@ function cardSnapshot(element: HTMLElement, width: number, height: number) {
     const rect = child.getBoundingClientRect()
     context.fillStyle = style.backgroundColor
     context.beginPath()
-    context.roundRect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height, parseFloat(style.borderRadius) || 0)
+    if (typeof context.roundRect === 'function') context.roundRect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height, parseFloat(style.borderRadius) || 0)
+    else context.rect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height)
     context.fill()
   }
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
@@ -56,25 +58,36 @@ export function disintegrate(element: HTMLElement): Disintegration {
   let timeout: ReturnType<typeof setTimeout> | undefined
   let overlay: HTMLCanvasElement | undefined
   let settled = false
+  let fallbackAnimation: Animation | undefined
   const opacity = element.style.opacity
   function cancel() {
     if (settled) return
     settled = true
     cancelAnimationFrame(frame)
     clearTimeout(timeout)
+    fallbackAnimation?.cancel()
     overlay?.remove()
     element.style.opacity = opacity
     resolve()
   }
+  function fallback() {
+    overlay?.remove()
+    element.style.opacity = opacity
+    if (typeof element.animate !== 'function') { cancel(); return }
+    try {
+      fallbackAnimation = element.animate([
+        { opacity: 1, transform: 'translateY(0) scale(1)' },
+        { opacity: 0, transform: 'translateY(-12px) scale(.97)' },
+      ], { duration: 300, easing: 'ease-out', fill: 'forwards' })
+      void fallbackAnimation.finished.then(cancel, cancel)
+      timeout = setTimeout(cancel, 600)
+    } catch { cancel() }
+  }
   try {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      cancel()
-      return { finished, cancel }
-    }
     const rect = element.getBoundingClientRect()
     if (!rect.width || !rect.height) { cancel(); return { finished, cancel } }
     const snapshot = cardSnapshot(element, rect.width, rect.height)
-    if (!snapshot) { cancel(); return { finished, cancel } }
+    if (!snapshot) { fallback(); return { finished, cancel } }
     const padding = 100
     overlay = document.createElement('canvas')
     const width = rect.width + padding * 2
@@ -88,7 +101,7 @@ export function disintegrate(element: HTMLElement): Disintegration {
     })
     overlay.setAttribute('aria-hidden', 'true')
     const context = overlay.getContext('2d')
-    if (!context) { cancel(); return { finished, cancel } }
+    if (!context) { fallback(); return { finished, cancel } }
     context.scale(scale, scale)
     const cell = Math.max(7, Math.sqrt(rect.width * rect.height / 700))
     const particles: { x: number; y: number; w: number; h: number; delay: number; dx: number; dy: number; turn: number }[] = []
@@ -125,6 +138,6 @@ export function disintegrate(element: HTMLElement): Disintegration {
     frame = requestAnimationFrame(draw)
     // Background tabs and interrupted animation frames must never block removal.
     timeout = setTimeout(cancel, 1400)
-  } catch { cancel() }
+  } catch { fallback() }
   return { finished, cancel }
 }
