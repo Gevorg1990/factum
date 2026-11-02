@@ -20,7 +20,7 @@ function setup(t,deferred=false,options={}){
  globalThis.document={hidden:false,addEventListener(){},removeEventListener(){}}
  globalThis.IntersectionObserver=class{constructor(fn){observe=fn}observe(){}disconnect(){}}
  const card={matches:()=>!!options.initialHover,addEventListener(){},removeEventListener(){},contains(){return false}}
- const video={src:'',currentTime:0,closest:()=>card,getAttribute(){return this.src},pause(){},play(){
+ const video={src:'',currentTime:0,closest:()=>card,getAttribute(){return this.src},paused:true,pause(){this.paused=true},play(){this.paused=false;
   let resolve,reject
   const promise=deferred?new Promise((yes,no)=>{resolve=yes;reject=no}):Promise.resolve()
   plays.push({resolve,reject});return promise
@@ -46,7 +46,7 @@ test('each new hover restarts both an interrupted and completed clip without loo
  reader.finishPlayback()
  reader.pointerLeave()
  assert.equal(video.currentTime,4)
- assert.equal(reader.previewing.value,true)
+ assert.equal(video.paused,true)
  reader.pointerEnter({pointerType:'mouse'});await nextTick()
  assert.equal(video.currentTime,0)
  assert.equal(reader.completed.value,false)
@@ -55,14 +55,14 @@ test('each new hover restarts both an interrupted and completed clip without loo
 })
 
 test('an old interrupted play promise cannot hide the new hover preview',async t=>{
- const {reader,plays}=setup(t,true)
+ const {reader,video,plays}=setup(t,true)
  reader.pointerEnter({pointerType:'mouse'})
  reader.pointerLeave()
  reader.pointerEnter({pointerType:'mouse'})
  plays[1].resolve();await nextTick();await nextTick()
- assert.equal(reader.previewing.value,true)
+ assert.equal(!video.paused,true)
  plays[0].reject(new Error('interrupted by pause'));await nextTick();await nextTick()
- assert.equal(reader.previewing.value,true)
+ assert.equal(!video.paused,true)
 })
 
 test('intentional hover starts muted playback even before visibility observation and with reduced motion', async t => {
@@ -74,35 +74,20 @@ test('intentional hover starts muted playback even before visibility observation
  assert.equal(video.muted,true)
  assert.equal(video.defaultMuted,true)
  assert.equal(video.playsInline,true)
- assert.equal(reader.previewing.value,true)
+ assert.equal(!video.paused,true)
  reader.pointerLeave();await nextTick()
- assert.equal(reader.previewing.value,false)
+ assert.equal(!video.paused,false)
 })
 test('a card already hovered during hydration starts its preview', async t => {
- const {reader,plays}=setup(t,false,{initialHover:true,deferObserver:true})
+ const {reader,video,plays}=setup(t,false,{initialHover:true,deferObserver:true})
  await nextTick()
  assert.equal(plays.length,1)
- assert.equal(reader.previewing.value,true)
+ assert.equal(!video.paused,true)
 })
 
-test('poster remains until a decoded video frame and stale frames cannot reveal a stopped preview', async t => {
- const {reader,video}=setup(t)
- const frames=new Map(),cancelled=[]
- let id=0
- video.requestVideoFrameCallback=fn=>{frames.set(++id,fn);return id}
- video.cancelVideoFrameCallback=key=>cancelled.push(key)
- reader.pointerEnter({pointerType:'mouse'});await nextTick();await nextTick()
- assert.equal(reader.previewing.value,false)
- const first=frames.get(1)
- reader.pointerLeave()
- assert.deepEqual(cancelled,[1])
- first()
- assert.equal(reader.previewing.value,false)
- reader.pointerEnter({pointerType:'mouse'});await nextTick();await nextTick()
- assert.equal(reader.previewing.value,false)
- frames.get(2)()
- assert.equal(reader.previewing.value,true)
- reader.pointerLeave()
- reader.pointerEnter({pointerType:'mouse'});await nextTick();await nextTick()
- assert.equal(reader.previewing.value,false)
+test('native poster and video share one surface without a separate image or touch hint', () => {
+ assert.match(descriptor.template.content, /<video[^>]*:poster="poster"/)
+ assert.doesNotMatch(descriptor.template.content, /<img|card-video-hint/)
+ assert.match(descriptor.template.content, /preload="none"/)
+ assert.doesNotMatch(descriptor.template.content, /<video[^>]*\s:?(?:src)=/)
 })
