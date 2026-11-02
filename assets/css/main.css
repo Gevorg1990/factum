@@ -1403,3 +1403,6 @@ html .factum-app :is(.subject-tile, .encyclopedia-tile, .game-card):is(:hover, :
 
 /* Game cards stay in place while their accent glow changes. */
 html .factum-app .game-card:is(:hover, :focus-visible) { transform: none; }
+
+/* Keep video cards stationary while the decoded frame fades over the poster. */
+html .factum-app :is(.subject-tile, .encyclopedia-tile):is(:hover, :focus-visible) { transform: none; }

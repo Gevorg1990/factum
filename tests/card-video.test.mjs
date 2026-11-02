@@ -84,3 +84,25 @@ test('a card already hovered during hydration starts its preview', async t => {
  assert.equal(plays.length,1)
  assert.equal(reader.previewing.value,true)
 })
+
+test('poster remains until a decoded video frame and stale frames cannot reveal a stopped preview', async t => {
+ const {reader,video}=setup(t)
+ const frames=new Map(),cancelled=[]
+ let id=0
+ video.requestVideoFrameCallback=fn=>{frames.set(++id,fn);return id}
+ video.cancelVideoFrameCallback=key=>cancelled.push(key)
+ reader.pointerEnter({pointerType:'mouse'});await nextTick();await nextTick()
+ assert.equal(reader.previewing.value,false)
+ const first=frames.get(1)
+ reader.pointerLeave()
+ assert.deepEqual(cancelled,[1])
+ first()
+ assert.equal(reader.previewing.value,false)
+ reader.pointerEnter({pointerType:'mouse'});await nextTick();await nextTick()
+ assert.equal(reader.previewing.value,false)
+ frames.get(2)()
+ assert.equal(reader.previewing.value,true)
+ reader.pointerLeave()
+ reader.pointerEnter({pointerType:'mouse'});await nextTick();await nextTick()
+ assert.equal(reader.previewing.value,false)
+})

@@ -65,8 +65,9 @@ test('header waits for arrival before pulsing and cancels pending flights on tea
   assert.equal(header.savePulse.value,true)
   header.savePulse.value=false
   reduced=true
-  await header.handleSaveAnimation(event);await nextTick()
-  assert.equal(pending.length,1)
+  const reducedSave=header.handleSaveAnimation(event)
+  assert.equal(pending.length,2)
+  pending[1].resolve(true);await reducedSave;await nextTick()
   assert.equal(header.savePulse.value,true)
   reduced=false
   header.savePulse.value=false

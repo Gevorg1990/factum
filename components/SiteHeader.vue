@@ -30,7 +30,7 @@ async function pulseSavedButton() {
 async function handleSaveAnimation(event: Event) {
   const target = document.querySelector<HTMLElement>('[data-save-target]')
   const origin = (event as CustomEvent<SaveAnimationDetail>).detail?.origin
-  if (!target || !origin || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof target.animate !== 'function') {
+  if (!target || !origin || typeof target.animate !== 'function') {
     void pulseSavedButton()
     return
   }

@@ -12,6 +12,11 @@ let touchPressed = false
 const touchPreviewing = ref(false)
 let disposed = false
 let playbackVersion = 0
+let frameCallback: number | undefined
+function cancelFrame() {
+  if (frameCallback !== undefined) video.value?.cancelVideoFrameCallback?.(frameCallback)
+  frameCallback = undefined
+}
 function shouldPlay() {
   return !disposed && visible && (hovered || focused || touchPreviewing.value) && !document.hidden
 }
@@ -19,6 +24,7 @@ function updatePlayback() {
   const element = video.value
   if (!element) return
   const version = ++playbackVersion
+  cancelFrame()
   if (completed.value) {
     previewing.value = true
     element.pause()
@@ -37,8 +43,16 @@ function updatePlayback() {
   if (!element.getAttribute('src')) element.src = props.src
   void element.play().then(() => {
     if (version !== playbackVersion) return
-    if (shouldPlay()) previewing.value = true
-    else element.pause()
+    if (!shouldPlay()) { element.pause(); return }
+    // play() can resolve before a decoded frame reaches the Windows compositor,
+    // especially after seeking to the start. Keep the poster until that frame.
+    if (typeof element.requestVideoFrameCallback === 'function') {
+      frameCallback = element.requestVideoFrameCallback(() => {
+        if (version !== playbackVersion) return
+        frameCallback = undefined
+        if (shouldPlay()) previewing.value = true
+      })
+    } else previewing.value = true
   }).catch(() => { if (version === playbackVersion) previewing.value = false })
 }
 function finishPlayback() {
@@ -114,6 +128,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   disposed = true
   playbackVersion++
+  cancelFrame()
   observer?.disconnect()
   card?.removeEventListener('pointerenter', pointerEnter)
   card?.removeEventListener('pointerdown', pointerDown)
@@ -139,7 +154,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .card-video { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
 .card-video > :is(img,video) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: inherit; }
-.card-video > video { opacity: 0; transition: opacity .3s ease; }
+.card-video > video { opacity: 0; transition: opacity .3s ease; transform: translateZ(0); backface-visibility: hidden; }
 .card-video > video.previewing { opacity: 1; }
 .card-video-hint { position: absolute; z-index: 1; right: 8px; bottom: 8px; padding: 5px 8px; border-radius: 999px; color: #fff; background: #101522d9; font-size: 10px; line-height: 1.3; }
 @media (prefers-reduced-motion: reduce) { .card-video > video { transition: none; } }
