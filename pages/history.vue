@@ -59,7 +59,7 @@ onBeforeUnmount(() => {
     <h1 class="heading">🇦🇲 Հայոց պատմություն · Ժամանակագիծ</h1>
     <p class="muted mb-6">Ուսումնասիրիր {{ timeline.length }} պատմական իրադարձություն՝ հնագույն շրջանից մինչև նորագույն ժամանակներ։ Ընտրիր դարաշրջանը և բացիր իրադարձության պատմությունն ու հետաքրքիր փաստերը։</p>
     <div class="flex flex-wrap gap-2 mb-7">
-      <button v-for="item in eras" :key="item" :class="era === item ? 'btn' : 'btn-secondary'" class="text-sm" @click="era = item">{{ item }}</button>
+      <button v-for="item in eras" :key="item" :aria-pressed="era === item" class="btn-secondary history-era text-sm" @click="era = item">{{ item }}</button>
     </div>
     <div class="border-l-2 border-amber-400/50 ml-4">
       <article v-for="event in shown" :id="eventId(event.year)" :key="event.year" class="history-detail-entry relative ml-7 mb-4 panel p-5" :class="{ 'history-detail-entry-open': expanded.includes(event.year) }">
@@ -89,3 +89,11 @@ onBeforeUnmount(() => {
     <p class="muted text-xs mt-6">Պատմական թվագրությունները որոշ դեպքերում ավանդական կամ մոտավոր են։</p>
   </main>
 </template>
+
+<style scoped>
+.history-era { font-weight: 400; background-color: transparent; }
+.history-era[aria-pressed="true"] { color: #071327; background-color: #f4c46c; border-color: #f4c46c; }
+.history-era:hover { background-color: #f4c46c26; border-color: #ffe2a2; box-shadow: 0 3px 12px #f4c46c26; }
+.history-era[aria-pressed="true"]:hover { background-color: #ffe2a2; }
+.history-era:focus-visible { outline: 2px solid #f4c46c; outline-offset: 3px; }
+</style>

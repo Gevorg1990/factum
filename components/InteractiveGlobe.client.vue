@@ -299,7 +299,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 .globe-controls button:disabled { opacity: .35; cursor: default; }
 .globe-stage { position: relative; width: 100%; aspect-ratio: 1; max-height: 680px; }
 .globe-stage svg { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; }
-.globe-stage svg, .globe-ocean, .globe-country { cursor: grab; }
+.globe-stage svg, .globe-ocean, .globe-country { cursor: url('/images/globe-pointer.svg') 5 5, crosshair; }
 .globe-stage.is-dragging :is(svg, .globe-ocean, .globe-country) { cursor: grabbing; }
 .globe-stage svg:focus { outline: none; }
 .globe-stage svg:not(.has-pointer-focus):focus-visible, .globe-controls button:focus-visible, .globe-results button:focus-visible { outline: 2px solid #f4c46c; outline-offset: -3px; }
