@@ -153,8 +153,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .card-video { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
-.card-video > :is(img,video) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: inherit; }
-.card-video > video { opacity: 0; transition: opacity .3s ease; transform: translateZ(0); backface-visibility: hidden; }
+.card-video > :is(img,video) { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; border: 0; object-fit: cover; object-position: inherit; transform: translateZ(0); backface-visibility: hidden; }
+.card-video > video { opacity: 0; transition: opacity .3s ease; }
 .card-video > video.previewing { opacity: 1; }
 .card-video-hint { position: absolute; z-index: 1; right: 8px; bottom: 8px; padding: 5px 8px; border-radius: 999px; color: #fff; background: #101522d9; font-size: 10px; line-height: 1.3; }
 @media (prefers-reduced-motion: reduce) { .card-video > video { transition: none; } }

@@ -107,8 +107,6 @@ onUnmounted(() => {
   100% { opacity: 0; transform: translateY(-12px) scale(.65) rotate(35deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sign-in.save-pulse { animation: none; box-shadow: 0 0 0 2px #f4c46c; }
-  .save-sparkle { animation: none; }
   .mobile-nav-enter-active, .mobile-nav-leave-active { transition: none; }
 }
 </style>
