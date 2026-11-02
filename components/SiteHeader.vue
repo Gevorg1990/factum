@@ -43,8 +43,8 @@ onUnmounted(() => {
 <header class="factum-header"><div class="header-inner">
 <NuxtLink to="/" class="brand" aria-label="FACTUM գլխավոր էջ"><span class="brand-icon"><Brain :size="38" :stroke-width="1.4"/></span><span><strong>FACTUM</strong><small>ԳԻՏԵԼԻՔԻ ԱՇԽԱՐՀ</small></span></NuxtLink>
 <nav class="desktop-nav" aria-label="Հիմնական նավիգացիա"><NuxtLink v-for="item in nav" :key="item[0]" :to="item[0]" active-class="nav-active">{{item[1]}}</NuxtLink></nav>
-<div class="header-actions"><NuxtLink to="/profile" aria-label="Իմ FACTUM-ը" data-save-target class="sign-in" :class="{ 'save-pulse': savePulse }"><UserRound :size="17"/> Իմ FACTUM-ը<span v-if="savePulse" class="save-sparkle" aria-hidden="true">✦</span></NuxtLink><span class="sr-only" role="status">{{ savePulse ? 'Ավելացվեց Իմ FACTUM-ում' : '' }}</span><button class="mobile-menu" aria-label="Բացել ընտրացանկը" @click="mobile=!mobile"><X v-if="mobile"/><Menu v-else/></button></div>
-</div><nav v-if="mobile" class="mobile-nav"><NuxtLink v-for="item in nav" :key="item[0]" :to="item[0]" @click="mobile=false">{{item[1]}}</NuxtLink></nav></header>
+<div class="header-actions"><NuxtLink to="/profile" aria-label="Իմ FACTUM-ը" data-save-target class="sign-in" :class="{ 'save-pulse': savePulse }"><UserRound :size="17"/> Իմ FACTUM-ը<span v-if="savePulse" class="save-sparkle" aria-hidden="true">✦</span></NuxtLink><span class="sr-only" role="status">{{ savePulse ? 'Ավելացվեց Իմ FACTUM-ում' : '' }}</span><button class="mobile-menu" :aria-label="mobile ? 'Փակել ընտրացանկը' : 'Բացել ընտրացանկը'" :aria-expanded="mobile" aria-controls="mobile-site-nav" @click="mobile=!mobile"><X v-if="mobile"/><Menu v-else/></button></div>
+</div><Transition name="mobile-nav"><div v-if="mobile" id="mobile-site-nav" class="mobile-nav-collapse"><div class="mobile-nav-clip"><nav class="mobile-nav" aria-label="Մոբայլ նավիգացիա"><NuxtLink v-for="item in nav" :key="item[0]" :to="item[0]" @click="mobile=false">{{item[1]}}</NuxtLink></nav></div></div></Transition></header>
 </template>
 
 <style scoped>
@@ -58,6 +58,11 @@ onUnmounted(() => {
     padding-bottom: 14px;
   }
 }
+.mobile-nav-collapse { display: grid; grid-template-rows: 1fr; opacity: 1; }
+.mobile-nav-clip { min-height: 0; overflow: hidden; }
+.mobile-nav-enter-active, .mobile-nav-leave-active { transition: grid-template-rows .3s ease, opacity .3s ease; }
+.mobile-nav-enter-from, .mobile-nav-leave-to { grid-template-rows: 0fr; opacity: 0; }
+.mobile-nav a[aria-current="page"] { color: #dfc38f; }
 .sign-in { position: relative; }
 @media (max-width: 480px) {
   .sign-in { justify-content: center; gap: 0; width: 36px; height: 36px; padding: 0; flex-shrink: 0; }
@@ -87,6 +92,7 @@ onUnmounted(() => {
 @media (prefers-reduced-motion: reduce) {
   .sign-in.save-pulse { animation: none; box-shadow: 0 0 0 2px #f4c46c; }
   .save-sparkle { animation: none; }
+  .mobile-nav-enter-active, .mobile-nav-leave-active { transition: none; }
 }
 </style>
 

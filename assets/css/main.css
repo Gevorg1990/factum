@@ -1337,3 +1337,23 @@ html.factum-light .home-cosmic-backdrop { opacity: .4; }
 
 /* Let quick search results extend above the homepage cards. */
 .factum-home .cosmic-hero { overflow: visible; z-index: 5; }
+
+/* Keep selected controls light and interaction changes consistent. */
+.factum-app :is(.desktop-nav a, .mobile-nav a, .sign-in),
+.factum-app :is(button[aria-pressed="true"], button[aria-selected="true"], button.active, button.is-active, a[aria-current="page"]) { font-weight: 400; }
+.factum-app :is(button, a.btn, a.btn-secondary, .desktop-nav a, .mobile-nav a, .sign-in) {
+  transition: color .3s ease, background-color .3s ease, border-color .3s ease, box-shadow .3s ease, opacity .3s ease, transform .3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .factum-app :is(button, a.btn, a.btn-secondary, .desktop-nav a, .mobile-nav a, .sign-in) { transition: none; }
+}
+
+/* Preserve the artwork's original color and keep shading close to labels. */
+html .factum-app :is(.subject-tile, .encyclopedia-tile) :is(img, video, .card-video) { filter: none; }
+html .factum-app .subject-tile::after {
+  background: linear-gradient(0deg, rgba(3, 10, 24, .88), rgba(3, 10, 24, .4) 22%, transparent 48%);
+  pointer-events: none;
+}
+html .factum-app .encyclopedia-tile-shade {
+  background: linear-gradient(0deg, rgba(3, 10, 24, .88), rgba(3, 10, 24, .35) 18%, transparent 42%);
+}
