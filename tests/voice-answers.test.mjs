@@ -9,6 +9,28 @@ const { periodicElements } = await import(moduleUrl(new URL('../data/periodicTab
 const capitals = capitalPairs.map(pair => ({ expected: pair.capital, aliases: pair.capitalAliases }))
 const armenia = capitalPairs.find(pair => pair.countryCode === 'ARM')
 const yerevan = { expected: armenia.capital, aliases: armenia.capitalAliases }
+test('Armenian articles and spoken copulas accept the full city name', () => {
+  const italy = capitalPairs.find(pair => pair.capital === 'Հռոմ')
+  assert.ok(italy)
+  const rome = { expected: italy.capital, aliases: italy.capitalAliases }
+  for (const transcript of ['Հռոմ', 'Հռոմը', 'հռոմնա', 'Հռոմն է։', 'Հռոմ է', 'Հռոմ ա', 'Հռոմը՝', 'Հռոմը է']) {
+    assert.equal(isVoiceAnswerCorrect(rome, transcript), true, transcript)
+    assert.equal(isCapitalAnswerCorrect({ pair: italy, direction: 'capital' }, transcript), true, transcript)
+    assert.equal(formatVoiceTranscript(transcript, capitals, 'hy-AM'), 'Հռոմ', transcript)
+  }
+  for (const transcript of ['Փարիզը', 'Երևանն է', 'Հռոմում', 'Հռոմից', 'Հռոմ չէ', 'Հռոմնան', 'Հռո', 'Romea', '']) {
+    assert.equal(isVoiceAnswerCorrect(rome, transcript), false, transcript)
+    assert.equal(isCapitalAnswerCorrect({ pair: italy, direction: 'capital' }, transcript), false, transcript)
+  }
+  assert.equal(formatVoiceTranscript('Փարիզն է', capitals, 'hy-AM'), 'Փարիզ')
+  assert.equal(isVoiceAnswerCorrect(rome, formatVoiceTranscript('Փարիզն է', capitals, 'hy-AM')), false)
+  assert.equal(formatVoiceTranscript('Հռոմը', capitals, 'en-US'), 'Հռոմը')
+})
+test('Armenian country endings are accepted without changing chemical symbols', () => {
+  assert.equal(isCapitalAnswerCorrect({ pair: armenia, direction: 'country' }, 'Հայաստանն է'), true)
+  assert.equal(isVoiceAnswerCorrect({ expected: 'Հայաստան', aliases: ['Armenia'] }, 'Հայաստաննա'), true)
+  assert.equal(isVoiceAnswerCorrect({ expected: 'K', aliases: ['կ'] }, 'կնա'), false)
+})
 test('Erevan, Yerevan and Armenian spelling are accepted and displayed as Երևան', () => {
   for (const transcript of ['Erevan', 'erevan.', 'YEREVAN', ' Երևան ', 'Երեվան']) {
     assert.equal(formatVoiceTranscript(transcript, capitals, 'hy-AM'), 'Երևան')

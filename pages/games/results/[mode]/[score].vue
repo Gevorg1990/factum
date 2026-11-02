@@ -9,7 +9,7 @@ const origin = useRequestURL().origin
 const title = computed(() => `${result.value!.title}․ իմ արդյունքը՝ ${result.value!.score} / ${result.value!.total}`)
 const description = 'Փորձիր քո գիտելիքները FACTUM-ում։ Խաղա և կիսվիր քո արդյունքով։'
 const url = computed(() => new URL(gameResultPath(result.value!.mode, result.value!.score), origin).href)
-const image = computed(() => new URL(optimizedImage(`/images/${result.value!.mode}-art.jpg`), origin).href)
+const image = computed(() => new URL(optimizedImage(result.value!.image), origin).href)
 useSeoMeta({
   title: () => title.value,
   description,
@@ -33,7 +33,7 @@ useHead(() => ({ link: [{ rel: 'canonical', href: url.value }] }))
       <p class="muted mt-4">Խաղի արդյունքը</p>
       <p class="gold text-3xl font-bold my-5">{{ result.score }} / {{ result.total }}</p>
       <p class="muted">{{ description }}</p>
-      <NuxtLink :to="`/games/${result.mode}`" class="btn mt-6">Խաղալ →</NuxtLink>
+      <NuxtLink :to="result.playPath" class="btn mt-6">Խաղալ →</NuxtLink>
     </section>
   </main>
 </template>

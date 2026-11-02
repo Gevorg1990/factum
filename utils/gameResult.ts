@@ -1,7 +1,9 @@
 export const shareableGames = {
-  million: { title: 'FACTUM Million', total: 15 },
-  genius: { title: 'FACTUM Genius', total: 10 },
-  logic: { title: 'FACTUM Logic', total: 5 },
+  million: { title: 'FACTUM Million', total: 15, step: 1, playPath: '/games/million', image: '/images/million-art.jpg' },
+  genius: { title: 'FACTUM Genius', total: 10, step: 1, playPath: '/games/genius', image: '/images/genius-art.jpg' },
+  logic: { title: 'FACTUM Logic', total: 5, step: 1, playPath: '/games/logic', image: '/images/logic-art.jpg' },
+  geography: { title: 'Երկիր և մայրաքաղաք', total: 1000, step: 100, playPath: '/globe#capital-quiz-title', image: '/images/geography-art.jpg' },
+  chemistry: { title: 'Քիմիական տարրեր', total: 1000, step: 100, playPath: '/periodic-table#element-quiz-title', image: '/images/chemistry-art.jpg' },
 } as const
 
 export type ShareableGame = keyof typeof shareableGames
@@ -10,7 +12,7 @@ export function parseGameResult(mode: string, score: string) {
   if (!Object.hasOwn(shareableGames, mode) || !/^(0|[1-9]\d*)$/.test(score)) return null
   const game = shareableGames[mode as ShareableGame]
   const value = Number(score)
-  if (value > game.total) return null
+  if (value > game.total || value % game.step !== 0) return null
   return { ...game, mode: mode as ShareableGame, score: value }
 }
 

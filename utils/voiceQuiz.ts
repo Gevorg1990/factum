@@ -1,4 +1,4 @@
-import { normalizeCapitalAnswer } from './capitalQuiz'
+import { matchesArmenianAnswer, normalizeCapitalAnswer } from './capitalQuiz'
 export type VoiceQuestion = {
   prompt: string
   expected: string
@@ -26,7 +26,7 @@ function romanizedNameKeys(name: string): string[] {
 }
 function matchesAnswer(candidate: Pick<VoiceQuestion, 'expected' | 'aliases'>, normalized: string): boolean {
   const values = [candidate.expected, ...candidate.aliases]
-  if (values.some(value => normalizeCapitalAnswer(value) === normalized)) return true
+  if (values.some(value => matchesArmenianAnswer(value, normalized))) return true
   // Only known names are converted. Symbols keep their standard Latin spelling;
   // unknown speech is left editable rather than guessed from the right answer.
   return /^[a-z]+$/i.test(normalized) && values.some(value => romanizedNameKeys(value).includes(normalized))

@@ -322,6 +322,7 @@ onBeforeUnmount(() => {
       </template>
       <template v-else>
         <div class="capital-result" role="status"><Trophy :size="42" /><h3>Խաղն ավարտված է</h3><strong>{{ score }} / {{ rounds.length * 100 }}</strong><p>{{ correctCount }} ճիշտ պատասխան՝ {{ rounds.length }} հարցից։</p></div>
+        <GameResultShare :mode="chemistry ? 'chemistry' : 'geography'" :score="score" class="capital-share" />
         <button class="btn capital-main" @click="start"><RotateCcw :size="17" /> Խաղալ կրկին</button><button class="capital-text-button capital-exit" @click="exit">{{ chemistry ? 'Փոխել խաղի կարգավորումները' : 'Փոխել խաղի ուղղությունը' }}</button>
       </template>
       <p v-if="!speechSupported" class="capital-note">Այս բրաուզերում ձայնի ճանաչումը հասանելի չէ։ Կարող ես պատասխանել գրելով։</p>
@@ -387,6 +388,7 @@ onBeforeUnmount(() => {
 .capital-auto { display: flex; align-items: center; gap: 8px; margin-top: 18px; font-size: 12px; }
 .capital-auto input { accent-color: #dfc38f; }
 .capital-result { display: grid; gap: 12px; text-align: center; justify-items: center; margin-bottom: 24px; }
+.capital-share { margin-bottom: 20px; }
 .capital-result > svg, .capital-result > strong { color: #dfc38f; }.capital-result h3 { font-size: 22px; font-weight: 750; }.capital-result strong { font-size: 36px; }.capital-result p { font-size: 13px; }
 .capital-modes button:focus-visible, .capital-read:focus-visible, .capital-mic:focus-visible, .capital-text-button:focus-visible { outline: 2px solid #dfc38f; outline-offset: 3px; }
 @keyframes capital-mic-pulse { 50% { box-shadow: 0 0 0 6px #fb71851a; } }

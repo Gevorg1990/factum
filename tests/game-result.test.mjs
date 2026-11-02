@@ -5,7 +5,7 @@ import { parseGameResult, gameResultPath, facebookShareUrl, shareableGames } fro
 
 test('each game shares every possible score with a distinct, reversible URL', () => {
   for (const [mode, game] of Object.entries(shareableGames)) {
-    for (let score = 0; score <= game.total; score++) {
+    for (let score = 0; score <= game.total; score += game.step) {
       const path = gameResultPath(mode, score)
       const result = parseGameResult(...path.split('/').slice(-2))
       assert.equal(result.score, score)
@@ -23,6 +23,10 @@ test('invalid game names and scores cannot produce a result preview', () => {
   for (const score of ['-1', '16', '1.5', 'NaN', 'Infinity', '', '01', '1e1', '<script>']) assert.equal(parseGameResult('million', score), null)
   assert.equal(parseGameResult('logic', '6'), null)
   assert.equal(parseGameResult('genius', '11'), null)
+  assert.equal(parseGameResult('geography', '50'), null)
+  assert.equal(parseGameResult('chemistry', '1001'), null)
+  assert.equal(parseGameResult('geography', '300').playPath, '/globe#capital-quiz-title')
+  assert.equal(parseGameResult('chemistry', '700').playPath, '/periodic-table#element-quiz-title')
 })
 
 test('result preview exposes the score in server-rendered Open Graph metadata', () => {
