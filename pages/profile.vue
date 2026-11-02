@@ -1,10 +1,38 @@
 <script setup lang="ts">
 import { allEncyclopediaQuestions, people, facts, timeline } from '~/data/content'
 import { bibleBooks } from '~/data/bible'
+import { disintegrate, type Disintegration } from '~/utils/disintegrate'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
 import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
 
 const { saved, removeSaved } = useProgress()
+const removing = ref(new Set<string>())
+const removalMessage = ref('')
+const removalEffects = new Set<Disintegration>()
+let disposed = false
+async function removeEntry(id: string, event: Event) {
+  if (removing.value.has(id)) return
+  const card = (event.currentTarget as HTMLElement).closest<HTMLElement>('.profile-entry')
+  if (!card) { removeSaved(id); return }
+  removing.value = new Set([...removing.value, id])
+  const nextButton = (card.nextElementSibling || card.previousElementSibling)?.querySelector<HTMLButtonElement>('.profile-remove')
+  const effect = disintegrate(card)
+  removalEffects.add(effect)
+  await effect.finished
+  removalEffects.delete(effect)
+  removeSaved(id)
+  removing.value = new Set([...removing.value].filter(item => item !== id))
+  if (disposed) return
+  removalMessage.value = 'Նյութը հեռացվեց Իմ FACTUM-ից։'
+  await nextTick()
+  const target = nextButton?.isConnected ? nextButton : document.querySelector<HTMLButtonElement>('.profile-categories button')
+  target?.focus({ preventScroll: true })
+}
+onBeforeUnmount(() => {
+  disposed = true
+  removalEffects.forEach(effect => effect.cancel())
+  removalEffects.clear()
+})
 
 type SavedCategory = 'encyclopedia' | 'million' | 'bible' | 'facts' | 'people' | 'history' | 'other'
 type SavedEntry = { id: string; title: string; to: string; kind: string; category: SavedCategory; answer?: string; explanation?: string }
@@ -74,15 +102,17 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
     <nav class="profile-categories" aria-label="Պահպանված նյութերի բաժիններ"><button :aria-pressed="activeCategory === 'all'" :class="{'is-active':activeCategory === 'all'}" @click="activeCategory='all'"><Bookmark :size="17" /> Բոլորը <span>{{savedEntries.length}}</span></button><button v-for="section in categoryTabs" :key="section.id" :aria-pressed="activeCategory === section.id" :class="{'is-active':activeCategory === section.id}" @click="activeCategory=section.id"><component :is="section.icon" :size="17" />{{section.title}}<span>{{section.items.length}}</span></button></nav>
     <section v-for="section in shownSections" :key="section.id" class="profile-section" :aria-labelledby="`saved-section-${section.id}`">
       <header class="profile-section-heading"><div class="profile-section-icon"><component :is="section.icon" :size="23" /></div><div><h2 :id="`saved-section-${section.id}`">{{section.title}} <span>{{section.items.length}}</span></h2><p class="muted">{{section.description}}</p></div></header>
-      <div v-if="section.items.length" class="profile-entry-grid"><article v-for="item in section.items" :key="item.id" class="panel profile-entry" :class="{'profile-million-entry':item.category === 'million'}"><div class="profile-entry-top"><span class="gold">{{item.kind}}</span><button class="profile-remove" :aria-label="`${item.title}՝ հեռացնել պահպանվածներից`" @click="removeSaved(item.id)"><Trash2 :size="15" /> Հեռացնել</button></div><NuxtLink :to="item.to" class="profile-entry-title">{{item.title}} <ArrowUpRight :size="16" /></NuxtLink><div v-if="item.answer" class="profile-answer"><span><Check :size="15" /> Ճիշտ պատասխան</span><strong>{{item.answer}}</strong></div><p v-if="item.explanation" class="profile-explanation">{{item.explanation}}</p></article></div>
+      <div v-if="section.items.length" class="profile-entry-grid"><article v-for="item in section.items" :key="item.id" class="panel profile-entry" :aria-busy="removing.has(item.id)" :class="{'profile-million-entry':item.category === 'million', 'is-removing':removing.has(item.id)}"><div class="profile-entry-top"><span class="gold">{{item.kind}}</span><button class="profile-remove" :disabled="removing.has(item.id)" :aria-label="`${item.title}՝ հեռացնել պահպանվածներից`" @click="removeEntry(item.id, $event)"><Trash2 :size="15" /> Հեռացնել</button></div><NuxtLink :to="item.to" class="profile-entry-title">{{item.title}} <ArrowUpRight :size="16" /></NuxtLink><div v-if="item.answer" class="profile-answer"><span><Check :size="15" /> Ճիշտ պատասխան</span><strong>{{item.answer}}</strong></div><p v-if="item.explanation" class="profile-explanation">{{item.explanation}}</p></article></div>
       <div v-else class="panel profile-empty"><component :is="section.icon" :size="30" /><p>Այս բաժնում դեռ պահպանված նյութեր չկան։</p><NuxtLink :to="section.to" class="btn-secondary">Բացահայտել բաժինը <ArrowUpRight :size="15" /></NuxtLink></div>
     </section>
     <div v-if="activeCategory === 'all' && !savedEntries.length" class="panel profile-empty"><Bookmark :size="32" /><h2>Քո հավաքածուն սկսվում է մեկ պահպանումից</h2><p class="muted">Պահպանիր հոդվածներ, Միլիոնատերի հարցեր կամ Աստվածաշնչի գլուխներ․ դրանք կհայտնվեն իրենց բաժիններում։</p><NuxtLink to="/subjects" class="btn">Բացահայտել հանրագիտարանը</NuxtLink></div>
+    <p class="sr-only" role="status">{{ removalMessage }}</p>
     <p class="profile-storage-note muted">Հյուրի ռեժիմ․ տվյալները պահվում են այս բրաուզերում։ Սարքերի համաժամեցում դեռ միացված չէ։</p>
   </main>
 </template>
 
 <style scoped>
+.profile-entry.is-removing { pointer-events: none; }
 .profile-heading { margin-bottom: 28px; }.profile-eyebrow { display: block; font-size: 10px; letter-spacing: 1.2px; margin-bottom: 14px; }.profile-heading .heading { margin-bottom: 12px; }.profile-heading > p { font-size: 13px; line-height: 1.9; }
 .profile-categories { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 38px; }.profile-categories button { display: flex; align-items: center; gap: 8px; border: 1px solid #8997c044; border-radius: 13px; padding: 12px 15px; font-size: 12px; }.profile-categories button.is-active { border-color: #dfc38f; color: #dfc38f; background: #dfc38f0f; }.profile-categories button > span { min-width: 23px; padding: 2px 6px; border-radius: 7px; background: #8997c01c; font-size: 10px; text-align: center; }
 .profile-section { margin-top: 32px; }.profile-section-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }.profile-section-icon { display: grid; place-items: center; width: 47px; height: 47px; border-radius: 14px; background: #dfc38f0d; border: 1px solid #dfc38f44; color: #dfc38f; flex-shrink: 0; }.profile-section-heading h2 { font-size: 22px; font-weight: 750; }.profile-section-heading h2 span { font-size: 12px; font-weight: 500; margin-left: 8px; color: #dfc38f; }.profile-section-heading p { font-size: 11px; margin-top: 6px; }

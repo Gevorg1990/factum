@@ -27,9 +27,13 @@ export default defineNuxtConfig({
   routeRules: {
     '/games/results/**': { headers: { 'cache-control': 'public, max-age=3600, s-maxage=86400' } },
     '/': { prerender: true },
+    '/fonts/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/images/optimized/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/videos/previews/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
   },
-  app: { head: { title: 'FACTUM — Գիտելիքի աշխարհ', meta: [{ name: 'description', content: 'Հայկական կրթական հարթակ՝ հանրագիտարան, խաղեր և պատմություն' }] } },
+  app: { head: { link: [
+    { rel: 'preload', href: '/fonts/noto-sans-armenian-armenian-v47.woff2', as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
+    { rel: 'preload', href: '/fonts/noto-sans-armenian-latin-v47.woff2', as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
+  ], title: 'FACTUM — Գիտելիքի աշխարհ', meta: [{ name: 'description', content: 'Հայկական կրթական հարթակ՝ հանրագիտարան, խաղեր և պատմություն' }] } },
   runtimeConfig: { azureSpeechKey: '', azureSpeechRegion: '', directusToken: process.env.DIRECTUS_SERVER_TOKEN || '', openaiApiKey: '', public: { directusUrl: process.env.NUXT_PUBLIC_DIRECTUS_URL || '' } }
 })

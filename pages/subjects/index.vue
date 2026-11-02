@@ -32,7 +32,7 @@ const subjectImages: Record<string, string> = {
   technology: '/images/optimized/technology-art-1c0313cbd8.webp',
   art: '/images/optimized/art-art-46ce31606a.webp',
   biology: '/images/optimized/butterfly-poster-ba96016f61.webp',
-  geography: '/images/optimized/geography-art-0b2e092e2b.webp',
+  geography: '/images/optimized/geography-globe-4e2efb7e.webp',
   mathematics: '/images/optimized/mathematics-poster-a8b4f5a4be.webp',
   linguistics: '/images/optimized/language-1ebd4747fa.webp',
   cinema: '/images/optimized/film-f5f6a80113.webp',

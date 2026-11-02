@@ -93,7 +93,6 @@ onBeforeUnmount(() => {
 <style scoped>
 .history-era { font-weight: 400; background-color: transparent; }
 .history-era[aria-pressed="true"] { color: #071327; background-color: #f4c46c; border-color: #f4c46c; }
-.history-era:hover { background-color: #f4c46c26; border-color: #ffe2a2; box-shadow: 0 3px 12px #f4c46c26; }
-.history-era[aria-pressed="true"]:hover { background-color: #ffe2a2; }
+.history-era:not([aria-pressed="true"]):hover { background-color: #f4c46c26; border-color: #ffe2a2; box-shadow: 0 3px 12px #f4c46c26; }
 .history-era:focus-visible { outline: 2px solid #f4c46c; outline-offset: 3px; }
 </style>

@@ -18,7 +18,7 @@ const subjectImages: Record<string, string> = {
   technology: '/images/technology-art.jpg',
   art: '/images/art-art.jpg',
   biology: '/images/dna_strand.jpg',
-  geography: '/images/geography-art.jpg',
+  geography: '/images/optimized/geography-globe-hero-4e2efb7e.jpg',
   mathematics: '/images/logic-art.jpg',
   linguistics: '/images/language.jpg',
   cinema: '/images/film.jpg',

@@ -1,4 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap');
+/* armenian */
+@font-face {
+  font-family: 'Noto Sans Armenian';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 100%;
+  font-display: block;
+  src: url(/fonts/noto-sans-armenian-armenian-v47.woff2) format('woff2');
+  unicode-range: U+0308, U+0530-058F, U+2010, U+2024, U+25CC, U+FB13-FB17;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Noto Sans Armenian';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 100%;
+  font-display: block;
+  src: url(/fonts/noto-sans-armenian-latin-ext-v47.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Noto Sans Armenian';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 100%;
+  font-display: block;
+  src: url(/fonts/noto-sans-armenian-latin-v47.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 @tailwind base;@tailwind components;@tailwind utilities;
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#030b19;color:#eef4ff;font-family:'Noto Sans Armenian',Arial,sans-serif}a{text-decoration:none}button,input{font:inherit}.shell{max-width:1320px;margin:auto;padding:0 24px}.panel{background:linear-gradient(145deg,#10243c,#071528);border:1px solid #294565;border-radius:18px}.gold{color:#f4c46c}.btn{background:linear-gradient(120deg,#ffe2a2,#f0b54e);color:#071327;padding:11px 22px;border-radius:999px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}.btn-secondary{border:1px solid #c99e53;border-radius:999px;padding:10px 18px;color:#f4c46c}.muted{color:#a9bbd4}.input{background:#091a32;border:1px solid #42607c;border-radius:12px;padding:12px 16px;color:white;width:100%}.card-hover{transition:transform .2s,border-color .2s}.card-hover:hover{transform:translateY(-3px);border-color:#f4c46c}.tag{font-size:12px;border:1px solid #31516e;background:#0a2540;border-radius:999px;padding:5px 10px}.heading{font-size:clamp(24px,3vw,32px);font-weight:800;margin-bottom:20px}
 /* Deep navy nebula gradients, not the screenshot or a repeated star tile. */
@@ -1363,5 +1392,14 @@ html .factum-app :is(.subject-tile, .encyclopedia-tile, .game-card) {
 html .factum-app :is(.subject-tile, .encyclopedia-tile, .game-card):is(:hover, :focus-visible) { transform: translateY(-5px); }
 @media (prefers-reduced-motion: reduce) {
   html .factum-app :is(.subject-tile, .encyclopedia-tile, .game-card) { transition: none; }
-  html .factum-app :is(.subject-tile, .encyclopedia-tile, .game-card):is(:hover, :focus-visible) { transform: none; }
+
 }
+
+/* Pointer-triggered feedback remains visible when OS animations are disabled. */
+html .factum-app :is(.subject-tile, .encyclopedia-tile, .game-card) {
+  transition: transform .35s ease, border-color .35s ease, box-shadow .35s ease;
+}
+html .factum-app :is(.subject-tile, .encyclopedia-tile, .game-card):is(:hover, :focus-visible) { transform: translateY(-5px); }
+
+/* Game cards stay in place while their accent glow changes. */
+html .factum-app .game-card:is(:hover, :focus-visible) { transform: none; }
