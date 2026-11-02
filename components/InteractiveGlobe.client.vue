@@ -346,7 +346,9 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
   .globe-search-panel { grid-column: 1; grid-row: 1; }
   .globe-view { grid-column: 1; grid-row: 2; }
   .globe-sidebar { grid-column: 1; grid-row: 3; }
-  .globe-tooltip.is-selected { display: block; }
+  .globe-tooltip.is-selected { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: max-content; max-width: calc(100% - 24px); padding: 7px 10px; }
+  .globe-tooltip.is-selected strong { min-width: 0; overflow-wrap: anywhere; }
+  .globe-tooltip.is-selected small { flex-shrink: 0; margin-top: 0; }
 }
 @media (max-width: 600px) { .globe-sidebar { grid-template-columns: 1fr; }.globe-toolbar { padding: 14px 12px 0; }.globe-toolbar > span { font-size: 10px; }.globe-layout { gap: 18px; }.globe-search-panel, .globe-info { padding: 18px; } }
 </style>

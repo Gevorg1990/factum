@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { optimizedImage } from '~/data/optimizedImages'
-import { subjects, collectionSubjects, armenianPeople, timeline, facts } from '~/data/content'
+import { subjects, collectionSubjects, armenianPeople, timeline, facts, questions } from '~/data/content'
 import { armenianPortraits } from '~/data/personPortraits'
 import { selectHomeFacts } from '~/utils/homeFacts'
 import { cardTheme, gameAccents } from '~/data/cardThemes'
@@ -13,11 +13,14 @@ function timelineYear(value: string) {
 }
 const homeTimeline = [...timeline].sort((a,b) => timelineYear(a.year) - timelineYear(b.year))
 const popularIndex=ref(0)
-const popularSets=[
-  ['Ի՞նչ է ատոմը','Ի՞նչ է մոլեկուլը','Ի՞նչ է pH-ը','Ինչո՞ւ է երկաթը ժանգոտում'],
-  ['Ի՞նչ է ձգողականությունը','Ինչո՞ւ է Վեներայի պտույտը դանդաղ','Ի՞նչ է պարբերական աղյուսակը','Ի՞նչ է ատոմը'],
-  ['Ինչո՞ւ է երկաթը ժանգոտում','Ի՞նչ է pH-ը','Ի՞նչ է մոլեկուլը','Ի՞նչ է ձգողականությունը']
-]
+// Use the same visible question catalog as site search.
+const suggestedQuestions = subjects.flatMap(subject => {
+  const question = questions.filter(item => item.subject === subject.slug)
+    .sort((a, b) => a.title.length - b.title.length)[0]
+  return question ? [question.title] : []
+}).slice(0, 12)
+const popularSets = Array.from({ length: Math.ceil(suggestedQuestions.length / 4) },
+  (_, index) => suggestedQuestions.slice(index * 4, index * 4 + 4))
 // Հետաքրքիր փաստերի ցուցադրություն։ Ընտրությունը կատարվում է միայն client-ում,
 // որպեսզի Nuxt SSR hydration-ի ժամանակ HTML-ը չտարբերվի։
 const homeFacts = ref(facts.slice(0, 5))
