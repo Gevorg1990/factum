@@ -30,7 +30,6 @@ const subjectImages: Record<string, string> = {
   history: '/images/optimized/history-bc707c9d4b.webp',
   nature: '/images/optimized/natural_science-c20c5b483b.webp',
   technology: '/images/optimized/technology-art-1c0313cbd8.webp',
-  art: '/images/optimized/art-art-46ce31606a.webp',
   biology: '/images/optimized/butterfly-poster-ba96016f61.webp',
   geography: '/images/optimized/geography-globe-4e2efb7e.webp',
   mathematics: '/images/optimized/mathematics-poster-a8b4f5a4be.webp',
@@ -71,7 +70,6 @@ function imageForSubject(slug: string): string {
       >
         <CardVideo v-if="subject.slug === 'music'" src="/videos/previews/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/optimized/video-first-frame-c6e2a98273d1.webp" />
         <CardVideo v-else-if="subject.slug === 'geography'" src="/videos/previews/Illuminated_globe_rotating_on_map_4e2efb7e.mp4" poster="/images/optimized/video-first-frame-4e9546a8ab01.webp" />
-        <CardVideo v-else-if="subject.slug === 'art'" src="/videos/previews/Marble_bust_in_museum_hall_bb4b7a2b.mp4" poster="/images/optimized/video-first-frame-7eb352771065.webp" />
         <CardVideo v-else-if="subject.slug === 'physics'" src="/videos/previews/Glowing_atom_floating_in_space_12f9fd11.mp4" poster="/images/optimized/video-first-frame-e4e4972220ff.webp" />
         <CardVideo v-else-if="subject.slug === 'biology'" src="/videos/previews/Glowing_butterfly_on_DNA_strand_929f84ef_t0-6.mp4" poster="/images/optimized/video-first-frame-f09d43ca356a.webp" />
         <CardVideo v-else-if="subject.slug === 'mathematics'" src="/videos/previews/Owl_blinking_on_stone_pedestal_ee98753c.mp4" poster="/images/optimized/video-first-frame-5db14267bb82.webp" />

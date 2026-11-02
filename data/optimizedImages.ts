@@ -6,7 +6,6 @@ const images: Record<string, string> = {
   "/images/history.jpg": "/images/optimized/history-bc707c9d4b.webp",
   "/images/natural_science.jpg": "/images/optimized/natural_science-c20c5b483b.webp",
   "/images/technology-art.jpg": "/images/optimized/technology-art-1c0313cbd8.webp",
-  "/images/art-art.jpg": "/images/optimized/art-art-46ce31606a.webp",
   "/images/geography-art.jpg": "/images/optimized/geography-art-0b2e092e2b.webp",
   "/images/musical.jpg": "/images/optimized/musical-81d16b4b01.webp",
   "/images/film.jpg": "/images/optimized/film-f5f6a80113.webp",

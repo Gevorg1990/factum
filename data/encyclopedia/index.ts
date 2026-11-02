@@ -4,7 +4,6 @@ import { spaceQuestions } from './space'
 import { historyQuestions } from './history'
 import { natureQuestions } from './nature'
 import { technologyQuestions } from './technology'
-import { artQuestions } from './art'
 import { biologyQuestions } from './biology'
 import { geographyQuestions } from './geography'
 import { mathematicsQuestions } from './mathematics'
@@ -18,7 +17,7 @@ import { bibleQuestions } from './bible'
 export const expandedQuestions = [
   ...chemistryQuestions, ...physicsQuestions, ...spaceQuestions,
   ...historyQuestions, ...natureQuestions, ...technologyQuestions,
-  ...artQuestions, ...biologyQuestions, ...geographyQuestions,
+  ...biologyQuestions, ...geographyQuestions,
   ...mathematicsQuestions, ...linguisticsQuestions, ...cinemaQuestions,
   ...musicQuestions, ...peopleQuestions, ...bibleQuestions,
 ]

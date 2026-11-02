@@ -4,6 +4,7 @@ import { subjects, questions, collectionSubjects } from '~/data/content'
 const route = useRoute()
 const slug = String(route.params.slug)
 const subject = [...subjects, ...collectionSubjects].find((item) => item.slug === slug)
+if (!subject) throw createError({ statusCode: 404, statusMessage: 'Բաժինը չի գտնվել' })
 const items = questions.filter((question) => question.subject === slug)
 const { read, saved, markRead, toggleSaved } = useProgress()
 
@@ -16,7 +17,6 @@ const subjectImages: Record<string, string> = {
   history: '/images/history.jpg',
   nature: '/images/natural_science.jpg',
   technology: '/images/technology-art.jpg',
-  art: '/images/art-art.jpg',
   biology: '/images/dna_strand.jpg',
   geography: '/images/optimized/geography-globe-hero-4e2efb7e.jpg',
   mathematics: '/images/logic-art.jpg',

@@ -75,7 +75,6 @@ export const encyclopediaQuestions: Question[] = [
     source: { name: 'Cloudflare · DNS Learning Center', url: 'https://www.cloudflare.com/learning/dns/what-is-dns/' },
   },
   {
-    id: 'art-paper-collage', subject: 'art', title: 'Ինչպե՞ս է թղթե կոլաժը դառնում արվեստի գործ',
     answer: 'Թղթե կոլաժում տարբեր թղթե հատվածներ դասավորվում և ամրացվում են հիմքի վրա՝ ստեղծելով նոր պատկերային ամբողջություն։',
     detail: 'Ֆրանսերեն «papier collé» արտահայտությունը նշանակում է սոսնձված թուղթ։ Թերթի, գունավոր թղթի կամ պաստառի հատվածը կարող է պահպանել իր նյութական տեսքը և միաժամանակ նոր պատկերում այլ դեր ստանալ։',
     sections: [
