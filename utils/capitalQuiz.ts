@@ -8,10 +8,8 @@ export function normalizeCapitalAnswer(value: string): string {
 export function matchesArmenianAnswer(value: string, normalized: string): boolean {
   const base = normalizeCapitalAnswer(value)
   if (base === normalized) return true
-  // Accept articles and spoken copulas only after a complete known Armenian name.
-  // Do not stem arbitrary words, Latin spellings, or single-letter symbols.
-  if (!/^[ա-ֆև]{3,}$/u.test(base)) return false
-  return ['ը', 'ն', 'նա', 'նէ', 'է', 'ա', 'ըէ'].some(suffix => normalized === base + suffix)
+  // Full names may occur anywhere in a spoken phrase. Short symbols stay exact.
+  return base.length >= 3 && normalized.includes(base)
 }
 export function isCapitalAnswerCorrect(question: CapitalQuestion, value: string): boolean {
   const expected = question.direction === 'capital'

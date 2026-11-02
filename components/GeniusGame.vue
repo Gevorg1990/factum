@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { geniusStatements, type GeniusStatement } from '~/data/geniusStatements'
 
+const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, scheduleNext, cancelNext } = useGameFeedback()
+
 const roundSize = 10
 const round = ref<GeniusStatement[]>(geniusStatements.slice(0, roundSize))
 const index = ref(0)
@@ -12,6 +14,8 @@ const answered = computed(() => index.value + (selected.value === null ? 0 : 1))
 const choices = [{ value: true, label: 'Ճիշտ է', icon: '✓' }, { value: false, label: 'Սխալ է', icon: '✕' }]
 
 function newRound() {
+  cancelNext()
+  stopSound()
   const pool = [...geniusStatements]
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
@@ -22,18 +26,31 @@ function newRound() {
   selected.value = null
   score.value = 0
   finished.value = false
+  void playSound('question')
 }
 function choose(value: boolean) {
   if (selected.value !== null || finished.value) return
   selected.value = value
-  if (value === current.value.correct) score.value++
+  stopSound()
+  void playSound('select')
+  if (value === current.value.correct) {
+    score.value++
+    void playSound('correct')
+    scheduleNext(next)
+  } else void playSound('wrong')
 }
 function next() {
   if (selected.value === null || finished.value) return
-  if (index.value === round.value.length - 1) finished.value = true
+  cancelNext()
+  stopSound()
+  if (index.value === round.value.length - 1) {
+    finished.value = true
+    void playSound(score.value === roundSize ? 'win' : 'stage')
+  }
   else {
     index.value++
     selected.value = null
+    void playSound('question')
   }
 }
 onMounted(newRound)
@@ -43,6 +60,7 @@ onMounted(newRound)
   <main class="shell genius-game">
     <p class="gold text-sm font-semibold">ՃԻՇՏ ԿԱՄ ՍԽԱԼ</p>
     <h1 class="heading mt-3">FACTUM Genius</h1>
+    <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
     <p class="muted mb-6">10 պատահական պնդում։ Որոշիր՝ ճիշտ է, թե սխալ։ Յուրաքանչյուր ճիշտ պատասխան՝ 1 միավոր։ Սխալվելուց հետո խաղը շարունակվում է։</p>
 
     <section v-if="finished" class="panel p-7 text-center" aria-live="polite">
@@ -73,6 +91,7 @@ onMounted(newRound)
         <p class="font-bold" :class="selected === current.correct ? 'text-green-400' : 'text-amber-300'">{{ selected === current.correct ? '✓ Ճիշտ գնահատեցիր։' : '✕ Այս անգամ սխալվեցիր։' }}</p>
         <p class="mt-2 font-semibold">Պնդումը {{ current.correct ? 'ճիշտ է' : 'սխալ է' }}։</p>
         <p class="muted mt-2">{{ current.explanation }}</p>
+        <p v-if="selected === current.correct" class="muted text-sm mt-3">Քիչ անց խաղը կշարունակվի ինքնաբերաբար։</p>
         <button type="button" class="btn mt-5" @click="next">{{ index === roundSize - 1 ? 'Տեսնել արդյունքը →' : 'Հաջորդ պնդումը →' }}</button>
       </div>
     </section>

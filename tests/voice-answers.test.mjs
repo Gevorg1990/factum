@@ -13,12 +13,12 @@ test('Armenian articles and spoken copulas accept the full city name', () => {
   const italy = capitalPairs.find(pair => pair.capital === 'Հռոմ')
   assert.ok(italy)
   const rome = { expected: italy.capital, aliases: italy.capitalAliases }
-  for (const transcript of ['Հռոմ', 'Հռոմը', 'հռոմնա', 'Հռոմն է։', 'Հռոմ է', 'Հռոմ ա', 'Հռոմը՝', 'Հռոմը է']) {
+  for (const transcript of ['Հռոմ', 'Հռոմը', 'հռոմնա', 'Հռոմն է։', 'Հռոմ է', 'Հռոմ ա', 'Հռոմը՝', 'Հռոմը է', 'Հռոմում', 'Հռոմից', 'Հռոմ չէ', 'Հռոմնան', 'Romea']) {
     assert.equal(isVoiceAnswerCorrect(rome, transcript), true, transcript)
     assert.equal(isCapitalAnswerCorrect({ pair: italy, direction: 'capital' }, transcript), true, transcript)
     assert.equal(formatVoiceTranscript(transcript, capitals, 'hy-AM'), 'Հռոմ', transcript)
   }
-  for (const transcript of ['Փարիզը', 'Երևանն է', 'Հռոմում', 'Հռոմից', 'Հռոմ չէ', 'Հռոմնան', 'Հռո', 'Romea', '']) {
+  for (const transcript of ['Փարիզը', 'Երևանն է', 'Հռո', '']) {
     assert.equal(isVoiceAnswerCorrect(rome, transcript), false, transcript)
     assert.equal(isCapitalAnswerCorrect({ pair: italy, direction: 'capital' }, transcript), false, transcript)
   }
@@ -83,4 +83,21 @@ test('chemical symbols remain Latin even when their letters are spoken in Armeni
   }
   assert.equal(formatVoiceTranscript('Voski', symbols, 'hy-AM'), 'Voski')
   assert.equal(isVoiceAnswerCorrect(symbols.find(item => item.expected === 'Au'), 'Voski'), false)
+})
+
+test('a country name anywhere in a phrase is accepted without a filler word list', () => {
+  const portugal = capitalPairs.find(pair => pair.countryCode === 'PRT')
+  assert.ok(portugal)
+  const question = { expected: portugal.country, aliases: portugal.countryAliases }
+  const countries = capitalPairs.map(pair => ({ expected: pair.country, aliases: pair.countryAliases }))
+  for (const transcript of ['պորտուգալիանա երևի', 'Պորտուգալիան ա, երևի։', 'Երևի Պորտուգալիան է', 'Երևի թե Պորտուգալիա', 'Պորտուգալիա հավանաբար', 'կարող ա Պորտուգալիան լինի', 'հնարավոր ա Պորտուգալիա', 'իմ պատասխանը Պորտուգալիա է', 'Պորտուգալիա չէ երևի', 'Պորտուգալիա կամ Իսպանիա', 'պորտուգալիացին']) {
+    assert.equal(isVoiceAnswerCorrect(question, transcript), true, transcript)
+    assert.equal(isCapitalAnswerCorrect({ pair: portugal, direction: 'country' }, transcript), true, transcript)
+    assert.equal(formatVoiceTranscript(transcript, countries, 'hy-AM'), transcript === 'Պորտուգալիա կամ Իսպանիա' ? transcript : portugal.country, transcript)
+  }
+  for (const transcript of ['երևի Իսպանիա', 'երևի', 'կարող ա', 'հնարավոր ա']) {
+    assert.equal(isVoiceAnswerCorrect(question, transcript), false, transcript)
+  }
+  assert.equal(formatVoiceTranscript('Իսպանիա երևի', countries, 'hy-AM'), 'Իսպանիա')
+  assert.equal(formatVoiceTranscript('անհայտ երևի', countries, 'hy-AM'), 'անհայտ երևի')
 })

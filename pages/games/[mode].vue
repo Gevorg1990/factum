@@ -5,11 +5,12 @@ const route = useRoute()
 const mode = computed(() => String(route.params.mode))
 const title = computed(() => ({ million: 'FACTUM Million', genius: 'FACTUM Genius', logic: 'FACTUM Logic' } as Record<string, string>)[mode.value] || 'FACTUM')
 const isMillion = computed(() => mode.value === 'million')
-const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound } = useMillionAudio()
+const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, scheduleNext, cancelNext } = useGameFeedback()
 function sound(cue: Parameters<typeof playSound>[0]) {
   if (isMillion.value) void playSound(cue)
 }
 function continueStage() {
+  cancelNext()
   stageTransition.value = false
   stopSound()
   sound('question')
@@ -71,12 +72,14 @@ function choose(answer: number) {
   if (answer === question.value.correct) {
     score.value += 1
     sound('correct')
+    scheduleNext(next)
   } else {
     sound('wrong')
     if (isMillion.value) finishGame()
   }
 }
 function finishGame() {
+  cancelNext()
   finished.value = true
   if (score.value === total.value) {
     stopSound()
@@ -88,7 +91,8 @@ function finishGame() {
   }
 }
 function next() {
-  if (selected.value === null) return
+  if (selected.value === null || finished.value) return
+  cancelNext()
   if (index.value + 1 >= total.value) {
     finishGame()
     return
@@ -100,6 +104,7 @@ function next() {
   stageTransition.value = isMillion.value && (index.value === 5 || index.value === 10)
   stopSound()
   sound(stageTransition.value ? 'stage' : 'question')
+  if (stageTransition.value) scheduleNext(continueStage)
 }
 function swapQuestion() {
   if (!isMillion.value || swapUsed.value || selected.value !== null || finished.value) return
@@ -119,6 +124,7 @@ function useFifty() {
   fiftyUsed.value = true
 }
 function restart() {
+  cancelNext()
   index.value = 0
   selected.value = null
   score.value = 0
@@ -132,6 +138,7 @@ function restart() {
   stopSound()
   sound('question')
 }
+watch(mode, () => { cancelNext(); stopSound() })
 useHead({ title: `${title.value} — FACTUM` })
 </script>
 
@@ -204,6 +211,7 @@ useHead({ title: `${title.value} — FACTUM` })
         <p :class="correct ? 'text-green-400' : 'text-amber-300'" class="font-semibold">{{ correct ? '✓ Ճիշտ է։' : '✕ Սխալ պատասխան։' }}</p>
         <p class="mt-2">{{ question.explanation }}</p>
         <SaveMillionQuestion v-if="isMillion" :question="question" />
+        <p v-if="correct" class="muted text-sm mt-3">Քիչ անց խաղը կշարունակվի ինքնաբերաբար։</p>
         <button class="btn mt-4" type="button" @click="next">{{ index + 1 === total ? 'Տեսնել արդյունքը →' : 'Հաջորդ հարցը →' }}</button>
       </div>
     </div>
