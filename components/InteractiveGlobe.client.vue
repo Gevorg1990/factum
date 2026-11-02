@@ -66,6 +66,7 @@ function toggleContinent(continent: string) {
   }
 }
 function info(country: CountryFeature) { return details.value[country.properties.ADM0_A3] }
+function flagCode(country: CountryFeature) { return info(country)?.cca2 || country.properties.ISO_A2 }
 function name(country: CountryFeature) {
   const code = info(country)?.cca2 || country.properties.ISO_A2
   return code && /^[A-Z]{2}$/.test(code) ? countryNames.of(code) || country.properties.NAME : country.properties.NAME
@@ -220,7 +221,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
       <section class="panel globe-search-panel">
         <label for="globe-country-search"><Search :size="17" /> Գտիր երկիրը</label>
         <input id="globe-country-search" v-model="search" class="input" type="search" placeholder="Օրինակ՝ Հայաստան" autocomplete="off" :disabled="loading || error" />
-        <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.properties.ADM0_A3"><button type="button" @click="choose(country, true)">{{ info(country)?.flag }} {{ name(country) }} <MapPin :size="14" /></button></li></ul>
+        <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.properties.ADM0_A3"><button type="button" @click="choose(country, true)"><CountryFlag :code="flagCode(country)" /><span class="globe-result-name">{{ name(country) }}</span> <MapPin :size="14" /></button></li></ul>
         <p v-else-if="search.trim()" class="muted globe-no-results" role="status">Երկիր չի գտնվել։ Փորձիր այլ անուն։</p>
       </section>
     <section class="panel globe-view" aria-label="Ինտերակտիվ երկրագունդ">
@@ -249,7 +250,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
           </g>
           <circle cx="340" cy="340" :r="radius" fill="url(#factum-globe-shade)" pointer-events="none" />
         </svg>
-        <div v-if="active && !dragging" class="globe-tooltip" :class="{ 'is-selected': !hovered }" :style="hovered ? { left: `${tip.x}px`, top: `${tip.y}px` } : undefined" aria-hidden="true"><strong>{{ info(active)?.flag }} {{ name(active) }}</strong><small>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</small></div>
+        <div v-if="active && !dragging" class="globe-tooltip" :class="{ 'is-selected': !hovered }" :style="hovered ? { left: `${tip.x}px`, top: `${tip.y}px` } : undefined" aria-hidden="true"><strong><CountryFlag :code="flagCode(active)" /> {{ name(active) }}</strong><small>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</small></div>
       </div>
       <ul class="globe-continent-legend" aria-label="Աշխարհամասերի գույները">
         <li v-for="(color, continent) in continentColors" :key="continent">
@@ -268,7 +269,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
       <section id="globe-country-info" tabindex="-1" class="panel globe-info" aria-live="polite" aria-atomic="true">
         <template v-if="active">
           <span class="globe-eyebrow">{{ hovered ? 'ԲԱՑԱՀԱՅՏՈՒՄ ԵՍ' : 'ԸՆՏՐՎԱԾ ԵՐԿԻՐ' }}</span>
-          <div class="globe-country-title"><span class="globe-flag" aria-hidden="true">{{ activeDetails?.flag || '🌍' }}</span><div><h2>{{ name(active) }}</h2><p>{{ active.properties.NAME }}</p></div></div>
+          <div class="globe-country-title"><CountryFlag class="globe-flag" :code="flagCode(active)" /><div><h2>{{ name(active) }}</h2><p>{{ active.properties.NAME }}</p></div></div>
           <dl>
             <div><dt>Մայրաքաղաք</dt><dd>{{ activeDetails?.capital?.join(', ') || 'Տվյալ չկա' }}</dd></div>
             <div><dt>Աշխարհամաս</dt><dd>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</dd></div>
@@ -298,7 +299,8 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 .globe-controls button:disabled { opacity: .35; cursor: default; }
 .globe-stage { position: relative; width: 100%; aspect-ratio: 1; max-height: 680px; }
 .globe-stage svg { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; }
-.globe-ocean, .globe-country { cursor: url('/images/globe-pointer.svg') 5 5, crosshair; }
+.globe-stage svg, .globe-ocean, .globe-country { cursor: grab; }
+.globe-stage.is-dragging :is(svg, .globe-ocean, .globe-country) { cursor: grabbing; }
 .globe-stage svg:focus { outline: none; }
 .globe-stage svg:not(.has-pointer-focus):focus-visible, .globe-controls button:focus-visible, .globe-results button:focus-visible { outline: 2px solid #f4c46c; outline-offset: -3px; }
 .globe-country { fill: var(--continent-color, #427c79); stroke: #94c0b2; stroke-width: .65; stroke-linejoin: round; }
@@ -307,7 +309,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 .globe-country.is-active { opacity: 1; fill: #dfbb76; stroke: #ffe8b4; stroke-width: 1.3; }
 .globe-tooltip { position: absolute; width: 200px; padding: 11px 14px; border: 1px solid #dfc38f88; border-radius: 12px; background: #081326ed; color: #ffe4b2; box-shadow: 0 8px 24px #0005; pointer-events: none; }
 .globe-tooltip strong, .globe-tooltip small { display: block; }
-.globe-tooltip strong { font-size: 13px; }
+.globe-tooltip strong { display: flex; align-items: center; gap: 7px; font-size: 13px; }
 .globe-tooltip small { font-size: 11px; color: #b8c7db; margin-top: 4px; }
 .globe-continent-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 16px; list-style: none; margin: 0; padding: 0 18px 18px; color: #c7d5e6; font-size: 11px; }
 .globe-continent-legend button { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; }
@@ -330,7 +332,8 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFra
 .globe-no-results { margin-top: 12px; font-size: 12px; }
 .globe-eyebrow { font-size: 10px; color: #dfc38f; letter-spacing: 1.5px; }
 .globe-country-title { display: flex; align-items: center; gap: 14px; margin: 20px 0; }
-.globe-flag { font-size: 40px; line-height: 1; }
+.globe-flag { width: 48px; height: 34px; }
+.globe-result-name { flex: 1; min-width: 0; }
 .globe-country-title h2 { font-size: 23px; font-weight: 800; }
 .globe-country-title p { font-size: 12px; color: #9caec6; margin-top: 4px; }
 .globe-info dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 15px 0; border-top: 1px solid #8291b126; }

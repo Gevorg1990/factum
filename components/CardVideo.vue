@@ -4,7 +4,6 @@ const video = ref<HTMLVideoElement | null>(null)
 const previewing = ref(false)
 const completed = ref(false)
 let card: HTMLElement | null = null
-let motionPreference: MediaQueryList | undefined
 let observer: IntersectionObserver | undefined
 let visible = false
 let hovered = false
@@ -14,7 +13,7 @@ const touchPreviewing = ref(false)
 let disposed = false
 let playbackVersion = 0
 function shouldPlay() {
-  return !disposed && visible && (hovered || focused || touchPreviewing.value) && !document.hidden && !motionPreference?.matches
+  return !disposed && visible && (hovered || focused || touchPreviewing.value) && !document.hidden
 }
 function updatePlayback() {
   const element = video.value
@@ -30,6 +29,11 @@ function updatePlayback() {
     element.pause()
     return
   }
+  // Set media properties before play(), including on browsers that treat the
+  // HTML muted attribute only as the initial default.
+  element.muted = true
+  element.defaultMuted = true
+  element.playsInline = true
   if (!element.getAttribute('src')) element.src = props.src
   void element.play().then(() => {
     if (version !== playbackVersion) return
@@ -53,6 +57,8 @@ function restartPlayback() {
 function pointerEnter(event: PointerEvent) {
   if (event.pointerType === 'touch') return
   hovered = true
+  // A pointer inside the card confirms visibility without waiting for the observer.
+  visible = true
   restartPlayback()
 }
 function pointerDown(event: PointerEvent) { touchPressed = event.pointerType === 'touch' }
@@ -93,8 +99,6 @@ onMounted(() => {
   card?.addEventListener('pointerleave', pointerLeave)
   card?.addEventListener('focusin', focusIn)
   card?.addEventListener('focusout', focusOut)
-  motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
-  motionPreference.addEventListener('change', updatePlayback)
   document.addEventListener('visibilitychange', updatePlayback)
   document.addEventListener('pointerdown', outsideTouch)
   if ('IntersectionObserver' in window && video.value) {
@@ -104,6 +108,8 @@ onMounted(() => {
     }, { threshold: [0, .1] })
     observer.observe(video.value)
   } else visible = true
+  // Hydration can attach listeners after the mouse has already entered the card.
+  if (card?.matches(':hover')) pointerEnter({ pointerType: 'mouse' } as PointerEvent)
 })
 onBeforeUnmount(() => {
   disposed = true
@@ -116,7 +122,6 @@ onBeforeUnmount(() => {
   card?.removeEventListener('pointerleave', pointerLeave)
   card?.removeEventListener('focusin', focusIn)
   card?.removeEventListener('focusout', focusOut)
-  motionPreference?.removeEventListener('change', updatePlayback)
   document.removeEventListener('visibilitychange', updatePlayback)
   document.removeEventListener('pointerdown', outsideTouch)
   video.value?.pause()

@@ -11,15 +11,15 @@ const code=`import {ref} from '${vueUrl}';const onMounted=fn=>globalThis.__cardV
 const js=ts.transpileModule(code,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
 const component=(await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'))).default
 
-function setup(t,deferred=false){
+function setup(t,deferred=false,options={}){
  const old={window:globalThis.window,document:globalThis.document,IntersectionObserver:globalThis.IntersectionObserver}
  const mounted=[],unmounted=[],plays=[]
  let observe
  globalThis.__cardVideo={mounted,unmounted}
- globalThis.window={IntersectionObserver:true,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})}
+ globalThis.window={IntersectionObserver:true,matchMedia:()=>({matches:!!options.reducedMotion,addEventListener(){},removeEventListener(){}})}
  globalThis.document={hidden:false,addEventListener(){},removeEventListener(){}}
  globalThis.IntersectionObserver=class{constructor(fn){observe=fn}observe(){}disconnect(){}}
- const card={addEventListener(){},removeEventListener(){},contains(){return false}}
+ const card={matches:()=>!!options.initialHover,addEventListener(){},removeEventListener(){},contains(){return false}}
  const video={src:'',currentTime:0,closest:()=>card,getAttribute(){return this.src},pause(){},play(){
   let resolve,reject
   const promise=deferred?new Promise((yes,no)=>{resolve=yes;reject=no}):Promise.resolve()
@@ -28,7 +28,7 @@ function setup(t,deferred=false){
  const reader=component.setup({src:'/videos/test.mp4',poster:'/images/test.jpg'},{expose(){}})
  reader.video.value=video
  mounted.forEach(fn=>fn())
- observe([{isIntersecting:true,intersectionRatio:1}])
+ if (!options.deferObserver) observe([{isIntersecting:true,intersectionRatio:1}])
  t.after(()=>{unmounted.forEach(fn=>fn());Object.assign(globalThis,old);delete globalThis.__cardVideo})
  return {reader,video,plays}
 }
@@ -62,5 +62,25 @@ test('an old interrupted play promise cannot hide the new hover preview',async t
  plays[1].resolve();await nextTick();await nextTick()
  assert.equal(reader.previewing.value,true)
  plays[0].reject(new Error('interrupted by pause'));await nextTick();await nextTick()
+ assert.equal(reader.previewing.value,true)
+})
+
+test('intentional hover starts muted playback even before visibility observation and with reduced motion', async t => {
+ const {reader,video,plays}=setup(t,false,{deferObserver:true,reducedMotion:true})
+ assert.equal(plays.length,0)
+ assert.equal(video.src,'')
+ reader.pointerEnter({pointerType:'mouse'});await nextTick()
+ assert.equal(plays.length,1)
+ assert.equal(video.muted,true)
+ assert.equal(video.defaultMuted,true)
+ assert.equal(video.playsInline,true)
+ assert.equal(reader.previewing.value,true)
+ reader.pointerLeave();await nextTick()
+ assert.equal(reader.previewing.value,false)
+})
+test('a card already hovered during hydration starts its preview', async t => {
+ const {reader,plays}=setup(t,false,{initialHover:true,deferObserver:true})
+ await nextTick()
+ assert.equal(plays.length,1)
  assert.equal(reader.previewing.value,true)
 })
