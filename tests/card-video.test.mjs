@@ -7,7 +7,7 @@ const vueUrl=new URL('file://'+require.resolve('vue')).href
 const {nextTick}=await import(vueUrl)
 const {descriptor}=parse(readFileSync(new URL('../components/CardVideo.vue',import.meta.url),'utf8'))
 const source=compileScript(descriptor,{id:'card-video-test'}).content.replaceAll("from 'vue'",`from '${vueUrl}'`)
-const code=`import {ref} from '${vueUrl}';const onMounted=fn=>globalThis.__cardVideo.mounted.push(fn);const onBeforeUnmount=fn=>globalThis.__cardVideo.unmounted.push(fn);`+source
+const code=`import {ref,nextTick} from '${vueUrl}';const onMounted=fn=>globalThis.__cardVideo.mounted.push(fn);const onBeforeUnmount=fn=>globalThis.__cardVideo.unmounted.push(fn);`+source
 const js=ts.transpileModule(code,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
 const component=(await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'))).default
 
@@ -20,7 +20,7 @@ function setup(t,deferred=false,options={}){
  globalThis.document={hidden:false,addEventListener(){},removeEventListener(){}}
  globalThis.IntersectionObserver=class{constructor(fn){observe=fn}observe(){}disconnect(){}}
  const card={matches:()=>!!options.initialHover,addEventListener(){},removeEventListener(){},contains(){return false}}
- const video={src:'',currentTime:0,closest:()=>card,getAttribute(){return this.src},paused:true,pause(){this.paused=true},play(){this.paused=false;
+ const video={src:'',currentTime:0,closest:()=>card,getAttribute(){return this.src},removeAttribute(){this.src=''},load(){this.currentTime=0},paused:true,pause(){this.paused=true},play(){this.paused=false;
   let resolve,reject
   const promise=deferred?new Promise((yes,no)=>{resolve=yes;reject=no}):Promise.resolve()
   plays.push({resolve,reject});return promise
@@ -33,25 +33,58 @@ function setup(t,deferred=false,options={}){
  return {reader,video,plays}
 }
 
-test('each new hover restarts both an interrupted and completed clip without looping',async t=>{
+test('repeat hover resumes interrupted clips and retains completed frames until replay',async t=>{
  const {reader,video,plays}=setup(t)
  assert.equal(plays.length,0)
  reader.pointerEnter({pointerType:'mouse'});await nextTick()
  video.currentTime=1.8
  reader.pointerLeave()
  reader.pointerEnter({pointerType:'mouse'});await nextTick()
- assert.equal(video.currentTime,0)
+ assert.equal(video.currentTime,1.8)
  assert.equal(plays.length,2)
  video.currentTime=4
  reader.finishPlayback()
+ assert.equal(video.currentTime,4)
  reader.pointerLeave()
  assert.equal(video.currentTime,4)
+ assert.equal(video.src,'/videos/test.mp4')
  assert.equal(video.paused,true)
  reader.pointerEnter({pointerType:'mouse'});await nextTick()
  assert.equal(video.currentTime,0)
  assert.equal(reader.completed.value,false)
+ assert.equal(video.src,'/videos/test.reverse.mp4')
+ assert.equal(reader.reversed.value,true)
  assert.equal(plays.length,3)
+ video.currentTime=6
+ reader.finishPlayback();reader.pointerLeave()
+ assert.equal(video.currentTime,6)
+ reader.pointerEnter({pointerType:'mouse'});await nextTick()
+ assert.equal(video.src,'/videos/test.mp4')
+ assert.equal(reader.reversed.value,false)
+ assert.equal(plays.length,4)
  assert.doesNotMatch(descriptor.template.content,/<video[^>]*\bloop\b/)
+})
+
+test('replay holds the final frame until the restarted video presents a frame',async t=>{
+ const {reader,video}=setup(t)
+ let drawn=0, reveal
+ video.videoWidth=640;video.videoHeight=360
+ reader.replayFrame.value={width:0,height:0,offsetWidth:640,getContext:()=>({drawImage(){drawn++}})}
+ video.requestVideoFrameCallback=fn=>{reveal=fn;return 1}
+ video.cancelVideoFrameCallback=()=>{}
+ reader.pointerEnter({pointerType:'mouse'});await nextTick()
+ video.currentTime=6;reader.finishPlayback();reader.pointerLeave()
+ assert.equal(video.currentTime,6)
+ reader.pointerEnter({pointerType:'mouse'})
+ assert.equal(reader.holdingLastFrame.value,true)
+ assert.equal(video.currentTime,6)
+ await nextTick();await nextTick();await nextTick()
+ assert.equal(drawn,1)
+ assert.equal(video.currentTime,0)
+ assert.equal(video.src,'/videos/test.reverse.mp4')
+ assert.equal(reader.holdingLastFrame.value,true)
+ reveal()
+ assert.equal(reader.holdingLastFrame.value,false)
 })
 
 test('an old interrupted play promise cannot hide the new hover preview',async t=>{

@@ -2,6 +2,10 @@
 const props = defineProps<{ src: string; poster: string }>()
 const video = ref<HTMLVideoElement | null>(null)
 const completed = ref(false)
+const reversed = ref(false)
+const replayFrame = ref<HTMLCanvasElement | null>(null)
+const holdingLastFrame = ref(false)
+let frameCallback: number | undefined
 let card: HTMLElement | null = null
 let observer: IntersectionObserver | undefined
 let visible = false
@@ -18,6 +22,8 @@ function updatePlayback() {
   const element = video.value
   if (!element) return
   const version = ++playbackVersion
+  if (frameCallback !== undefined) element.cancelVideoFrameCallback?.(frameCallback)
+  frameCallback = undefined
   if (completed.value) {
     element.pause()
     return
@@ -35,16 +41,45 @@ function updatePlayback() {
   void element.play().then(() => {
     if (version !== playbackVersion) return
     if (!shouldPlay()) { element.pause(); return }
+    if (holdingLastFrame.value) {
+      const reveal = () => {
+        if (version !== playbackVersion || !shouldPlay()) return
+        frameCallback = undefined
+        holdingLastFrame.value = false
+      }
+      if (typeof element.requestVideoFrameCallback === 'function') frameCallback = element.requestVideoFrameCallback(reveal)
+      else reveal()
+    }
   }).catch(() => { /* Keep the native poster/frame visible when playback is blocked. */ })
 }
 function finishPlayback() {
   completed.value = true
 }
-function restartPlayback() {
-  completed.value = false
-  video.value?.pause()
-  if (video.value?.getAttribute('src')) {
-    try { video.value.currentTime = 0 } catch { /* Not yet seekable; first playback starts at zero. */ }
+async function startPreview() {
+  if (completed.value && video.value) {
+    const element = video.value
+    const canvas = replayFrame.value
+    try {
+      if (canvas && element.videoWidth && element.videoHeight) {
+        canvas.width = element.videoWidth
+        canvas.height = element.videoHeight
+        const context = canvas.getContext('2d')
+        if (context) {
+          context.drawImage(element, 0, 0)
+          holdingLastFrame.value = true
+          await nextTick()
+          // Commit the opaque final frame before seeking the video underneath.
+          void canvas.offsetWidth
+        }
+      }
+    } catch { /* Playback still works if a frame cannot be copied. */ }
+    if (disposed) return
+    completed.value = false
+    // Encoded reverse clips work consistently without negative playback rates.
+    // The reverse file is requested only after a complete forward viewing.
+    reversed.value = !reversed.value
+    element.src = reversed.value ? props.src.replace(/\.mp4$/, '.reverse.mp4') : props.src
+    element.currentTime = 0
   }
   updatePlayback()
 }
@@ -53,7 +88,7 @@ function pointerEnter(event: PointerEvent) {
   hovered = true
   // A pointer inside the card confirms visibility without waiting for the observer.
   visible = true
-  restartPlayback()
+  void startPreview()
 }
 function pointerDown(event: PointerEvent) { touchPressed = event.pointerType === 'touch' }
 function pointerCancel() { touchPressed = false }
@@ -66,7 +101,7 @@ function captureTouchClick(event: MouseEvent) {
   // A touch on an onscreen card is itself the user's play gesture. Start now
   // instead of waiting for IntersectionObserver, which can lose iOS activation.
   visible = true
-  restartPlayback()
+  void startPreview()
 }
 function outsideTouch(event: PointerEvent) {
   if (event.pointerType !== 'touch' || card?.contains(event.target as Node)) return
@@ -75,9 +110,9 @@ function outsideTouch(event: PointerEvent) {
 }
 function pointerLeave() { hovered = false; updatePlayback() }
 function focusIn() {
-  const restart = !focused && !hovered
+  const entering = !focused && !hovered
   focused = true
-  if (restart) restartPlayback()
+  if (entering) void startPreview()
   else updatePlayback()
 }
 function focusOut(event: FocusEvent) {
@@ -108,6 +143,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   disposed = true
   playbackVersion++
+  if (frameCallback !== undefined) video.value?.cancelVideoFrameCallback?.(frameCallback)
   observer?.disconnect()
   card?.removeEventListener('pointerenter', pointerEnter)
   card?.removeEventListener('pointerdown', pointerDown)
@@ -125,10 +161,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="card-video" aria-hidden="true">
     <video ref="video" :poster="poster" muted playsinline @ended="finishPlayback" preload="none" loading="lazy" tabindex="-1" />
+    <canvas ref="replayFrame" class="replay-frame" :class="{ 'is-holding': holdingLastFrame }" />
   </div>
 </template>
 
 <style scoped>
 .card-video { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
-.card-video > video { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; border: 0; object-fit: cover; object-position: inherit; }
+.card-video > :is(video, canvas) { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; border: 0; object-fit: cover; object-position: inherit; }
+.replay-frame { opacity: 0; transition: opacity 260ms ease; }
+.replay-frame.is-holding { opacity: 1; transition: none; }
 </style>
