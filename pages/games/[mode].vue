@@ -151,6 +151,7 @@ useHead({ title: `${title.value} — FACTUM` })
         <p class="mt-2 text-green-400"><strong>Ճիշտ պատասխանը՝ {{ question.answers[question.correct] }}</strong></p>
         <p class="mt-2">{{ question.explanation }}</p>
       </div>
+      <SaveMillionQuestion v-if="isMillion && selected !== null" :question="question" />
       <p class="text-xl mt-5">Ճիշտ պատասխաններ՝ <strong class="gold">{{ score }} / {{ total }}</strong> · {{ currentDifficulty === 'easy' ? 'Հեշտ' : currentDifficulty === 'medium' ? 'Միջին' : 'Բարդ' }} ռեժիմ</p>
       <p v-if="isMillion" class="muted mt-2">Լավագույն արդյունք՝ {{ best }} / 15</p>
       <p class="mt-4">{{ score === total ? 'Գերազանց արդյունք։' : score >= 10 ? 'Շատ լավ արդյունք։' : 'Շարունակիր սովորել և փորձիր կրկին։' }}</p>
@@ -207,7 +208,7 @@ useHead({ title: `${title.value} — FACTUM` })
         <p class="mt-2">{{ question.explanation }}</p>
         <button class="btn mt-4" type="button" @click="next">{{ index + 1 === total ? 'Տեսնել արդյունքը →' : 'Հաջորդ հարցը →' }}</button>
       </div>
-      <div v-if="isMillion" class="flex justify-end mt-5"><SaveMillionQuestion :question="question" /></div>
+      <div v-if="isMillion && selected !== null" class="flex justify-end mt-5"><SaveMillionQuestion :question="question" /></div>
     </div>
     <p v-if="!isMillion" class="muted text-sm mt-5">Այս խաղի ընդլայնված տարբերակը դեռ մշակման փուլում է։</p>
     </template>
