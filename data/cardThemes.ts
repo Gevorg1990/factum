@@ -1,4 +1,4 @@
-import { FlaskConical, Atom, Orbit, Landmark, Leaf, Cpu, Dna, Globe2, Calculator, Languages, Film, Music, Users, BookOpen, BookOpenCheck, Grid3X3 } from 'lucide-vue-next'
+import { FlaskConical, Atom, Orbit, Landmark, Leaf, Cpu, Dna, Globe2, Calculator, Languages, Film, Music, Users, BookOpen, BookOpenCheck, Grid3X3, LibraryBig, HeartPulse, Wallet } from 'lucide-vue-next'
 
 export const cardThemes = {
   chemistry: { color:'#34d399', icon:FlaskConical },
@@ -16,6 +16,9 @@ export const cardThemes = {
   'periodic-table': { color:'#86efac', icon:Grid3X3 },
   people: { color:'#facc99', icon:Users },
   bible: { color:'#e9d5a1', icon:BookOpen },
+  literature: { color:'#f0abfc', icon:LibraryBig },
+  health: { color:'#fb7185', icon:HeartPulse },
+  finance: { color:'#34d399', icon:Wallet },
 } as const
 
 export function cardTheme(id: string) {

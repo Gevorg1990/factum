@@ -2,7 +2,6 @@
 const props = defineProps<{ src: string; poster: string }>()
 const video = ref<HTMLVideoElement | null>(null)
 const completed = ref(false)
-const reversed = ref(false)
 const replayFrame = ref<HTMLCanvasElement | null>(null)
 const holdingLastFrame = ref(false)
 let frameCallback: number | undefined
@@ -75,10 +74,6 @@ async function startPreview() {
     } catch { /* Playback still works if a frame cannot be copied. */ }
     if (disposed) return
     completed.value = false
-    // Encoded reverse clips work consistently without negative playback rates.
-    // The reverse file is requested only after a complete forward viewing.
-    reversed.value = !reversed.value
-    element.src = reversed.value ? props.src.replace(/\.mp4$/, '.reverse.mp4') : props.src
     element.currentTime = 0
   }
   updatePlayback()

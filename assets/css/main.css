@@ -1406,3 +1406,16 @@ html .factum-app .game-card:is(:hover, :focus-visible) { transform: none; }
 
 /* Keep video cards stationary while the decoded frame fades over the poster. */
 html .factum-app :is(.subject-tile, .encyclopedia-tile):is(:hover, :focus-visible) { transform: none; }
+
+/* Keep encyclopedia card labels on one line without clipping the arrow/count. */
+html .factum-app .subject-tile > strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+html .factum-app .encyclopedia-tile-name > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

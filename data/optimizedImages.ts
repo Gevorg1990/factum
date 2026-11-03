@@ -17,7 +17,10 @@ const images: Record<string, string> = {
   "/images/space-art.jpg": "/images/optimized/space-art-2f2239150d.webp",
   "/images/million-art.jpg": "/images/optimized/million-art-d0d4634d21.webp",
   "/images/genius-art.jpg": "/images/optimized/genius-art-c410cd085a.webp",
-  "/images/logic-art.jpg": "/images/optimized/logic-art-a9bd59eb1d.webp"
+  "/images/logic-art.jpg": "/images/optimized/logic-art-a9bd59eb1d.webp",
+  "/images/Magical_book_in_cozy_library_9cd74fda.jpg": "/images/optimized/literature-library-9cd74fda.webp",
+  "/images/Holographic_human_body_scientifi…_a5d93967.jpg": "/images/optimized/health-anatomy-a5d93967.webp",
+  "/images/Ancient_desk_with_gold_coins_2a9c80b1.jpg": "/images/optimized/finance-coins-2a9c80b1.webp"
 }
 
 export function optimizedImage(src: string): string { return images[src] || src }

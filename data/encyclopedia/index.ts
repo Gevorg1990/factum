@@ -12,6 +12,9 @@ import { cinemaQuestions } from './cinema'
 import { musicQuestions } from './music'
 import { peopleQuestions } from './people'
 import { bibleQuestions } from './bible'
+import { literatureQuestions } from './literature'
+import { healthQuestions } from './health'
+import { financeQuestions } from './finance'
 
 // Append new editions to each subject without renumbering existing questions.
 export const expandedQuestions = [
@@ -20,4 +23,5 @@ export const expandedQuestions = [
   ...biologyQuestions, ...geographyQuestions,
   ...mathematicsQuestions, ...linguisticsQuestions, ...cinemaQuestions,
   ...musicQuestions, ...peopleQuestions, ...bibleQuestions,
+  ...literatureQuestions, ...healthQuestions, ...financeQuestions,
 ]

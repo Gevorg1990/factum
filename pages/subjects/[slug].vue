@@ -23,6 +23,9 @@ const subjectImages: Record<string, string> = {
   linguistics: '/images/language.jpg',
   cinema: '/images/film.jpg',
   music: '/images/musical.jpg',
+  literature: '/images/optimized/literature-library-large-9cd74fda.webp',
+  health: '/images/optimized/health-anatomy-large-a5d93967.webp',
+  finance: '/images/optimized/finance-coins-large-2a9c80b1.webp',
 }
 
 const filter = ref('all')

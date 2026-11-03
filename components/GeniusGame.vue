@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { geniusStatements, type GeniusStatement } from '~/data/geniusStatements'
+import GameDifficultyPicker from '~/components/GameDifficultyPicker.vue'
+import { difficultyIndex, difficultyTitle, requiredCorrectAnswers, saveDifficultyProgress, unlockedDifficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
+
+const route = useRoute()
+const router = useRouter()
 
 const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, scheduleNext, cancelNext } = useGameFeedback()
 
 const roundSize = 10
+const unlockedIndex = ref(0)
+const level = ref<GameDifficulty | null>(null)
 const round = ref<GeniusStatement[]>(geniusStatements.slice(0, roundSize))
 const index = ref(0)
 const selected = ref<boolean | null>(null)
@@ -11,12 +18,32 @@ const score = ref(0)
 const finished = ref(false)
 const current = computed(() => round.value[index.value]!)
 const answered = computed(() => index.value + (selected.value === null ? 0 : 1))
+const passed = computed(() => score.value >= requiredCorrectAnswers(roundSize))
+const nextLevel = computed<GameDifficulty | null>(() => {
+  const next = level.value ? difficultyIndex(level.value) + 1 : 3
+  return next >= 0 && next < 3 ? (['easy', 'medium', 'hard'] as const)[next]! : null
+})
 const choices = [{ value: true, label: 'Ճիշտ է', icon: '✓' }, { value: false, label: 'Սխալ է', icon: '✕' }]
 
-function newRound() {
+function startLevel(next: GameDifficulty) {
+  if (difficultyIndex(next) > unlockedIndex.value) return
+  level.value = next
+  void router.replace({ path: route.path, query: { level: next } })
+  newRound()
+}
+
+function returnToLevels() {
+  level.value = null
+  void router.replace({ path: route.path })
   cancelNext()
   stopSound()
-  const pool = [...geniusStatements]
+}
+
+function newRound() {
+  if (!level.value) return
+  cancelNext()
+  stopSound()
+  const pool = geniusStatements.filter(item => item.difficulty === level.value)
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[pool[i], pool[j]] = [pool[j]!, pool[i]!]
@@ -45,6 +72,7 @@ function next() {
   stopSound()
   if (index.value === round.value.length - 1) {
     finished.value = true
+    if (passed.value && level.value) unlockedIndex.value = saveDifficultyProgress('genius', level.value)
     void playSound(score.value === roundSize ? 'win' : 'stage')
   }
   else {
@@ -53,23 +81,36 @@ function next() {
     void playSound('question')
   }
 }
-onMounted(newRound)
+onMounted(() => {
+  unlockedIndex.value = unlockedDifficultyIndex('genius')
+  const requestedLevel = String(route.query.level || '')
+  if (difficultyIndex(requestedLevel) >= 0 && difficultyIndex(requestedLevel) <= unlockedIndex.value) {
+    startLevel(requestedLevel as GameDifficulty)
+  }
+})
 </script>
 
 <template>
-  <main class="shell genius-game">
+  <GameDifficultyPicker v-if="!level" game="genius" :unlocked-index="unlockedIndex" @select="startLevel" />
+
+  <main v-else class="shell genius-game">
     <p class="gold text-sm font-semibold">ՃԻՇՏ ԿԱՄ ՍԽԱԼ</p>
     <h1 class="heading mt-3">FACTUM Genius</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
-    <p class="muted mb-6">10 պատահական պնդում։ Որոշիր՝ ճիշտ է, թե սխալ։ Յուրաքանչյուր ճիշտ պատասխան՝ 1 միավոր։ Սխալվելուց հետո խաղը շարունակվում է։</p>
+    <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · 10 պատահական պնդում։ Առնվազն 8 ճիշտ պատասխանով կբացվի հաջորդ մակարդակը։</p>
+    <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" />
 
     <section v-if="finished" class="panel p-7 text-center" aria-live="polite">
       <div class="text-5xl mb-4" aria-hidden="true">{{ score === roundSize ? '🏆' : '🧠' }}</div>
       <h2 class="text-2xl font-bold">Խաղն ավարտված է</h2>
       <p class="gold text-3xl font-bold my-5">{{ score }} / {{ roundSize }}</p>
       <p class="muted">{{ score === roundSize ? 'Գերազանց է․ բոլոր պնդումները ճիշտ գնահատեցիր։' : score >= 7 ? 'Շատ լավ արդյունք։ Շարունակիր բացահայտել նոր գիտելիքներ։' : 'Ամեն փորձ նոր գիտելիք է։ Փորձիր կրկին։' }}</p>
+      <p v-if="passed && nextLevel" class="text-green-400 mt-4">Հաջորդ՝ {{ difficultyTitle(nextLevel) }} մակարդակը բացվեց։</p>
+      <p v-else-if="!passed" class="muted mt-4">Հաջորդ մակարդակը բացելու համար պետք է առնվազն {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխան։</p>
       <GameResultShare mode="genius" :score="score" />
-      <button type="button" class="btn mt-6" @click="newRound">Խաղալ նորից ↻</button>
+      <button v-if="passed && nextLevel" type="button" class="btn mt-6" @click="startLevel(nextLevel)">Անցնել {{ difficultyTitle(nextLevel) }} մակարդակին →</button>
+      <button v-else type="button" class="btn mt-6" @click="newRound">Խաղալ նորից ↻</button>
+      <button type="button" class="btn-secondary mt-3" @click="returnToLevels">Մակարդակների ցանկ</button>
     </section>
 
     <section v-else class="panel p-7">

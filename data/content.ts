@@ -21,7 +21,7 @@ export type Question = {
   takeaway?: string
   source?: { name: string; url: string }
 }
-export const subjects=[{slug:'chemistry',name:'Քիմիա',img:'chemistry'},{slug:'physics',name:'Ֆիզիկա',img:'physics'},{slug:'space',name:'Տիեզերք',img:'space'},{slug:'history',name:'Պատմություն',img:'history'},{slug:'nature',name:'Բնագիտություն',img:'nature'},{slug:'technology',name:'Տեխնոլոգիա',img:'technology'},{slug:'biology',name:'Կենսաբանություն',img:'brain'},{"slug": "geography", "name": "Աշխարհագրություն", "img": "geography"},{"slug": "mathematics", "name": "Մաթեմատիկա", "img": "logic"},{"slug": "linguistics", "name": "Լեզվաբանություն", "img": "history"},{slug:'cinema',name:'Կինո',img:'cinema'},{slug:'music',name:'Երաժշտություն',img:'music'}]
+export const subjects=[{slug:'chemistry',name:'Քիմիա',img:'chemistry'},{slug:'physics',name:'Ֆիզիկա',img:'physics'},{slug:'space',name:'Տիեզերք',img:'space'},{slug:'history',name:'Պատմություն',img:'history'},{slug:'nature',name:'Բնագիտություն',img:'nature'},{slug:'technology',name:'Տեխնոլոգիա',img:'technology'},{slug:'biology',name:'Կենսաբանություն',img:'brain'},{"slug": "geography", "name": "Աշխարհագրություն", "img": "geography"},{"slug": "mathematics", "name": "Մաթեմատիկա", "img": "logic"},{"slug": "linguistics", "name": "Լեզվաբանություն", "img": "history"},{slug:'cinema',name:'Կինո',img:'cinema'},{slug:'music',name:'Երաժշտություն',img:'music'},{slug:'literature',name:'Գրականություն',shortName:'Գրականություն',img:'literature'},{slug:'health',name:'Մարդու մարմին և առողջություն',shortName:'Առողջություն',img:'health'},{slug:'finance',name:'Տնտեսագիտություն և ֆինանսական գրագիտություն',shortName:'Տնտեսագիտություն',img:'finance'}]
 const rawQuestions:Question[]=[
 ...collectionQuestions,
 ...encyclopediaQuestions,

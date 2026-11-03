@@ -36,6 +36,9 @@ const subjectImages: Record<string, string> = {
   linguistics: '/images/optimized/language-1ebd4747fa.webp',
   cinema: '/images/optimized/film-f5f6a80113.webp',
   music: '/images/optimized/musical-81d16b4b01.webp',
+  literature: '/images/optimized/literature-library-9cd74fda.webp',
+  health: '/images/optimized/health-anatomy-a5d93967.webp',
+  finance: '/images/optimized/finance-coins-2a9c80b1.webp',
 }
 
 function imageForSubject(slug: string): string {
@@ -66,6 +69,7 @@ function imageForSubject(slug: string): string {
         :key="subject.slug"
         :to="`/subjects/${subject.slug}`"
         class="encyclopedia-tile"
+        :title="subject.name"
         :style="{ '--card-accent': cardTheme(subject.slug).color }"
       >
         <CardVideo v-if="subject.slug === 'music'" src="/videos/previews/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/optimized/video-first-frame-c6e2a98273d1.webp" />
@@ -88,7 +92,7 @@ function imageForSubject(slug: string): string {
         >
         <span class="encyclopedia-tile-shade" aria-hidden="true" />
         <span class="encyclopedia-emblem" aria-hidden="true"><component :is="cardTheme(subject.slug).icon" :size="19" /></span>
-        <span class="encyclopedia-tile-name">{{ subject.name }} · {{ questions.filter(item => item.subject === subject.slug).length }} նյութ <span aria-hidden="true">→</span></span>
+        <span class="encyclopedia-tile-name"><span>{{ subject.shortName || subject.name }} · {{ questions.filter(item => item.subject === subject.slug).length }} նյութ</span><span aria-hidden="true">→</span></span>
       </NuxtLink>
       <!-- Հանրագիտարանի լրացուցիչ հավաքածուներ -->
       <NuxtLink
