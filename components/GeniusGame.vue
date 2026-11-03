@@ -135,7 +135,7 @@ onMounted(() => {
         <p class="muted mt-2">{{ current.explanation }}</p>
         <button type="button" class="btn mt-5" @click="next">{{ index === roundSize - 1 ? 'Տեսնել արդյունքը →' : 'Հաջորդ պնդումը →' }}</button>
       </div>
-      <div class="flex justify-end mt-5"><SaveGameQuestion game="genius" :question="current.statement" /></div>
+      <div class="flex justify-end mt-5"><SaveGameQuestion :disabled="selected === null" game="genius" :question="current.statement" /></div>
     </section>
   </main>
 </template>
