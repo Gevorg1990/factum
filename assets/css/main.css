@@ -1419,3 +1419,11 @@ html .factum-app .encyclopedia-tile-name > span:first-child {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* Result actions keep consistent spacing even when labels wrap. */
+.game-result-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; margin-top: 24px; }
+.game-result-actions > button { margin: 0; max-width: 100%; }
+@media (max-width: 600px) {
+  .game-result-actions { flex-direction: column; align-items: stretch; }
+  .game-result-actions > button { width: 100%; }
+}

@@ -107,9 +107,11 @@ onMounted(() => {
       <p v-if="passed && nextLevel" class="text-green-400 mt-4">Հաջորդ՝ {{ difficultyTitle(nextLevel) }} մակարդակը բացվեց։</p>
       <p v-else-if="!passed" class="muted mt-4">Հաջորդ մակարդակը բացելու համար պետք է առնվազն {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխան։</p>
       <GameResultShare mode="genius" :score="score" />
+      <div class="game-result-actions">
       <button v-if="passed && nextLevel" type="button" class="btn mt-6" @click="startLevel(nextLevel)">Անցնել {{ difficultyTitle(nextLevel) }} մակարդակին →</button>
       <button v-else type="button" class="btn mt-6" @click="newRound">Խաղալ նորից ↻</button>
       <button type="button" class="btn-secondary mt-3" @click="returnToLevels">Մակարդակների ցանկ</button>
+      </div>
     </section>
 
     <section v-else class="panel p-7">

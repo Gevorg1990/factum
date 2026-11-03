@@ -155,9 +155,11 @@ useHead({ title: `${title.value} — FACTUM` })
       <p v-if="isMillion" class="muted mt-2">Լավագույն արդյունք՝ {{ best }} / 15</p>
       <p class="mt-4">{{ score === total ? 'Գերազանց արդյունք։' : score >= 10 ? 'Շատ լավ արդյունք։' : 'Շարունակիր սովորել և փորձիր կրկին։' }}</p>
       <GameResultShare v-if="isMillion" mode="million" :score="score" />
+      <div class="game-result-actions">
       <button class="btn mt-6" type="button" @click="restart">Խաղալ այս ռեժիմը կրկին ↻</button>
       <button v-if="isMillion" class="million-tool ml-2" type="button" @click="backToModes">Մակարդակների ցանկ</button>
       <button v-if="isMillion && score === total && selectedMillionMode && difficultyIndex(selectedMillionMode) < 2" class="btn mt-4" type="button" @click="startMillionMode((['easy', 'medium', 'hard'] as GameDifficulty[])[difficultyIndex(selectedMillionMode) + 1])">Բացել հաջորդ ռեժիմը →</button>
+      </div>
     </div>
 
     <div v-else-if="stageTransition" class="panel p-7 text-center million-stage" role="status" aria-live="polite">
