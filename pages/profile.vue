@@ -3,7 +3,8 @@ import { allEncyclopediaQuestions, people, facts, timeline, subjects, collection
 import { bibleBooks } from '~/data/bible'
 import { disintegrate, type Disintegration } from '~/utils/disintegrate'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
-import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
+import { findGameBookmark } from '~/utils/gameBookmarks'
+import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Gamepad2, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
 
 const { saved, removeSaved } = useProgress()
 const removing = ref(new Set<string>())
@@ -34,12 +35,13 @@ onBeforeUnmount(() => {
   removalEffects.clear()
 })
 
-type SavedCategory = 'encyclopedia' | 'million' | 'bible' | 'facts' | 'people' | 'history' | 'other'
+type SavedCategory = 'encyclopedia' | 'million' | 'games' | 'bible' | 'facts' | 'people' | 'history' | 'other'
 type SavedEntry = { id: string; title: string; to: string; kind: string; category: SavedCategory; sourceSection?: string; answer?: string; explanation?: string }
 const activeCategory = ref<SavedCategory | 'all'>('all')
 const sectionDefinitions = [
   { id: 'encyclopedia', title: 'Հանրագիտարան', icon: BookOpen, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
   { id: 'million', title: 'Միլիոնատեր', icon: Trophy, description: 'Խաղի հարցերը՝ ճիշտ պատասխաններով', to: '/games/million' },
+  { id: 'games', title: 'Խաղեր', icon: Gamepad2, description: 'Genius և տրամաբանական խաղերի հարցերը', to: '/games/million' },
   { id: 'bible', title: 'Աստվածաշունչ', icon: ScrollText, description: 'Պահպանված գրքեր և գլուխներ', to: '/bible' },
   { id: 'facts', title: 'Հետաքրքիր փաստեր', icon: Sparkles, description: 'Քեզ հետաքրքրած փաստերն ու բացահայտումները', to: '/facts' },
   { id: 'people', title: 'Նշանավոր մարդիկ', icon: Users, description: 'Կենսագրություններ և ստեղծագործություններ', to: '/people' },
@@ -53,6 +55,12 @@ function describeEntry(id: string): SavedEntry {
     return question
       ? { id, title: question.question, to: `/games/questions/${id}#saved-million-question`, kind: 'Միլիոնատերի հարց', category: 'million', answer: question.answers[question.correct], explanation: question.explanation }
       : { id, title: 'Պահպանված հարցն այլևս հասանելի չէ', to: '/games/million', kind: 'Միլիոնատերի հարց', category: 'million' }
+  }
+  if (id.startsWith('game-')) {
+    const question = findGameBookmark(id)
+    return question
+      ? { id, title: question.question, to: `/games/questions/${id}#saved-game-question`, kind: question.gameTitle, category: 'games', answer: question.answers[question.correct], explanation: question.explanation }
+      : { id, title: 'Պահպանված խաղի հարցը հասանելի չէ', to: '/games', kind: 'Խաղի հարց', category: 'games' }
   }
   const question = allEncyclopediaQuestions.find(item => item.id === id)
   if (question) {

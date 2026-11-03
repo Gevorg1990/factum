@@ -6,7 +6,7 @@ import { difficultyIndex, difficultyTitle, requiredCorrectAnswers, saveDifficult
 const route = useRoute()
 const router = useRouter()
 
-const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, scheduleNext, cancelNext } = useGameFeedback()
+const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, cancelNext } = useGameFeedback()
 
 const roundSize = 5
 const unlockedIndex = ref(0)
@@ -63,7 +63,6 @@ function choose(value: number) {
   if (value === current.value.correct) {
     score.value++
     void playSound('correct')
-    scheduleNext(next)
   } else void playSound('wrong')
 }
 function next() {
@@ -132,9 +131,9 @@ onMounted(() => {
         <p class="font-bold" :class="selected === current.correct ? 'text-green-400' : 'text-amber-300'">{{ selected === current.correct ? '✓ Ճիշտ լուծեցիր։' : '✕ Այս անգամ սխալվեցիր։' }}</p>
         <p class="mt-2 font-semibold">Ճիշտ պատասխանը՝ {{ current.answers[current.correct] }}</p>
         <p class="muted mt-2">{{ current.explanation }}</p>
-        <p v-if="selected === current.correct" class="muted text-sm mt-3">Քիչ անց խաղը կշարունակվի ինքնաբերաբար։</p>
         <button type="button" class="btn mt-5" @click="next">{{ index === roundSize - 1 ? 'Տեսնել արդյունքը →' : 'Հաջորդ խնդիրը →' }}</button>
       </div>
+      <div class="flex justify-end mt-5"><SaveGameQuestion game="logic" :question="current.question" /></div>
     </section>
   </main>
 </template>

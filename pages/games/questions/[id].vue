@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ArrowLeft, Trophy, Check, ArrowRight } from 'lucide-vue-next'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
+import { findGameBookmark } from '~/utils/gameBookmarks'
 const route = useRoute()
 const question = computed(() => findMillionBookmark(String(route.params.id)))
-useHead({title: computed(() => `${question.value?.question ?? 'Միլիոնատերի հարց'} — FACTUM`)})
-useSavedScroll(() => question.value && route.hash === '#saved-million-question' ? 'saved-million-question' : undefined)
+const gameQuestion = computed(() => findGameBookmark(String(route.params.id)))
+useHead({title: computed(() => `${question.value?.question ?? gameQuestion.value?.question ?? 'Պահպանված խաղի հարց'} — FACTUM`)})
+useSavedScroll(() => route.hash === '#saved-game-question' && gameQuestion.value ? 'saved-game-question' : question.value && route.hash === '#saved-million-question' ? 'saved-million-question' : undefined)
 </script>
 <template>
   <main class="shell py-10 max-w-3xl saved-million-page">
     <NuxtLink to="/profile" class="gold saved-million-back"><ArrowLeft :size="16" /> Իմ FACTUM-ը</NuxtLink>
     <article v-if="question" id="saved-million-question" class="panel saved-million-card saved-destination" tabindex="-1"><p class="gold saved-million-label"><Trophy :size="18" /> ՄԻԼԻՈՆԱՏԵՐ · ՀԱՐՑ ԵՎ ՊԱՏԱՍԽԱՆ</p><h1 class="heading">{{question.question}}</h1><div class="saved-million-options"><div v-for="(answer,index) in question.answers" :key="index" :class="{'is-correct':index === question.correct}"><span>{{['Ա','Բ','Գ','Դ'][index]}}.</span><strong>{{answer}}</strong><Check v-if="index === question.correct" :size="19" /></div></div><section class="saved-million-explanation"><h2><Check :size="18" /> Ճիշտ պատասխանը՝ {{question.answers[question.correct]}}</h2><p>{{question.explanation}}</p></section><SaveMillionQuestion :question="question" /><NuxtLink to="/games/million" class="gold saved-million-play">Խաղալ նոր խաղ <ArrowRight :size="16" /></NuxtLink></article>
+    <article v-else-if="gameQuestion" id="saved-game-question" class="panel saved-million-card saved-destination" tabindex="-1"><p class="gold saved-million-label"><Trophy :size="18" /> {{ gameQuestion.gameTitle }} · ՀԱՐՑ ԵՎ ՊԱՏԱՍԽԱՆ</p><h1 class="heading">{{ gameQuestion.question }}</h1><div class="saved-million-options"><div v-for="(answer,index) in gameQuestion.answers" :key="index" :class="{'is-correct':index === gameQuestion.correct}"><span>{{['Ա','Բ','Գ','Դ'][index]}}.</span><strong>{{answer}}</strong><Check v-if="index === gameQuestion.correct" :size="19" /></div></div><section class="saved-million-explanation"><h2><Check :size="18" /> Ճիշտ պատասխանը՝ {{gameQuestion.answers[gameQuestion.correct]}}</h2><p>{{gameQuestion.explanation}}</p></section><SaveGameQuestion :game="gameQuestion.game" :question="gameQuestion.question" /><NuxtLink :to="`/games/${gameQuestion.game}`" class="gold saved-million-play">Վերադառնալ խաղին <ArrowRight :size="16" /></NuxtLink></article>
     <div v-else class="panel saved-million-card"><h1 class="heading">Հարցը չի գտնվել</h1><p class="muted">Այս հարցն այլևս հասանելի չէ։ Մյուս պահպանված հարցերը կարող ես գտնել «Իմ FACTUM»-ում։</p></div>
   </main>
 </template>
