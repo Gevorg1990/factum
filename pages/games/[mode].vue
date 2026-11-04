@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { millionQuestions, type MillionQuestion, millionQuestionBank, type MillionTier } from '~/data/millionQuestions'
+import { millionQuestions, type MillionQuestion, millionTiers, createMillionRound, type MillionTier } from '~/utils/millionQuestionPool'
 import { difficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
 
 const route = useRoute()
@@ -23,14 +23,12 @@ const best = ref(0)
 const unlockedMillionIndex = ref(0)
 const selectedMillionMode = ref<GameDifficulty | null>(null)
 const gameQuestions = ref<MillionQuestion[]>([])
+const replacementQuestions = ref<MillionQuestion[]>([])
 const demoQuestions = [millionQuestions[2], millionQuestions[5], millionQuestions[3]]
 const total = computed(() => isMillion.value ? 15 : demoQuestions.length)
 const question = computed<MillionQuestion>(() => isMillion.value ? (gameQuestions.value[index.value] || millionQuestions[index.value]) : demoQuestions[Math.min(index.value, demoQuestions.length - 1)])
-const tiers: MillionTier[] = ['easy', 'medium', 'hard', 'veryHard', 'expert']
-const modeStart = computed(() => Math.max(0, difficultyIndex(selectedMillionMode.value || 'easy')))
-const activeTiers = computed(() => tiers.slice(modeStart.value, modeStart.value + 3))
 const currentDifficulty = computed<GameDifficulty>(() => selectedMillionMode.value || 'easy')
-const currentTierName = computed(() => ({ easy: 'Հեշտ', medium: 'Միջին', hard: 'Բարդ', veryHard: 'Շատ բարդ', expert: 'Փորձագիտական' } as Record<MillionTier, string>)[activeTiers.value[Math.floor(index.value / 5)] || 'easy'])
+const currentTierName = computed(() => ({ easy: 'Հեշտ', medium: 'Միջին', hard: 'Բարդ' } as Record<MillionTier, string>)[millionTiers[Math.floor(index.value / 5)] || 'easy'])
 const correct = computed(() => selected.value !== null && selected.value === question.value.correct)
 const progress = computed(() => Math.round((index.value / total.value) * 100))
 const storageKey = computed(() => `factum-million-best-v1-${selectedMillionMode.value || 'easy'}`)
@@ -40,10 +38,6 @@ function shuffled<T>(items: T[]): T[] {
   const copy = [...items]
   for (let i = copy.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [copy[i], copy[j]] = [copy[j], copy[i]] }
   return copy
-}
-function randomizeAnswers(item: MillionQuestion): MillionQuestion {
-  const options = shuffled(item.answers.map((answer, answerIndex) => ({ answer, index: answerIndex })))
-  return { ...item, answers: options.map(option => option.answer) as MillionQuestion['answers'], correct: options.findIndex(option => option.index === item.correct) }
 }
 function readMillionProgress(): number {
   try {
@@ -58,7 +52,9 @@ function saveMillionProgress(level: GameDifficulty): number {
 }
 function newRound() {
   if (!selectedMillionMode.value) return
-  gameQuestions.value = activeTiers.value.flatMap(level => shuffled(millionQuestionBank[level]).slice(0, 5)).map(randomizeAnswers)
+  const round = createMillionRound(selectedMillionMode.value)
+  gameQuestions.value = round.questions
+  replacementQuestions.value = round.replacements
 }
 function resetRound() {
   cancelNext(); index.value = 0; selected.value = null; score.value = 0; hintVisible.value = false
@@ -115,11 +111,10 @@ function next() {
 }
 function swapQuestion() {
   if (!isMillion.value || swapUsed.value || selected.value !== null || finished.value) return
-  const current = question.value
-  const level = activeTiers.value[Math.floor(index.value / 5)]
-  const candidates = millionQuestionBank[level].filter(item => !gameQuestions.value.some(used => used.question === item.question) && item.question !== current.question)
-  if (!candidates.length) return
-  gameQuestions.value[index.value] = randomizeAnswers(shuffled(candidates)[0]); swapUsed.value = true
+  const replacement = replacementQuestions.value[index.value]
+  if (!replacement) return
+  gameQuestions.value[index.value] = replacement
+  swapUsed.value = true
   stopSound(); sound('question'); hintVisible.value = false; hiddenAnswers.value = []
 }
 function useFifty() {

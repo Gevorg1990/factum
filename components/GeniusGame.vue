@@ -37,6 +37,7 @@ const index = ref(0)
 const selected = ref<boolean | null>(null)
 const score = ref(0)
 const finished = ref(false)
+const newlyUnlockedLevel = ref<GameDifficulty | null>(null)
 const current = computed(() => round.value[index.value]!)
 const answered = computed(() => index.value + (selected.value === null ? 0 : 1))
 const passed = computed(() => score.value >= requiredCorrectAnswers(roundSize))
@@ -74,6 +75,7 @@ function newRound() {
   selected.value = null
   score.value = 0
   finished.value = false
+  newlyUnlockedLevel.value = null
   void playSound('question')
 }
 function choose(value: boolean) {
@@ -94,7 +96,9 @@ function next() {
     finished.value = true
     saveRecord()
     if (passed.value && level.value) {
+      const previouslyUnlocked = Math.max(unlockedIndex.value, unlockedDifficultyIndex('genius'))
       unlockedIndex.value = saveDifficultyProgress('genius', level.value)
+      newlyUnlockedLevel.value = nextLevel.value && difficultyIndex(nextLevel.value) > previouslyUnlocked ? nextLevel.value : null
     }
     if (!passed.value) void playSound('stage')
   }
@@ -121,15 +125,15 @@ onMounted(() => {
     <p class="gold text-sm font-semibold">ՃԻՇՏ ԿԱՄ ՍԽԱԼ</p>
     <h1 class="heading mt-3">FACTUM Genius</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
-    <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · 10 պատահական պնդում։ {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխանով կանցնես այս փուլը և կբացվի հաջորդ մակարդակը։</p>
+    <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · 10 պատահական պնդում։ {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխանով կանցնես այս փուլը։</p>
     <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" />
 
     <section v-if="finished" class="panel p-7 text-center result-panel" aria-live="polite">
       <h2 class="text-2xl font-bold">{{ passed ? 'Փուլն անցած է։ Ապրե՛ս։' : 'Խաղն ավարտված է' }}</h2>
       <p class="gold text-3xl font-bold my-5">{{ score }} / {{ roundSize }}</p>
       <p class="muted">{{ score === roundSize ? 'Գերազանց է․ բոլոր պնդումները ճիշտ գնահատեցիր։' : score >= 7 ? 'Շատ լավ արդյունք։ Շարունակիր բացահայտել նոր գիտելիքներ։' : 'Ամեն փորձ նոր գիտելիք է։ Փորձիր կրկին։' }}</p>
-      <p v-if="passed && nextLevel" class="text-green-400 mt-4">Հաջորդ՝ {{ difficultyTitle(nextLevel) }} մակարդակը բացվեց։</p>
-      <p v-else-if="!passed" class="muted mt-4">Հաջորդ մակարդակը բացելու համար պետք է առնվազն {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխան։</p>
+      <p v-if="newlyUnlockedLevel" class="text-green-400 mt-4">Հաջորդ՝ {{ difficultyTitle(newlyUnlockedLevel) }} մակարդակը բացվեց։</p>
+      <p v-else-if="!passed" class="muted mt-4">Այս փուլն անցնելու համար պետք է առնվազն {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխան։</p>
       <p v-if="passed && !nextLevel" class="text-green-400 mt-4">🏆 Բոլոր փուլերն անցած են, ներառյալ ամենադժվարը։</p>
       <p class="gold mt-4">Լավագույն արդյունքը՝ {{ bestScore }} / {{ roundSize }}<span v-if="bestLevel"> · {{ difficultyTitle(bestLevel) }} մակարդակ</span></p>
       <GameResultShare mode="genius" :score="bestScore" :level="bestLevel" />

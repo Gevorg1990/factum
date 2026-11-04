@@ -8,7 +8,10 @@ const router = useRouter()
 
 const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, cancelNext } = useGameFeedback()
 
-const roundSize = 5
+const roundSize = 10
+const completedLevels = ref<GameDifficulty[]>([])
+const completedKey = 'factum-logic-completed-levels-v1'
+const newlyUnlockedLevel = ref<GameDifficulty | null>(null)
 const unlockedIndex = ref(0)
 const level = ref<GameDifficulty | null>(null)
 const round = ref<LogicPuzzle[]>(logicPuzzles.slice(0, roundSize))
@@ -53,6 +56,7 @@ function newRound() {
   selected.value = null
   score.value = 0
   finished.value = false
+  newlyUnlockedLevel.value = null
   void playSound('question')
 }
 function choose(value: number) {
@@ -71,7 +75,13 @@ function next() {
   stopSound()
   if (index.value === round.value.length - 1) {
     finished.value = true
-    if (passed.value && level.value) unlockedIndex.value = saveDifficultyProgress('logic', level.value)
+    if (passed.value && level.value) {
+      const previouslyUnlocked = Math.max(unlockedIndex.value, unlockedDifficultyIndex('logic'))
+      unlockedIndex.value = saveDifficultyProgress('logic', level.value)
+      newlyUnlockedLevel.value = nextLevel.value && difficultyIndex(nextLevel.value) > previouslyUnlocked ? nextLevel.value : null
+      if (!completedLevels.value.includes(level.value)) completedLevels.value.push(level.value)
+      try { localStorage.setItem(completedKey, JSON.stringify(completedLevels.value)) } catch { /* Keep progress in this session. */ }
+    }
     void playSound(score.value === roundSize ? 'win' : 'stage')
   }
   else {
@@ -82,6 +92,10 @@ function next() {
 }
 onMounted(() => {
   unlockedIndex.value = unlockedDifficultyIndex('logic')
+  try {
+    const saved = JSON.parse(localStorage.getItem(completedKey) || '[]')
+    completedLevels.value = (['easy', 'medium', 'hard'] as const).filter(item => Array.isArray(saved) && saved.includes(item))
+  } catch { /* Browser storage may be unavailable. */ }
   const requestedLevel = String(route.query.level || '')
   if (difficultyIndex(requestedLevel) >= 0 && difficultyIndex(requestedLevel) <= unlockedIndex.value) {
     startLevel(requestedLevel as GameDifficulty)
@@ -90,23 +104,24 @@ onMounted(() => {
 </script>
 
 <template>
-  <GameDifficultyPicker v-if="!level" game="logic" :unlocked-index="unlockedIndex" @select="startLevel" />
+  <GameDifficultyPicker v-if="!level" game="logic" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" @select="startLevel" />
 
   <main v-else class="shell logic-game">
     <p class="gold text-sm font-semibold">ՏՐԱՄԱԲԱՆԱԿԱՆ ՄԱՐՏԱՀՐԱՎԵՐ</p>
     <h1 class="heading mt-3">FACTUM Logic</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
-    <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · 5 պատահական գլուխկոտրուկ։ 4 ճիշտ պատասխանով կբացվի հաջորդ մակարդակը։</p>
-    <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" />
+    <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · {{ roundSize }} պատահական գլուխկոտրուկ։ {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխանով կանցնես այս փուլը։</p>
+    <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" />
 
     <section v-if="finished" class="panel p-7 text-center" aria-live="polite">
       <div class="text-5xl mb-4" aria-hidden="true">{{ score === roundSize ? '🏆' : '🧩' }}</div>
-      <h2 class="text-2xl font-bold">Խաղն ավարտված է</h2>
+      <h2 class="text-2xl font-bold">{{ passed ? 'Փուլն անցած է։ Ապրե՛ս։' : 'Խաղն ավարտված է' }}</h2>
       <p class="gold text-3xl font-bold my-5">{{ score }} / {{ roundSize }}</p>
-      <p class="muted">{{ score === roundSize ? 'Գերազանց է․ բոլոր գլուխկոտրուկները լուծեցիր։' : score >= 3 ? 'Շատ լավ արդյունք։ Շարունակիր բացահայտել նոր գիտելիքներ։' : 'Ամեն փորձ նոր գիտելիք է։ Փորձիր կրկին։' }}</p>
-      <p v-if="passed && nextLevel" class="text-green-400 mt-4">Հաջորդ՝ {{ difficultyTitle(nextLevel) }} մակարդակը բացվեց։</p>
-      <p v-else-if="!passed" class="muted mt-4">Հաջորդ մակարդակը բացելու համար պետք է առնվազն 4 ճիշտ պատասխան։</p>
-      <GameResultShare mode="logic" :score="score" />
+      <p class="muted">{{ score === roundSize ? 'Գերազանց է․ բոլոր գլուխկոտրուկները լուծեցիր։' : score >= 7 ? 'Շատ լավ արդյունք։ Շարունակիր բացահայտել նոր գիտելիքներ։' : 'Ամեն փորձ նոր գիտելիք է։ Փորձիր կրկին։' }}</p>
+      <p v-if="newlyUnlockedLevel" class="text-green-400 mt-4">Հաջորդ՝ {{ difficultyTitle(newlyUnlockedLevel) }} մակարդակը բացվեց։</p>
+      <p v-else-if="!passed" class="muted mt-4">Այս փուլն անցնելու համար պետք է առնվազն {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխան։</p>
+      <p v-if="passed && !nextLevel" class="text-green-400 mt-4">🏆 Բոլոր փուլերն անցած են, ներառյալ ամենադժվարը։</p>
+      <GameResultShare mode="logic" :score="score" :level="level" />
       <div class="game-result-actions">
       <button v-if="passed && nextLevel" type="button" class="btn mt-6" @click="startLevel(nextLevel)">Անցնել {{ difficultyTitle(nextLevel) }} մակարդակին →</button>
       <button v-else type="button" class="btn mt-6" @click="newRound">Խաղալ նորից ↻</button>

@@ -8,7 +8,7 @@ export function parseResultLevel(value: unknown): ResultLevel | null {
 export const shareableGames = {
   million: { title: 'FACTUM Million', total: 15, step: 1, playPath: '/games/million', image: '/images/million-art.jpg' },
   genius: { title: 'FACTUM Genius', total: 10, step: 1, playPath: '/games/genius', image: '/images/genius-art.jpg' },
-  logic: { title: 'FACTUM Logic', total: 5, step: 1, playPath: '/games/logic', image: '/images/logic-art.jpg' },
+  logic: { title: 'FACTUM Logic', total: 10, step: 1, playPath: '/games/logic', image: '/images/logic-art.jpg' },
   geography: { title: 'Երկիր և մայրաքաղաք', total: 1000, step: 100, playPath: '/globe#capital-quiz-title', image: '/images/geography-art.jpg' },
   chemistry: { title: 'Քիմիական տարրեր', total: 1000, step: 100, playPath: '/periodic-table#element-quiz-title', image: '/images/chemistry-art.jpg' },
 } as const
@@ -25,7 +25,7 @@ export function parseGameResult(mode: string, score: string) {
 
 export function gameResultPath(mode: ShareableGame, score: number, level?: ResultLevel | null) {
   const path = `/games/results/${mode}/${score}`
-  return mode === 'genius' && level ? `${path}?level=${level}` : path
+  return (mode === 'genius' || mode === 'logic') && level ? `${path}?level=${level}` : path
 }
 
 export function facebookShareUrl(resultUrl: string) {

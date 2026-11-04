@@ -17,6 +17,8 @@ const prerenderedContentRoutes = [
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
+  // Production builds must not replace a running dev server's generated aliases.
+  $production: { buildDir: '.nuxt-build' },
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],

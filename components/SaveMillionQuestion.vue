@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Bookmark, Check } from 'lucide-vue-next'
-import type { MillionQuestion } from '~/data/millionQuestions'
+import type { MillionaireQuestion as MillionQuestion } from '~/data/factum_millionaire_45'
 import { millionBookmarkId } from '~/utils/millionBookmarks'
 const props = defineProps<{ question: MillionQuestion; disabled?: boolean }>()
 const { saved, toggleSaved } = useProgress()

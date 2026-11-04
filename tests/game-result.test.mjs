@@ -21,7 +21,7 @@ test('each game shares every possible score with a distinct, reversible URL', ()
 test('invalid game names and scores cannot produce a result preview', () => {
   for (const mode of ['unknown', '__proto__', 'constructor']) assert.equal(parseGameResult(mode, '0'), null)
   for (const score of ['-1', '16', '1.5', 'NaN', 'Infinity', '', '01', '1e1', '<script>']) assert.equal(parseGameResult('million', score), null)
-  assert.equal(parseGameResult('logic', '6'), null)
+  assert.equal(parseGameResult('logic', '11'), null)
   assert.equal(parseGameResult('genius', '11'), null)
   assert.equal(parseGameResult('geography', '50'), null)
   assert.equal(parseGameResult('chemistry', '1001'), null)
@@ -37,19 +37,19 @@ test('result preview exposes the score in server-rendered Open Graph metadata', 
   assert.match(page, /ogUrl: \(\) => url.value/)
 })
 
-test('Genius shares each difficulty in its own Facebook result URL', async () => {
+test('Genius and Logic share each difficulty in distinct Facebook result URLs', async () => {
   const { parseResultLevel, resultLevels } = await import('../utils/gameResult.ts')
   const urls = new Set()
-  for (const level of Object.keys(resultLevels)) {
-    const url = new URL(gameResultPath('genius', 10, level), 'https://factum.example')
+  for (const mode of ['genius', 'logic']) for (const level of Object.keys(resultLevels)) {
+    const url = new URL(gameResultPath(mode, 10, level), 'https://factum.example')
     assert.equal(parseResultLevel(url.searchParams.get('level')), level)
     assert.equal(new URL(facebookShareUrl(url.href)).searchParams.get('u'), url.href)
     urls.add(url.href)
   }
-  assert.equal(urls.size, 3)
+  assert.equal(urls.size, 6)
   for (const invalid of [undefined, null, '', 'unknown', '__proto__', ['hard']]) {
     assert.equal(parseResultLevel(invalid), null)
   }
   assert.equal(gameResultPath('genius', 10), '/games/results/genius/10')
-  assert.equal(gameResultPath('logic', 5, 'hard'), '/games/results/logic/5')
+  assert.equal(gameResultPath('logic', 10, 'hard'), '/games/results/logic/10?level=hard')
 })

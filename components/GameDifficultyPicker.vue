@@ -27,7 +27,7 @@ const gameTitles = {
     <p class="muted mt-3 mb-7">{{ game === 'million' ? 'Յուրաքանչյուր ռեժիմում կա 15 հարց՝ բարդացող երեք հնգյակով։ Հաջորդ ռեժիմը կբացվի միայն բոլոր 15 հարցերին ճիշտ պատասխանելուց հետո։' : 'Անցիր մակարդակը՝ ճիշտ պատասխանելով հարցերի առնվազն 80%-ին։ Հաջորդ մակարդակը կբացվի միայն հաջող ավարտից հետո։' }}</p>
 
     <section class="difficulty-list" aria-label="Ընտրիր խաղի բարդությունը">
-      <article v-for="(level, index) in gameDifficulties" :key="level.id" class="panel difficulty-card" :class="{ 'is-locked': index > unlockedIndex }">
+      <article v-for="(level, index) in gameDifficulties" :key="level.id" class="panel difficulty-card" :class="{ 'is-locked': index > unlockedIndex, 'is-complete': completedLevels?.includes(level.id) || index < unlockedIndex }">
         <div class="difficulty-icon" aria-hidden="true">{{ level.icon }}</div>
         <div class="difficulty-copy">
           <h2>{{ level.title }}</h2>
@@ -53,6 +53,9 @@ const gameTitles = {
 .difficulty-copy h2 { font-size: 17px; font-weight: 750; }
 .difficulty-status { margin-top: 5px; color: #aebbd0; font-size: 12px; }
 .difficulty-status.is-complete { color: #86c6a2; }
+.difficulty-card.is-complete { border-color: #86c6a266; background: #86c6a20a; }
+.difficulty-card.is-complete .difficulty-icon { background: #86c6a21a; }
+.difficulty-card.is-complete h2 { color: #b7e0c6; }
 .difficulty-card.is-locked { opacity: .58; }
 .difficulty-button { min-width: 102px; }
 .difficulty-button:disabled { cursor: not-allowed; opacity: .55; }

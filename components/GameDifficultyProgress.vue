@@ -18,7 +18,7 @@ const currentIndex = computed(() => difficultyIndex(props.current))
       class="difficulty-step"
       :class="{
         'is-current': index === currentIndex,
-        'is-complete': (completedLevels?.includes(level.id) || index < unlockedIndex) && index !== currentIndex,
+        'is-complete': completedLevels?.includes(level.id) || index < unlockedIndex,
         'is-locked': index > unlockedIndex,
       }"
       :aria-current="index === currentIndex ? 'step' : undefined"
@@ -44,7 +44,7 @@ const currentIndex = computed(() => difficultyIndex(props.current))
 .step-copy small { font-size: 10px; }
 .difficulty-step.is-current { border-color: #dfc38f99; background: #dfc38f12; color: #dfc38f; }
 .difficulty-step.is-current .step-copy strong { color: #f3dba9; }
-.difficulty-step.is-complete { border-color: #86c6a266; color: #86c6a2; }
+.difficulty-step.is-complete { background: #86c6a20a; border-color: #86c6a266; color: #86c6a2; }
 .difficulty-step.is-complete .step-copy strong { color: #b7e0c6; }
 .difficulty-step.is-locked { opacity: .52; }
 @media (max-width: 560px) {
