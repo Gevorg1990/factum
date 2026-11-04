@@ -25,7 +25,7 @@ export function parseGameResult(mode: string, score: string) {
 
 export function gameResultPath(mode: ShareableGame, score: number, level?: ResultLevel | null) {
   const path = `/games/results/${mode}/${score}`
-  return (mode === 'genius' || mode === 'logic') && level ? `${path}?level=${level}` : path
+  return ['million', 'genius', 'logic'].includes(mode) && level ? `${path}?level=${level}` : path
 }
 
 export function facebookShareUrl(resultUrl: string) {

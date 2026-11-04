@@ -7,6 +7,7 @@ import { moduleUrl } from './helpers/catalog.mjs'
 import { geniusStatements } from '../data/geniusStatements.ts'
 import { logicPuzzles } from '../data/logicPuzzles.ts'
 import { parseGeniusRecord, geniusRecordKey } from '../utils/geniusRecord.ts'
+const { saveGameResult: saveResult, readGameRecords } = await import(moduleUrl(new URL('../utils/gameRecords.ts', import.meta.url)))
 const require = createRequire(import.meta.url)
 const ts = require('typescript')
 const { parse, compileTemplate, compileStyle } = require('@vue/compiler-sfc')
@@ -21,6 +22,7 @@ function setup(mode, level = 'easy') {
   assert.deepEqual(compileStyle({ source: descriptor.styles[0].content, filename, id: mode, scoped: true }).errors, [])
   const cleanup = [], mounted = [], cues = [], values = new Map(level === 'easy' ? [] : [['factum-million-mode-progress-v2', '2']])
   const context = {
+    saveGameResult: (mode, score, level) => saveResult(mode, score, level, context.localStorage),
     ...millionPool, geniusStatements, logicPuzzles, parseGeniusRecord, geniusRecordKey,
     ref, computed, exports: {}, setTimeout, clearTimeout,
     localStorage: { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) },
@@ -38,7 +40,7 @@ function setup(mode, level = 'easy') {
   runInNewContext(transpile(source + `;globalThis.game = { choose, next, index, selected, score, finished, soundEnabled, toggleSound, ${exported} };`), context)
   mounted.forEach(fn => fn())
   context.game.start(level)
-  return { game: context.game, cues, dispose() { cleanup.forEach(fn => fn()) } }
+  return { game: context.game, cues, records: () => readGameRecords(context.localStorage), dispose() { cleanup.forEach(fn => fn()) } }
 }
 for (const mode of ['million', 'genius', 'logic']) {
   test(`${mode}: manual next completes the game without skipping answer feedback`, () => {
@@ -54,6 +56,7 @@ for (const mode of ['million', 'genius', 'logic']) {
       if (g.stageTransition?.value) g.continueStage()
     }
     assert.equal(g.finished.value, true)
+    assert.equal(app.records().find(record => record.mode === mode)?.score, total)
     assert.ok(app.cues.includes('correct'))
     app.dispose()
   })

@@ -5,7 +5,7 @@ import { gameResultPath, parseGameResult, parseResultLevel, resultLevels } from 
 const route = useRoute()
 const result = computed(() => parseGameResult(String(route.params.mode), String(route.params.score)))
 if (!result.value) throw createError({ statusCode: 404, statusMessage: 'Result not found' })
-const level = computed(() => ['genius', 'logic'].includes(result.value?.mode || '') ? parseResultLevel(route.query.level) : null)
+const level = computed(() => ['million', 'genius', 'logic'].includes(result.value?.mode || '') ? parseResultLevel(route.query.level) : null)
 const levelTitle = computed(() => level.value ? `${resultLevels[level.value]} մակարդակ` : '')
 const origin = useRequestURL().origin
 const title = computed(() => `${result.value!.title}${levelTitle.value ? ` · ${levelTitle.value}` : ''}․ իմ արդյունքը՝ ${result.value!.score} / ${result.value!.total}`)

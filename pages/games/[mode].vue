@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { saveGameResult } from '~/utils/gameRecords'
 import { millionQuestions, type MillionQuestion, millionTiers, createMillionRound, type MillionTier } from '~/utils/millionQuestionPool'
 import { difficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
 
@@ -92,6 +93,7 @@ function choose(answer: number) {
 }
 function finishGame() {
   cancelNext(); finished.value = true
+  if (isMillion.value) saveGameResult('million', score.value, selectedMillionMode.value)
   if (score.value === total.value) {
     stopSound(); sound('win')
     if (isMillion.value && selectedMillionMode.value) unlockedMillionIndex.value = saveMillionProgress(selectedMillionMode.value)

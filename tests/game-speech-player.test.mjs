@@ -54,9 +54,10 @@ function setup(topic = 'geography', fakeTimers = false) {
     $fetch: async () => ({ available: true }),
     fetch: async (...args) => { requests.push(args); return fetcher(...args) },
   })
-  const quiz = exports.default.setup({ topic }, { expose() {}, emit() {} })
+  const props = vue.reactive({ topic, paused: false })
+  const quiz = exports.default.setup(props, { expose() {}, emit() {} })
   mounted.forEach(callback => callback())
-  return { quiz, audios, requests, utterances, recognitions, cues, roundModes,
+  return { quiz, props, audios, requests, utterances, recognitions, cues, roundModes,
     advanceFeedback: () => { for (const [id, timer] of [...timers]) if (timer.delay === 2500) { timers.delete(id); timer.fn() } },
     feedbackCount: () => [...timers.values()].filter(timer => timer.delay === 2500).length, setFetcher: fn => { fetcher = fn }, dispose: () => unmounted.forEach(callback => callback()) }
 }
@@ -313,4 +314,22 @@ test('chemistry offers only symbol-to-name rounds, while geography keeps all dir
   const geography = setup('geography')
   assert.deepEqual(Array.from(geography.quiz.modes.value, item => item.id), ['capital', 'country', 'mixed'])
   geography.dispose()
+})
+
+test('switching to earth interior pauses hidden quiz audio and feedback while preserving its score and answer', async () => {
+  const app = setup('geography', true)
+  app.quiz.start(); await tick()
+  app.quiz.answer.value = 'Երևան'
+  app.quiz.score.value = 300
+  app.props.paused = true
+  await vue.nextTick()
+  assert.equal(app.quiz.reading.value, false)
+  assert.equal(app.quiz.listening.value, false)
+  assert.equal(app.quiz.status.value, 'playing')
+  assert.equal(app.quiz.score.value, 300)
+  assert.equal(app.quiz.answer.value, 'Երևան')
+  app.props.paused = false
+  await vue.nextTick()
+  assert.equal(app.quiz.reading.value, false)
+  app.dispose()
 })

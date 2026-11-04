@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { allEncyclopediaQuestions, people, facts, timeline, subjects, collectionSubjects } from '~/data/content'
-import { resultLevels, type ResultLevel } from '~/utils/gameResult'
-import { geniusRecordKey, parseGeniusRecord, clearGeniusBest } from '~/utils/geniusRecord'
+import { resultLevels, shareableGames, type ShareableGame } from '~/utils/gameResult'
+import { optimizedImage } from '~/data/optimizedImages'
+import { readGameRecords, removeGameRecord, restoreGameRecord, gameRecordsEvent, type GameRecord, type RemovedGameRecord } from '~/utils/gameRecords'
 import { bibleBooks } from '~/data/bible'
 import { disintegrate, type Disintegration } from '~/utils/disintegrate'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
@@ -37,48 +38,45 @@ onBeforeUnmount(() => {
   removalEffects.clear()
 })
 
-type SavedCategory = 'encyclopedia' | 'million' | 'games' | 'bible' | 'facts' | 'people' | 'history' | 'other'
+type SavedCategory = 'encyclopedia' | 'games' | 'bible' | 'facts' | 'people' | 'history' | 'other'
 type SavedEntry = { id: string; title: string; to: string; kind: string; category: SavedCategory; sourceSection?: string; answer?: string; explanation?: string }
 const activeCategory = ref<SavedCategory | 'all'>('all')
-const geniusBestLevel = ref<ResultLevel | null>(null)
-const geniusBestScore = ref<number | null>(null)
-function refreshGeniusRecord() {
+const gameRecords = ref<GameRecord[]>([])
+const profileGameRecords = computed(() => gameRecords.value.map(record => ({
+  ...record, ...shareableGames[record.mode], category: 'games',
+})))
+function refreshGameRecords() { gameRecords.value = readGameRecords() }
+const removedGameRecord = ref<RemovedGameRecord | null>(null)
+function removeRecord(mode: ShareableGame) {
   try {
-    const record = parseGeniusRecord(localStorage.getItem(geniusRecordKey))
-    geniusBestLevel.value = record.bestLevel
-    geniusBestScore.value = record.best
-  } catch { geniusBestScore.value = null; geniusBestLevel.value = null }
+    removedGameRecord.value = removeGameRecord(mode)
+    refreshGameRecords()
+    removalMessage.value = `${shareableGames[mode].title}․ լավագույն արդյունքը ջնջվեց։ Անցած մակարդակները պահպանված են։`
+  } catch { removalMessage.value = 'Չհաջողվեց ջնջել արդյունքը։ Փորձիր կրկին։' }
 }
-const removedGeniusRecord = ref<string | null>(null)
-function removeGeniusRecord() {
+function undoGameRemoval() {
+  if (!removedGameRecord.value) return
   try {
-    removedGeniusRecord.value = clearGeniusBest(localStorage)
-    refreshGeniusRecord()
-    removalMessage.value = 'Genius-ի լավագույն արդյունքը ջնջվեց։ Անցած մակարդակները պահպանված են։'
-  } catch {
-    removalMessage.value = 'Չհաջողվեց ջնջել արդյունքը։ Փորձիր կրկին։'
-  }
-}
-function undoGeniusRemoval() {
-  if (removedGeniusRecord.value === null) return
-  try {
-    localStorage.setItem(geniusRecordKey, removedGeniusRecord.value)
-    removedGeniusRecord.value = null
-    refreshGeniusRecord()
-    removalMessage.value = 'Genius-ի լավագույն արդյունքը վերականգնվեց։'
+    restoreGameRecord(removedGameRecord.value)
+    removedGameRecord.value = null
+    refreshGameRecords()
+    removalMessage.value = 'Լավագույն արդյունքը վերականգնվեց։'
   } catch { removalMessage.value = 'Չհաջողվեց վերականգնել արդյունքը։' }
 }
 onMounted(() => {
-  refreshGeniusRecord()
-  window.addEventListener('storage', refreshGeniusRecord)
+  refreshGameRecords()
+  window.addEventListener('storage', refreshGameRecords)
+  window.addEventListener(gameRecordsEvent, refreshGameRecords)
+  window.addEventListener('focus', refreshGameRecords)
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('storage', refreshGeniusRecord)
+  window.removeEventListener('storage', refreshGameRecords)
+  window.removeEventListener(gameRecordsEvent, refreshGameRecords)
+  window.removeEventListener('focus', refreshGameRecords)
 })
 const sectionDefinitions = [
   { id: 'encyclopedia', title: 'Հանրագիտարան', icon: BookOpen, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
-  { id: 'million', title: 'Միլիոնատեր', icon: Trophy, description: 'Խաղի հարցերը՝ ճիշտ պատասխաններով', to: '/games/million' },
-  { id: 'games', title: 'Խաղեր', icon: Gamepad2, description: 'Լավագույն արդյունքներ և պահպանված խաղի հարցեր', to: '/games/genius' },
+  { id: 'games', title: 'Խաղեր', icon: Gamepad2, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
   { id: 'bible', title: 'Աստվածաշունչ', icon: ScrollText, description: 'Պահպանված գրքեր և գլուխներ', to: '/bible' },
   { id: 'facts', title: 'Հետաքրքիր փաստեր', icon: Sparkles, description: 'Քեզ հետաքրքրած փաստերն ու բացահայտումները', to: '/facts' },
   { id: 'people', title: 'Նշանավոր մարդիկ', icon: Users, description: 'Կենսագրություններ և ստեղծագործություններ', to: '/people' },
@@ -90,8 +88,8 @@ function describeEntry(id: string): SavedEntry {
   if (id.startsWith('million-')) {
     const question = findMillionBookmark(id)
     return question
-      ? { id, title: question.question, to: `/games/questions/${id}#saved-million-question`, kind: 'Միլիոնատերի հարց', category: 'million', answer: question.answers[question.correct], explanation: question.explanation }
-      : { id, title: 'Պահպանված հարցն այլևս հասանելի չէ', to: '/games/million', kind: 'Միլիոնատերի հարց', category: 'million' }
+      ? { id, title: question.question, to: `/games/questions/${id}#saved-million-question`, kind: 'Միլիոնատերի հարց', category: 'games', answer: question.answers[question.correct], explanation: question.explanation }
+      : { id, title: 'Պահպանված հարցն այլևս հասանելի չէ', to: '/games/million', kind: 'Միլիոնատերի հարց', category: 'games' }
   }
   if (id.startsWith('game-')) {
     const question = findGameBookmark(id)
@@ -142,13 +140,14 @@ function describeEntry(id: string): SavedEntry {
 }
 
 const savedEntries = computed(() => [...new Set(saved.value)].map(describeEntry))
-const savedCount = computed(() => savedEntries.value.length + (geniusBestScore.value !== null ? 1 : 0))
+const savedCount = computed(() => savedEntries.value.length + gameRecords.value.length)
 const sections = computed(() => sectionDefinitions.map(section => {
   const items = savedEntries.value.filter(item => item.category === section.id)
-  return { ...section, items, count: items.length + (section.id === 'games' && geniusBestScore.value !== null ? 1 : 0) }
+  const records = profileGameRecords.value.filter(record => record.category === section.id)
+  return { ...section, items, records, count: items.length + records.length }
 }))
-const categoryTabs = computed(() => sections.value.filter(section => ['encyclopedia','million','games','bible'].includes(section.id) || section.items.length || section.id === activeCategory.value))
-const shownSections = computed(() => sections.value.filter(section => activeCategory.value === 'all' ? section.items.length || (section.id === 'games' && geniusBestScore.value !== null) : section.id === activeCategory.value))
+const categoryTabs = computed(() => sections.value.filter(section => ['encyclopedia','games','bible'].includes(section.id) || section.items.length || section.id === activeCategory.value))
+const shownSections = computed(() => sections.value.filter(section => activeCategory.value === 'all' ? section.count : section.id === activeCategory.value))
 </script>
 
 <template>
@@ -157,41 +156,35 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
     <nav class="profile-categories" aria-label="Պահպանված նյութերի բաժիններ"><button :aria-pressed="activeCategory === 'all'" :class="{'is-active':activeCategory === 'all'}" @click="activeCategory='all'"><Bookmark :size="17" /> Բոլորը <span>{{savedCount}}</span></button><button v-for="section in categoryTabs" :key="section.id" :aria-pressed="activeCategory === section.id" :class="{'is-active':activeCategory === section.id}" @click="activeCategory=section.id"><component :is="section.icon" :size="17" />{{section.title}}<span>{{section.count}}</span></button></nav>
     <section v-for="section in shownSections" :key="section.id" class="profile-section" :aria-labelledby="`saved-section-${section.id}`">
       <header class="profile-section-heading"><div class="profile-section-icon"><component :is="section.icon" :size="23" /></div><div><h2 :id="`saved-section-${section.id}`">{{section.title}} <span>{{section.count}}</span></h2><p class="muted">{{section.description}}</p></div></header>
-      <article v-if="section.id === 'games'" class="panel profile-game-record">
+      <article v-for="record in section.records" :key="record.mode" class="panel profile-game-record">
         <div class="genius-record-art">
-          <img src="/images/optimized/genius-art-c410cd085a.webp" alt="Genius խաղի լուսավոր ուղեղի պատկերազարդումը" width="640" height="358" loading="lazy" decoding="async" />
-          <span class="genius-record-label"><Gamepad2 :size="15" aria-hidden="true" /> ՃԻՇՏ ԿԱՄ ՍԽԱԼ</span>
+          <img :src="optimizedImage(record.image)" :alt="record.title" width="640" height="358" loading="lazy" decoding="async" />
+          <span class="genius-record-label"><Gamepad2 :size="15" aria-hidden="true" /> {{ record.title }}</span>
         </div>
         <div class="genius-record-content">
           <div class="genius-record-top">
             <span class="genius-record-eyebrow"><Trophy :size="15" aria-hidden="true" /> ՔՈ ԱՆՁՆԱԿԱՆ ՌԵԿՈՐԴԸ</span>
-            <button v-if="geniusBestScore !== null" type="button" class="profile-remove" aria-label="Ջնջել Genius-ի լավագույն արդյունքը" @click="removeGeniusRecord"><Trash2 :size="15" aria-hidden="true" /> Ջնջել</button>
+            <button type="button" class="profile-remove" :aria-label="`Ջնջել ${record.title}-ի լավագույն արդյունքը`" @click="removeRecord(record.mode)"><Trash2 :size="15" aria-hidden="true" /> Ջնջել</button>
           </div>
-          <h3>FACTUM <span>Genius</span></h3>
-          <template v-if="geniusBestScore !== null">
-            <p class="muted genius-record-caption">Քո լավագույն արդյունքը</p>
-            <p class="genius-record-level">{{ geniusBestLevel ? `${resultLevels[geniusBestLevel]} մակարդակ` : 'Մակարդակը չի պահպանվել' }}</p>
-            <p v-if="!geniusBestLevel" class="muted genius-record-description">Սա նախկինում գրանցված արդյունք է։ Մակարդակը կպահպանվի նոր խաղում նույն կամ ավելի բարձր միավոր ստանալիս։</p>
-            <p class="genius-record-score"><strong>{{ geniusBestScore }}</strong><span>/ 10</span></p>
-            <p class="muted genius-record-description">{{ geniusBestScore === 10 ? 'Կատարյալ արդյունք․ բոլոր պատասխանները ճիշտ են։' : 'Նոր փորձ, նոր բացահայտումներ․ բարելավիր քո ռեկորդը։' }}</p>
-            <div class="genius-record-actions">
-              <GameResultShare mode="genius" :score="geniusBestScore" :level="geniusBestLevel" />
-              <NuxtLink to="/games/genius" class="btn-secondary">Խաղալ կրկին <ArrowUpRight :size="16" aria-hidden="true" /></NuxtLink>
-            </div>
-          </template>
-          <template v-else>
-            <p class="muted genius-record-description">Փորձիր գիտելիքներդ․ ավարտիր առաջին խաղը և պահպանիր քո լավագույն արդյունքն այստեղ։</p>
-            <NuxtLink to="/games/genius" class="btn genius-record-start">Խաղալ Genius <ArrowUpRight :size="16" aria-hidden="true" /></NuxtLink>
-          </template>
+          <h3>{{ record.title }}</h3>
+          <p class="muted genius-record-caption">Քո լավագույն արդյունքը</p>
+          <p v-if="record.level" class="genius-record-level">{{ resultLevels[record.level] }} մակարդակ</p>
+          <p v-else-if="['genius', 'logic', 'million'].includes(record.mode)" class="genius-record-level">Մակարդակը չի պահպանվել</p>
+          <p class="genius-record-score"><strong>{{ record.score }}</strong><span>/ {{ record.total }}</span></p>
+          <p class="muted genius-record-description">{{ record.score === record.total ? 'Կատարյալ արդյունք․ բոլոր պատասխանները ճիշտ են։' : 'Նոր փորձ, նոր բացահայտումներ․ բարելավիր քո ռեկորդը։' }}</p>
+          <div class="genius-record-actions">
+            <GameResultShare :mode="record.mode" :score="record.score" :level="record.level" />
+            <NuxtLink :to="record.playPath" class="btn-secondary">Խաղալ կրկին <ArrowUpRight :size="16" aria-hidden="true" /></NuxtLink>
+          </div>
         </div>
       </article>
-      <div v-if="section.items.length" class="profile-entry-grid"><article v-for="item in section.items" :key="item.id" class="panel profile-entry" :aria-busy="removing.has(item.id)" :class="{'profile-million-entry':item.category === 'million', 'is-removing':removing.has(item.id)}"><div class="profile-entry-top"><div class="profile-entry-labels"><span class="gold">{{item.kind}}</span><span v-if="item.sourceSection" class="profile-entry-source">{{item.sourceSection}}</span></div><button class="profile-remove" :disabled="removing.has(item.id)" :aria-label="`${item.title}՝ հեռացնել պահպանվածներից`" @click="removeEntry(item.id, $event)"><Trash2 :size="15" /> Հեռացնել</button></div><NuxtLink :to="item.to" class="profile-entry-title">{{item.title}} <ArrowUpRight :size="16" /></NuxtLink><div v-if="item.answer" class="profile-answer"><span><Check :size="15" /> Ճիշտ պատասխան</span><strong>{{item.answer}}</strong></div><p v-if="item.explanation" class="profile-explanation">{{item.explanation}}</p></article></div>
-      <div v-else-if="section.id !== 'games'" class="panel profile-empty"><component :is="section.icon" :size="30" /><p>Այս բաժնում դեռ պահպանված նյութեր չկան։</p><NuxtLink :to="section.to" class="btn-secondary">Բացահայտել բաժինը <ArrowUpRight :size="15" /></NuxtLink></div>
+      <div v-if="section.items.length" class="profile-entry-grid"><article v-for="item in section.items" :key="item.id" class="panel profile-entry" :aria-busy="removing.has(item.id)" :class="{'is-removing':removing.has(item.id)}"><div class="profile-entry-top"><div class="profile-entry-labels"><span class="gold">{{item.kind}}</span><span v-if="item.sourceSection" class="profile-entry-source">{{item.sourceSection}}</span></div><button class="profile-remove" :disabled="removing.has(item.id)" :aria-label="`${item.title}՝ հեռացնել պահպանվածներից`" @click="removeEntry(item.id, $event)"><Trash2 :size="15" /> Հեռացնել</button></div><NuxtLink :to="item.to" class="profile-entry-title">{{item.title}} <ArrowUpRight :size="16" /></NuxtLink><div v-if="item.answer" class="profile-answer"><span><Check :size="15" /> Ճիշտ պատասխան</span><strong>{{item.answer}}</strong></div><p v-if="item.explanation" class="profile-explanation">{{item.explanation}}</p></article></div>
+      <div v-else-if="!section.records.length" class="panel profile-empty"><component :is="section.icon" :size="30" /><p>Այս բաժնում դեռ պահպանված նյութեր չկան։</p><NuxtLink :to="section.to" class="btn-secondary">Բացահայտել բաժինը <ArrowUpRight :size="15" /></NuxtLink></div>
     </section>
     <div v-if="activeCategory === 'all' && !savedCount" class="panel profile-empty"><Bookmark :size="32" /><h2>Քո հավաքածուն սկսվում է մեկ պահպանումից</h2><p class="muted">Պահպանիր հոդվածներ, Միլիոնատերի հարցեր կամ Աստվածաշնչի գլուխներ․ դրանք կհայտնվեն իրենց բաժիններում։</p><NuxtLink to="/subjects" class="btn">Բացահայտել հանրագիտարանը</NuxtLink></div>
     <div v-if="removalMessage" class="profile-removal-status" role="status">
       <p>{{ removalMessage }}</p>
-      <button v-if="removedGeniusRecord !== null" type="button" class="btn-secondary" @click="undoGeniusRemoval">Վերականգնել արդյունքը</button>
+      <button v-if="removedGameRecord !== null" type="button" class="btn-secondary" @click="undoGameRemoval">Վերականգնել արդյունքը</button>
     </div>
     <p class="profile-storage-note muted">Հյուրի ռեժիմ․ տվյալները պահվում են այս բրաուզերում։ Սարքերի համաժամեցում դեռ միացված չէ։</p>
   </main>

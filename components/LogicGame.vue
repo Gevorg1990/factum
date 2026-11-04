@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { saveGameResult } from '~/utils/gameRecords'
 import { logicPuzzles, type LogicPuzzle } from '~/data/logicPuzzles'
 import GameDifficultyPicker from '~/components/GameDifficultyPicker.vue'
 import { difficultyIndex, difficultyTitle, requiredCorrectAnswers, saveDifficultyProgress, unlockedDifficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
@@ -75,6 +76,7 @@ function next() {
   stopSound()
   if (index.value === round.value.length - 1) {
     finished.value = true
+    saveGameResult('logic', score.value, level.value)
     if (passed.value && level.value) {
       const previouslyUnlocked = Math.max(unlockedIndex.value, unlockedDifficultyIndex('logic'))
       unlockedIndex.value = saveDifficultyProgress('logic', level.value)

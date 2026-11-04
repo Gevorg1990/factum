@@ -7,7 +7,7 @@ import { createCapitalRounds, type CapitalQuizMode } from '~/utils/capitalQuiz'
 
 import { createElementRounds, symbolSpeechAliases } from '~/utils/elementQuiz'
 import { formatVoiceTranscript, isVoiceAnswerCorrect, type VoiceQuestion } from '~/utils/voiceQuiz'
-const props = withDefaults(defineProps<{ topic?: 'geography' | 'chemistry' }>(), { topic: 'geography' })
+const props = withDefaults(defineProps<{ topic?: 'geography' | 'chemistry'; paused?: boolean }>(), { topic: 'geography', paused: false })
 const feedbackAudio = useMillionAudio()
 feedbackAudio.enabled.value = true
 const chemistry = computed(() => props.topic === 'chemistry')
@@ -260,6 +260,7 @@ function next() {
   else startAutoListening()
 }
 function exit() { clearFeedbackTimer(); stopAudio(); status.value = 'idle'; speechError.value = '' }
+watch(() => props.paused, paused => { if (paused) { clearFeedbackTimer(); stopAudio() } })
 watch(autoListen, enabled => { if (!enabled) stopListening() })
 onMounted(() => {
   questionAudio = new Audio()

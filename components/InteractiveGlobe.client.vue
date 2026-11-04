@@ -214,6 +214,7 @@ function keyRotate(event: KeyboardEvent) {
 function reset() { selectedContinent.value = null; rotation.value = [-45, -25, 0]; zoom.value = 1; hovered.value = null }
 onMounted(load)
 onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFrame(frame) })
+defineExpose({ getSurfaceFeatures: () => countries.value })
 </script>
 
 <template>

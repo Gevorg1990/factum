@@ -1,9 +1,11 @@
+import { moduleUrl } from './helpers/catalog.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { logicPuzzles } from '../data/logicPuzzles.ts'
+const { saveGameResult: saveResult, readGameRecords } = await import(moduleUrl(new URL('../utils/gameRecords.ts', import.meta.url)))
 const require = createRequire(import.meta.url)
 const ts = require('typescript')
 const { ref, computed } = require('vue')
@@ -15,6 +17,7 @@ function setup(random = Math.random) {
   const randomMath = Object.create(Math)
   randomMath.random = random
   const context = {
+    saveGameResult: (mode, score, level) => saveResult(mode, score, level, context.localStorage),
     Math: randomMath,
     ref, computed, logicPuzzles, exports: {},
     localStorage: { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) },

@@ -12,10 +12,38 @@ const tooltipStyle = ref<CSSProperties>({})
 const preview = computed(() => hovered.value ?? selected.value)
 const detailPanel = ref<HTMLElement | null>(null)
 const quizNavigation = ref(false)
+const labTab = ref<'table' | 'atoms'>('table')
+const atomPanel = ref<HTMLElement | null>(null)
+function selectAtomElement(number: number) {
+  const element = periodicElements.find(item => item.number === number)
+  if (element) selected.value = element
+  hideTooltip()
+}
+async function openAtom(element: PeriodicElement = selected.value) {
+  selected.value = element
+  hideTooltip()
+  labTab.value = 'atoms'
+  await nextTick()
+  atomPanel.value?.focus({ preventScroll: true })
+}
+function switchLabTab(tab: 'table' | 'atoms') {
+  hideTooltip()
+  labTab.value = tab
+}
+async function labTabKeyboard(event: KeyboardEvent) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+  event.preventDefault()
+  const tab = event.key === 'Home' ? 'table' : event.key === 'End' ? 'atoms' : labTab.value === 'table' ? 'atoms' : 'table'
+  switchLabTab(tab)
+  await nextTick()
+  document.getElementById(`chemistry-tab-${tab}`)?.focus()
+}
+
 async function showInTable(number: number) {
   const element = periodicElements.find(item => item.number === number)
   if (!element) return
   clearFilters()
+  labTab.value = 'table'
   selected.value = element
   hideTooltip()
   quizNavigation.value = true
@@ -84,12 +112,19 @@ onBeforeUnmount(() => {
       <p class="encyclopedia-eyebrow">FACTUM · ՔԻՄԻԱ</p>
       <h1><Atom :size="32" aria-hidden="true" /> Մենդելեևի աղյուսակ</h1>
       <p class="muted">118 տարր, մի ամբողջ աշխարհ։ Պահիր ցուցիչը տարրի վրա կամ սեղմիր՝ դրա հատկությունները բացահայտելու համար։</p>
-      <a href="#element-quiz-title" class="btn-secondary periodic-game-link"><Mic :size="17" /> Փորձիր ձայնային խաղը</a>
+      <a v-if="labTab === 'table'" href="#element-quiz-title" class="btn-secondary periodic-game-link"><Mic :size="17" /> Փորձիր ձայնային խաղը</a>
     </header>
 
+    <nav class="chemistry-lab-tabs" role="tablist" aria-label="Քիմիական լաբորատորիա" @keydown="labTabKeyboard">
+      <button id="chemistry-tab-table" type="button" role="tab" :aria-selected="labTab === 'table'" aria-controls="chemistry-panel-table" :tabindex="labTab === 'table' ? 0 : -1" @click="switchLabTab('table')"><Search :size="17" aria-hidden="true" /><span>Պարբերական աղյուսակ</span><small>118 տարր</small></button>
+      <button id="chemistry-tab-atoms" type="button" role="tab" :aria-selected="labTab === 'atoms'" aria-controls="chemistry-panel-atoms" :tabindex="labTab === 'atoms' ? 0 : -1" @click="switchLabTab('atoms')"><Atom :size="18" aria-hidden="true" /><span>Ատոմների 3D աշխարհ</span><small>Բացահայտիր կառուցվածքը</small></button>
+    </nav>
+
+    <section id="chemistry-panel-table" v-show="labTab === 'table'" role="tabpanel" aria-labelledby="chemistry-tab-table">
     <div class="periodic-intro-grid">
       <section ref="detailPanel" class="panel periodic-inspector" aria-label="Ընտրված տարրի հատկությունները">
         <PeriodicElementInfo :element="preview" />
+        <button type="button" class="btn-secondary periodic-open-atom" @click="openAtom(preview)"><Atom :size="18" aria-hidden="true" /> Դիտել 3D ատոմը <span>{{ preview.symbol }}</span></button>
         <a :href="`https://pubchem.ncbi.nlm.nih.gov/element/${preview.number}`" target="_blank" rel="noopener noreferrer" class="gold periodic-source">Տարրի տվյալները՝ PubChem-ում ↗</a>
       </section>
       <aside class="panel periodic-guide">
@@ -130,12 +165,21 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <ClientOnly><CapitalVoiceQuiz topic="chemistry" @show-in-table="showInTable" /></ClientOnly>
+    <ClientOnly v-if="labTab === 'table'"><CapitalVoiceQuiz topic="chemistry" @show-in-table="showInTable" /></ClientOnly>
 
     <footer class="periodic-notes muted">
       <p>Տվյալների աղբյուր՝ <a :href="periodicSource" target="_blank" rel="noopener noreferrer" class="gold">PubChem ↗</a> · տվյալների պատճեն՝ 28.10.2026։ Դասակարգումը հետևում է այս աղբյուրին։</p>
       <p>u-ն ատոմային զանգվածի միավորն է։ Ռադիոակտիվ տարրերից մի քանիսի համար աղբյուրը ներկայացնում է առանձին իզոտոպի զանգվածը։ Կանխատեսված հատկությունները նշված են, բացակայող արժեքները՝ «Տվյալ չկա»։</p>
     </footer>
+    </section>
+    <section v-if="labTab === 'atoms'" id="chemistry-panel-atoms" ref="atomPanel" role="tabpanel" aria-labelledby="chemistry-tab-atoms" tabindex="-1" class="chemistry-atom-panel">
+      <ClientOnly>
+        <Suspense>
+          <LazyChemistryAtomExplorer :element-number="selected.number" @select="selectAtomElement" @back="switchLabTab('table')" />
+          <template #fallback><div class="panel atom-panel-loading" role="status">Բացում ենք ատոմների աշխարհը…</div></template>
+        </Suspense>
+      </ClientOnly>
+    </section>
     <Teleport to="body">
       <div v-if="hovered" id="element-hover-card" class="periodic-tooltip" :style="tooltipStyle" role="tooltip" @pointerenter="cancelHide" @pointerleave="scheduleHide">
         <PeriodicElementInfo :element="hovered" compact />
@@ -146,6 +190,19 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .periodic-page { max-width: 1480px; }
+.chemistry-lab-tabs { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 26px; padding-bottom: 20px; border-bottom: 1px solid #8997c033; }
+.chemistry-lab-tabs button { display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; align-items: center; padding: 14px 20px; border: 1px solid #8997c044; border-radius: 13px; background: #11213a; color: #bfcee4; text-align: left; }
+.chemistry-lab-tabs button > svg { grid-row: span 2; color: #a6caff; }
+.chemistry-lab-tabs button span { font-size: 13px; font-weight: 700; }
+.chemistry-lab-tabs button small { font-size: 10px; color: #8fa7c8; }
+.chemistry-lab-tabs button[aria-selected="true"] { border-color: #dfc38faa; background: #dfc38f12; color: #f1dbb1; }
+.chemistry-lab-tabs button[aria-selected="true"] > svg { color: #dfc38f; }
+.chemistry-lab-tabs button:focus-visible, .periodic-open-atom:focus-visible { outline: 2px solid #dfc38f; outline-offset: 3px; }
+.periodic-open-atom { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 22px; font-size: 13px; }
+.periodic-open-atom > span { font-weight: 800; padding-left: 10px; border-left: 1px solid #dfc38f44; }
+.chemistry-atom-panel:focus { outline: none; }
+.atom-panel-loading { padding: 70px 24px; text-align: center; color: #b7d5fa; }
+@media (max-width: 540px) { .chemistry-lab-tabs { gap: 8px; }.chemistry-lab-tabs button { flex: 1 1 180px; padding: 12px; }.periodic-open-atom { width: 100%; } }
 .periodic-game-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; font-size: 12px; }
 .periodic-quiz-return { flex-basis: 100%; font-size: 12px; padding-bottom: 8px; }
 .periodic-back { display: inline-flex; gap: 7px; align-items: center; }

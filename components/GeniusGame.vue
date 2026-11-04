@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { saveGameResult } from '~/utils/gameRecords'
 import { geniusStatements, type GeniusStatement } from '~/data/geniusStatements'
 import { geniusRecordKey, parseGeniusRecord } from '~/utils/geniusRecord'
 import GameDifficultyPicker from '~/components/GameDifficultyPicker.vue'
@@ -22,6 +23,7 @@ function loadRecord() {
   } catch { /* Storage may be unavailable. */ }
 }
 function saveRecord() {
+  saveGameResult('genius', score.value, level.value)
   if (score.value > bestScore.value || (score.value === bestScore.value && level.value && difficultyIndex(level.value) > difficultyIndex(bestLevel.value || undefined))) {
     bestScore.value = score.value
     bestLevel.value = level.value
