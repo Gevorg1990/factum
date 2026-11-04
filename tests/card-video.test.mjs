@@ -33,7 +33,7 @@ function setup(t,deferred=false,options={}){
  return {reader,video,plays}
 }
 
-test('repeat hover resumes interrupted clips and retains completed frames until replay',async t=>{
+test('repeat hover resumes interrupted clips and loops previews while hovered',async t=>{
  const {reader,video,plays}=setup(t)
  assert.equal(plays.length,0)
  reader.pointerEnter({pointerType:'mouse'});await nextTick()
@@ -55,15 +55,16 @@ test('repeat hover resumes interrupted clips and retains completed frames until 
  assert.equal(video.src,'/videos/test.mp4')
  assert.equal(plays.length,3)
  video.currentTime=6
- reader.finishPlayback();reader.pointerLeave()
+ reader.finishPlayback()
  assert.equal(video.currentTime,6)
+ reader.pointerLeave()
  reader.pointerEnter({pointerType:'mouse'});await nextTick()
  assert.equal(video.src,'/videos/test.mp4')
  assert.equal(plays.length,4)
- assert.doesNotMatch(descriptor.template.content,/<video[^>]*\bloop\b/)
+ assert.match(descriptor.template.content,/<video[^>]*\bloop\b/)
 })
 
-test('replay holds the final frame until the restarted video presents a frame',async t=>{
+test('looping preview keeps playing while hovered and pauses after pointer leaves',async t=>{
  const {reader,video}=setup(t)
  let drawn=0, reveal
  video.videoWidth=640;video.videoHeight=360
@@ -74,15 +75,12 @@ test('replay holds the final frame until the restarted video presents a frame',a
  video.currentTime=6;reader.finishPlayback();reader.pointerLeave()
  assert.equal(video.currentTime,6)
  reader.pointerEnter({pointerType:'mouse'})
- assert.equal(reader.holdingLastFrame.value,true)
- assert.equal(video.currentTime,6)
- await nextTick();await nextTick();await nextTick()
- assert.equal(drawn,1)
- assert.equal(video.currentTime,0)
- assert.equal(video.src,'/videos/test.mp4')
- assert.equal(reader.holdingLastFrame.value,true)
- reveal()
  assert.equal(reader.holdingLastFrame.value,false)
+ assert.equal(video.currentTime,6)
+ assert.equal(video.src,'/videos/test.mp4')
+ assert.equal(!video.paused,true)
+ reader.pointerLeave()
+ assert.equal(video.paused,true)
 })
 
 test('an old interrupted play promise cannot hide the new hover preview',async t=>{

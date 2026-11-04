@@ -76,10 +76,16 @@ function toggleQuestion(id: string) {
     <NuxtLink to="/subjects" class="gold">← Բոլոր առարկաները</NuxtLink>
 
     <div class="encyclopedia-subject-hero mt-5">
-      <img
-        :src="subjectImages[slug] || '/images/space-art.jpg'"
-        :alt="subject?.name || 'Առարկա'"
-      >
+      <video
+        v-if="['space', 'finance', 'health', 'literature'].includes(slug)"
+        :poster="`/images/optimized/${slug}-video-first-frame.webp`"
+        muted
+        playsinline
+        controls
+        preload="none"
+        :src="`/videos/previews/${{ space: 'Solar_system_planets_orbiting_sun_d14eb8ab', finance: 'Brass_scales_book_coins_abacus_db917ecf', health: 'Holographic_human_body_and_DNA_270d202e', literature: 'Magical_figures_emerge_from_book_f81aa87e' }[slug]}.mp4`"
+      />
+      <img v-else :src="subjectImages[slug] || '/images/space-art.jpg'" :alt="subject?.name || 'Առարկա'">
       <div class="encyclopedia-subject-hero-content">
         <p class="encyclopedia-eyebrow">FACTUM · ՀԱՆՐԱԳԻՏԱՐԱՆ</p>
         <h1 class="heading">{{ subject?.name || 'Առարկա' }}</h1>

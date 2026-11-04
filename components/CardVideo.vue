@@ -52,6 +52,8 @@ function updatePlayback() {
   }).catch(() => { /* Keep the native poster/frame visible when playback is blocked. */ })
 }
 function finishPlayback() {
+  // A card preview repeats only while the user is still engaging with the card.
+  if (shouldPlay()) return
   completed.value = true
 }
 async function startPreview() {
@@ -155,7 +157,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="card-video" aria-hidden="true">
-    <video ref="video" :poster="poster" muted playsinline @ended="finishPlayback" preload="none" loading="lazy" tabindex="-1" />
+    <video ref="video" :poster="poster" muted playsinline loop @ended="finishPlayback" preload="none" loading="lazy" tabindex="-1" />
     <canvas ref="replayFrame" class="replay-frame" :class="{ 'is-holding': holdingLastFrame }" />
   </div>
 </template>
@@ -165,4 +167,5 @@ onBeforeUnmount(() => {
 .card-video > :is(video, canvas) { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; border: 0; object-fit: cover; object-position: inherit; }
 .replay-frame { opacity: 0; transition: opacity 260ms ease; }
 .replay-frame.is-holding { opacity: 1; transition: none; }
+@media (prefers-reduced-motion: reduce) { .replay-frame { transition: none; } }
 </style>

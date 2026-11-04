@@ -69,7 +69,6 @@ function imageForSubject(slug: string): string {
         :key="subject.slug"
         :to="`/subjects/${subject.slug}`"
         class="encyclopedia-tile"
-        :title="subject.name"
         :style="{ '--card-accent': cardTheme(subject.slug).color }"
       >
         <CardVideo v-if="subject.slug === 'music'" src="/videos/previews/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/optimized/video-first-frame-c6e2a98273d1.webp" />
@@ -83,7 +82,10 @@ function imageForSubject(slug: string): string {
         <CardVideo v-else-if="subject.slug === 'history'" src="/videos/previews/Ancient_monuments_under_drifting…_8c16c027.mp4" poster="/images/optimized/video-first-frame-109d93bdc887.webp" />
         <CardVideo v-else-if="subject.slug === 'linguistics'" src="/videos/previews/Magical_tree_sprouting_from_book_4ffec4a6.mp4" poster="/images/optimized/video-first-frame-b36b975b4af1.webp" />
         <CardVideo v-else-if="subject.slug === 'technology'" src="/videos/previews/Cyberpunk_city_lights_at_night_6d880cd4.mp4" poster="/images/optimized/video-first-frame-c52d37ab7a2d.webp" />
-        <CardVideo v-else-if="subject.slug === 'space'" src="/videos/previews/Planets_orbit_the_sun_bd41aa81.mp4" poster="/images/optimized/video-first-frame-dfd8d71721c8.webp" />
+        <CardVideo v-else-if="subject.slug === 'space'" src="/videos/previews/Solar_system_planets_orbiting_sun_d14eb8ab.mp4" poster="/images/optimized/space-video-first-frame.webp" />
+        <CardVideo v-else-if="subject.slug === 'finance'" src="/videos/previews/Brass_scales_book_coins_abacus_db917ecf.mp4" poster="/images/optimized/finance-video-first-frame.webp" />
+        <CardVideo v-else-if="subject.slug === 'health'" src="/videos/previews/Holographic_human_body_and_DNA_270d202e.mp4" poster="/images/optimized/health-video-first-frame.webp" />
+        <CardVideo v-else-if="subject.slug === 'literature'" src="/videos/previews/Magical_figures_emerge_from_book_f81aa87e.mp4" poster="/images/optimized/literature-video-first-frame.webp" />
         <img
           v-else
           :src="imageForSubject(subject.slug)"
