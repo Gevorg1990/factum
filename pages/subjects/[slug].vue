@@ -28,6 +28,12 @@ const subjectImages: Record<string, string> = {
   finance: '/images/optimized/finance-coins-large-2a9c80b1.webp',
 }
 
+const subjectIntroductions: Record<string, string> = {
+  finance: 'Բացահայտիր, թե ինչպես են աշխատում փողը, շուկաները և անձնական բյուջեն։',
+  health: 'Ծանոթացիր մարդու մարմնի կառուցվածքին, օրգանների աշխատանքին և առողջ սովորություններին։',
+  literature: 'Բացահայտիր գրական ժանրերը, ստեղծագործությունների կառուցվածքը և լեզվի արտահայտչական միջոցները։',
+}
+
 const filter = ref('all')
 const opened = ref<string[]>([])
 const searchQuery = ref('')
@@ -77,13 +83,13 @@ function toggleQuestion(id: string) {
 
     <div class="encyclopedia-subject-hero mt-5">
       <video
-        v-if="['space', 'finance', 'health', 'literature'].includes(slug)"
-        :poster="`/images/optimized/${slug}-video-first-frame.webp`"
+        v-if="slug === 'space'"
+        poster="/images/optimized/space-video-first-frame.webp"
         muted
         playsinline
         controls
         preload="none"
-        :src="`/videos/previews/${{ space: 'Solar_system_planets_orbiting_sun_d14eb8ab', finance: 'Brass_scales_book_coins_abacus_db917ecf', health: 'Holographic_human_body_and_DNA_270d202e', literature: 'Magical_figures_emerge_from_book_f81aa87e' }[slug]}.mp4`"
+        src="/videos/previews/Solar_system_planets_orbiting_sun_d14eb8ab.mp4"
       />
       <img v-else :src="subjectImages[slug] || '/images/space-art.jpg'" :alt="subject?.name || 'Առարկա'">
       <div class="encyclopedia-subject-hero-content">
@@ -93,6 +99,7 @@ function toggleQuestion(id: string) {
       </div>
     </div>
 
+    <p v-if="subjectIntroductions[slug]" class="muted mt-5">{{ subjectIntroductions[slug] }}</p>
     <p class="muted mb-4 mt-5">{{ items.length }} նյութ՝ բացատրություններով և օրինակներով։ Ընտրիր հարցը՝ կարճ պատասխանը տեսնելու համար։ Մանրամասն բացատրությունը՝ հարցի էջում։</p>
 
     <div class="h-2 rounded bg-slate-700 mb-6 overflow-hidden">
