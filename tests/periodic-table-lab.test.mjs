@@ -64,3 +64,21 @@ test('tab navigation supports arrows, Home and End; the existing quiz can still 
   assert.equal(focused.at(-1), 'periodic-element-26')
   dispose()
 })
+
+test('filtered-out elements cannot open a hover card and filter changes close stale cards', async () => {
+  const { page, dispose } = setup()
+  const iron = elements.periodicElements.find(element => element.symbol === 'Fe')
+  const helium = elements.periodicElements.find(element => element.symbol === 'He')
+  page.family.value = 'noble'
+  await vue.nextTick()
+  page.showTooltip(iron, {})
+  assert.equal(page.hovered.value, null)
+  page.hovered.value = helium
+  page.query.value = 'He'
+  await vue.nextTick()
+  assert.equal(page.hovered.value.symbol, 'He')
+  page.query.value = 'Ne'
+  await vue.nextTick()
+  assert.equal(page.hovered.value, null)
+  dispose()
+})

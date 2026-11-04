@@ -61,6 +61,9 @@ function matches(element: PeriodicElement) {
 }
 const matchCount = computed(() => periodicElements.filter(matches).length)
 const filtered = computed(() => !!query.value.trim() || !!family.value)
+watch([query, family], () => {
+  if (hovered.value && !matches(hovered.value)) hideTooltip()
+})
 function clearFilters() { query.value = ''; family.value = '' }
 function cancelHide() { clearTimeout(hideTimer) }
 function hideTooltip() {
@@ -69,17 +72,25 @@ function hideTooltip() {
 }
 function scheduleHide() {
   clearTimeout(hideTimer)
-  hideTimer = setTimeout(hideTooltip, 140)
+  hideTimer = setTimeout(hideTooltip, 320)
 }
 function showTooltip(element: PeriodicElement, event: Event) {
+  if (!matches(element)) { hideTooltip(); return }
   if (event instanceof PointerEvent && event.pointerType !== 'mouse') return
   clearTimeout(hideTimer)
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   const width = Math.min(350, window.innerWidth - 24)
-  const height = Math.min(390, window.innerHeight - 32)
+  const gap = 4
+  const below = window.innerHeight - rect.bottom - gap - 12
+  const above = rect.top - gap - 12
+  const placeBelow = below >= 400 || below >= above
+  const height = Math.max(0, Math.min(480, placeBelow ? below : above))
   const left = Math.max(12, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 12))
-  const top = rect.bottom + 12 + height <= window.innerHeight ? rect.bottom + 12 : Math.max(12, rect.top - height - 12)
-  tooltipStyle.value = { left: `${left}px`, top: `${top}px`, width: `${width}px`, maxHeight: `${height}px` }
+  // Anchor the nearest edge so short cards also stay beside their element.
+  tooltipStyle.value = {
+    left: `${left}px`, width: `${width}px`, maxHeight: `${height}px`,
+    ...(placeBelow ? { top: `${rect.bottom + gap}px` } : { bottom: `${window.innerHeight - rect.top + gap}px` }),
+  }
   hovered.value = element
 }
 async function selectElement(element: PeriodicElement) {
@@ -181,7 +192,7 @@ onBeforeUnmount(() => {
       </ClientOnly>
     </section>
     <Teleport to="body">
-      <div v-if="hovered" id="element-hover-card" class="periodic-tooltip" :style="tooltipStyle" role="tooltip" @pointerenter="cancelHide" @pointerleave="scheduleHide">
+      <div v-if="hovered" id="element-hover-card" class="periodic-tooltip" :style="tooltipStyle" role="tooltip" @pointerenter="cancelHide" @pointerleave="scheduleHide" @focusin="cancelHide" @focusout="scheduleHide">
         <PeriodicElementInfo :element="hovered" compact />
       </div>
     </Teleport>
@@ -232,10 +243,10 @@ onBeforeUnmount(() => {
 .periodic-grid { display: grid; grid-template-columns: 20px repeat(18, minmax(0, 1fr)); grid-template-rows: 22px repeat(7, 88px) 16px repeat(2, 88px); gap: 5px; min-width: 1100px; }
 .periodic-group, .periodic-period { display: flex; justify-content: center; align-items: center; color: #aebbd4; font-size: 11px; }
 .periodic-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 5px 2px; border-radius: 7px; border: 1px solid color-mix(in srgb, var(--element-accent) 45%, #162039); background: color-mix(in srgb, var(--element-accent) 12%, #0c1529); color: #eef4ff; transition: background .15s, opacity .15s, border-color .15s; }
-.periodic-cell:hover, .periodic-cell.is-previewed { border-color: var(--element-accent); background: color-mix(in srgb, var(--element-accent) 24%, #0c1529); }
+.periodic-cell:not(.is-muted):hover, .periodic-cell.is-previewed { border-color: var(--element-accent); background: color-mix(in srgb, var(--element-accent) 24%, #0c1529); }
 .periodic-cell.is-selected { outline: 2px solid var(--element-accent); outline-offset: 1px; }
 .periodic-cell.is-muted { opacity: .22; }
-.periodic-cell.is-muted:hover, .periodic-cell.is-muted:focus-visible { opacity: 1; }
+.periodic-cell.is-muted:focus-visible { opacity: 1; }
 .periodic-cell:focus-visible, .periodic-scroll:focus-visible, .periodic-legend button:focus-visible, .periodic-clear:focus-visible { outline: 2px solid #eed8b0; outline-offset: 3px; }
 .periodic-cell-number { align-self: flex-start; font-size: 10px; line-height: 1; padding-left: 3px; color: #c3cce0; }
 .periodic-cell strong { font-size: 23px; line-height: 1.3; color: var(--element-accent); }

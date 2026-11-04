@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick } from 'vue'
 import AtomSelect from './AtomSelect.vue'
-import { Atom, RotateCcw, Pause, Play, Plus, Minus, Tag, Move, LoaderCircle, ChevronLeft, X } from 'lucide-vue-next'
+import { Atom, RotateCcw, Pause, Play, Plus, Minus, Move, LoaderCircle, ChevronLeft, X } from 'lucide-vue-next'
 import { periodicElements, elementFamilies } from '~/data/periodicTable'
 import { atomIsotopes, atomIsotopeSource, createAtomModel, defaultIsotope } from '~/utils/chemistry/atomModel'
 import { atomLessons } from '~/data/chemistry/atomLessons'
@@ -15,8 +15,6 @@ const element = computed(() => periodicElements.find(item => item.number === pro
 const configuration = computed(() => element.value.electronConfiguration.replace(/\s*\((?:calculated|predicted)\)/g, ''))
 const isotopeOptions = computed(() => atomIsotopes(element.value.number))
 const massNumber = ref(defaultIsotope(element.value.number)!)
-const shell = ref(0)
-const viewMode = ref<'cloud' | 'shells'>('shells')
 const guideStep = ref<number | null>(null)
 const lessonExpanded = ref(true)
 const lessonPanel = ref<HTMLElement | null>(null)
@@ -29,7 +27,6 @@ const cloudBusy = ref(false)
 const cloudError = ref(false)
 let sampler: ReturnType<typeof createOrbitalSampler> | undefined
 let cloudGeneration = 0
-const labelsVisible = ref(false)
 const playing = ref(false)
 const loading = ref(true)
 const error = ref(false)
@@ -38,13 +35,12 @@ let scene: AtomScene | undefined
 let disposed = false
 let loadingScene = false
 let motionPreference: MediaQueryList | undefined
-watch(() => element.value.number, number => { massNumber.value = defaultIsotope(number)!; shell.value = 0 })
+watch(() => element.value.number, number => { massNumber.value = defaultIsotope(number)! })
 const model = computed(() => createAtomModel(element.value.number, massNumber.value))
 const subshell = computed(() => model.value.subshells.find(item => item.label === subshellLabel.value) || model.value.subshells.at(-1)!)
 const orientations = computed(() => orbitalOrientations(subshell.value.l))
 const elementSelectOptions = periodicElements.map(item => ({ value: item.number, label: `${item.number} · ${item.name} · ${item.symbol}` }))
 const isotopeSelectOptions = computed(() => isotopeOptions.value.map(item => ({ value: item.massNumber, label: `${element.value.symbol}–${item.massNumber}` })))
-const shellSelectOptions = computed(() => [{ value: 0, label: 'Բոլոր շերտերը' }, ...model.value.shells.map(item => ({ value: item.number, label: `${item.number}${item.number === 1 ? '-ին' : '-րդ'} շերտ · ${item.count} էլեկտրոն` }))])
 const subshellSelectOptions = computed(() => model.value.subshells.map(item => ({ value: item.label, label: `${item.label} · ${item.count} էլեկտրոն` })))
 const orientationSelectOptions = computed(() => orientations.value.map(item => ({ value: item.m, label: `${subshell.value.n}${item.label}` })))
 const orbital = computed(() => ({ n: subshell.value.n, l: subshell.value.l, m: orientation.value }))
@@ -60,9 +56,9 @@ const activeLesson = computed(() => guideStep.value === null ? null : atomLesson
 const guideTitle = computed(() => guideStep.value === null ? 'Ինչի՞ց է կազմված ատոմը' : lessonNames[guideStep.value])
 const guideDescription = computed(() => {
   switch (guideStep.value) {
-    case 0: return `Վարդագույն գնդիկները պրոտոններն են։ Դրանք միջուկում են և ունեն դրական լիցք։ Պրոտոնների քանակն է որոշում քիմիական տարրը․ ${element.value.name} տարրի ատոմն ունի ${model.value.protons} պրոտոն։ Այդ թիվը փոխելիս արդեն այլ տարր կստանանք։`
-    case 1: return `Ոսկեգույն գնդիկները նեյտրոններն են։ Դրանք միջուկում են և էլեկտրական լիցք չունեն։ Նեյտրոնները մասնակցում են միջուկի կառուցվածքին, և դրանց քանակն ազդում է միջուկի կայունության վրա։ ${element.value.symbol}–${massNumber.value} իզոտոպն ունի ${model.value.neutrons} նեյտրոն։ ${model.value.neutrons === 0 ? 'Այս իզոտոպում նեյտրոն չկա, ուստի ոսկեգույն գնդիկ չես տեսնի։' : ''}`
-    case 2: return `Երկնագույն փոքր գնդիկները այս շերտային պատկերում էլեկտրոններն են՝ բացասական լիցքով մասնիկներ։ Դրանք միջուկից դուրս են և մասնակցում են քիմիական կապերի առաջացմանը։ Այս չեզոք ատոմում դրանց թիվը ${model.value.electrons} է՝ պրոտոնների թվին հավասար։ Օղակները պայմանական են․ էլեկտրոններն իրականում այսպիսի գծված ուղիներով չեն շարժվում։`
+    case 0: return `Պրոտոնները միջուկում են և ունեն դրական լիցք։ Պրոտոնների քանակն է որոշում քիմիական տարրը․ ${element.value.name} տարրի ատոմն ունի ${model.value.protons} պրոտոն։ Այդ թիվը փոխելիս արդեն այլ տարր կստանանք։`
+    case 1: return `Նեյտրոնները միջուկում են և էլեկտրական լիցք չունեն։ Նեյտրոնները մասնակցում են միջուկի կառուցվածքին, և դրանց քանակն ազդում է միջուկի կայունության վրա։ ${element.value.symbol}–${massNumber.value} իզոտոպն ունի ${model.value.neutrons} նեյտրոն։ ${model.value.neutrons === 0 ? 'Այս իզոտոպում նեյտրոն չկա։' : ''}`
+    case 2: return `Էլեկտրոնները բացասական լիցքով մասնիկներ են։ Դրանք միջուկից դուրս են և մասնակցում են քիմիական կապերի առաջացմանը։ Այս չեզոք ատոմում դրանց թիվը ${model.value.electrons} է՝ պրոտոնների թվին հավասար։ Ամպի կետերը էլեկտրոնի հնարավոր հայտնաբերման տեղերն են, ոչ առանձին էլեկտրոններ կամ դրանց շարժման ուղիներ։`
     case 3: return `Նույն տարրի տարբեր իզոտոպներն ունեն նույն թվով պրոտոններ և տարբեր թվով նեյտրոններ։ Ընտրված ${element.value.symbol}–${massNumber.value} իզոտոպի զանգվածային թիվը ${massNumber.value} է՝ ${model.value.protons} պրոտոն + ${model.value.neutrons} նեյտրոն։ Ստորև փոխիր իզոտոպը և հետևիր՝ ինչն է փոխվում, ինչը՝ մնում նույնը։`
     case 4: return 'Օրբիտալը նկարագրում է էլեկտրոնի քվանտային վիճակը։ Ամպը ցույց է տալիս՝ որտեղ է այն հայտնաբերելու հավանականությունն ավելի մեծ։ Յուրաքանչյուր կետ հնարավոր դիտարկման տեղ է․ հազարավոր կետերը հազարավոր էլեկտրոններ չեն։ Սա մեկ ընտրված օրբիտալ է, ոչ ամբողջ ատոմի էլեկտրոնային պատկերը։'
     default: return 'Ատոմի կենտրոնում միջուկն է՝ պրոտոններով և, սովորաբար, նեյտրոններով։ Միջուկից դուրս էլեկտրոններն են։ Ընտրիր թեման և իմացիր՝ որն է յուրաքանչյուր մասնիկը, որտեղ է գտնվում և ինչ դեր ունի։ Մասնիկների չափերն ու հեռավորությունները պայմանական են։'
@@ -96,7 +92,7 @@ async function updateCloud() {
   scene?.clearCloud()
   cloudBusy.value = false
   cloudError.value = false
-  if (viewMode.value !== 'cloud' || !scene || !sampler) return
+  if (!scene || !sampler) return
   cloudBusy.value = true
   try {
     const cloud = await sampler.sample(orbital.value)
@@ -107,22 +103,18 @@ async function updateCloud() {
     if (!disposed && generation === cloudGeneration) cloudBusy.value = false
   }
 }
-watch([viewMode, orbital], () => { scene?.setView(viewMode.value); void updateCloud() })
+watch(orbital, () => { void updateCloud() })
 watch(cutaway, value => scene?.setCutaway(value))
 watch(density, value => scene?.setDensity(value))
 function updateModel() {
   scene?.setAtom(model.value)
-  scene?.setShell(shell.value || null)
-  scene?.setLabels(labelsVisible.value)
   scene?.setMotion(playing.value)
-  scene?.setView(viewMode.value)
+  scene?.setView('cloud')
   scene?.setCutaway(cutaway.value)
   scene?.setDensity(density.value)
   void updateCloud()
 }
 watch(model, updateModel)
-watch(shell, number => scene?.setShell(number || null))
-watch(labelsVisible, enabled => scene?.setLabels(enabled))
 watch(playing, enabled => scene?.setMotion(enabled))
 function stopForReducedMotion(event: MediaQueryListEvent) { if (event.matches) playing.value = false }
 async function loadScene() {
@@ -180,10 +172,7 @@ onBeforeUnmount(() => {
       <div><p class="atom-eyebrow"><Atom :size="15" aria-hidden="true" /> FACTUM · ԱՏՈՄՆԵՐԻ ԱՇԽԱՐՀ</p><h2>{{ element.name }} <span>{{ element.symbol }}</span></h2><p class="muted">Բացահայտիր չեզոք ատոմի կառուցվածքը՝ մասնիկ առ մասնիկ։</p></div>
       <button type="button" class="btn-secondary atom-back" @click="emit('back')"><ChevronLeft :size="16" aria-hidden="true" /> Պարբերական աղյուսակ</button>
     </header>
-    <div class="atom-view-switch" role="group" aria-label="Ատոմի ներկայացման եղանակը">
-      <button type="button" :aria-pressed="viewMode === 'cloud'" @click="viewMode = 'cloud'; closeGuide()">Քվանտային օրբիտալներ <small>Հավանականության ամպ</small></button>
-      <button type="button" :aria-pressed="viewMode === 'shells'" @click="viewMode = 'shells'; closeGuide()">Ատոմի կառուցվածքը <small>Միջուկ և էլեկտրոնային շերտեր</small></button>
-    </div>
+    <p class="atom-quantum-intro">Քվանտային օրբիտալներ · Հավանականության ամպ</p>
     <section ref="lessonPanel" class="atom-guide panel" aria-label="Սովորիր ատոմի կառուցվածքը">
       <div class="atom-lesson-tabs" role="group" aria-label="Ընտրիր՝ ինչ ես ուզում ուսումնասիրել"><button v-for="(name, index) in lessonNames" :key="name" type="button" :aria-pressed="guideStep === index" :data-lesson-index="index" @click="startGuide(index)">{{ index + 1 }}. {{ name }}</button></div>
       <div v-if="lessonExpanded" class="atom-lesson-heading"><h3 ref="lessonHeading" tabindex="-1">{{ guideTitle }}</h3><button type="button" class="atom-lesson-close" @click="closeReading"><X :size="15" aria-hidden="true"/>Փակել բացատրությունը</button></div>
@@ -195,21 +184,20 @@ onBeforeUnmount(() => {
     </section>
     <div class="atom-workspace">
       <section class="panel atom-stage" aria-label="Ատոմի ինտերակտիվ 3D մոդել">
-        <div class="atom-stage-top"><span class="atom-stage-badge">{{ element.symbol }}–{{ massNumber }}</span><span class="atom-model-label">{{ viewMode === 'cloud' ? `${orbitalName} · ջրածնանման օրբիտալ` : 'Պարզեցված ուսուցողական մոդել' }}</span></div>
+        <div class="atom-stage-top"><span class="atom-stage-badge">{{ element.symbol }}–{{ massNumber }}</span><span class="atom-model-label">{{ orbitalName }} · ջրածնանման օրբիտալ</span></div>
         <div ref="viewport" class="atom-viewport" role="group" tabindex="0" :aria-label="`${element.name}–${massNumber} ատոմի մոդել։ ${model.protons} պրոտոն, ${model.neutrons} նեյտրոն, ${model.electrons} էլեկտրոն։`" aria-describedby="atom-keyboard-help" :aria-busy="loading || cloudBusy" @keydown="keyboard" />
         <div v-if="loading" class="atom-stage-message" role="status"><LoaderCircle class="atom-loading" :size="26" aria-hidden="true" /><span>Պատրաստում ենք 3D աշխարհը…</span></div>
         <div v-else-if="error" class="atom-stage-message atom-stage-error" role="status"><Atom :size="30" aria-hidden="true" /><p>Այս սարքում 3D դիտարկիչը չի գործարկվել։ Իզոտոպի տվյալները հասանելի են աջ կողմի քարտում։</p><button type="button" class="btn-secondary" @click="loadScene">Կրկին փորձել</button></div>
         <div v-if="!loading && !error && cloudBusy" class="atom-cloud-status" role="status">Հաշվարկում ենք հավանականության ամպը…</div>
         <div v-if="!loading && !error && cloudError" class="atom-stage-message atom-stage-error" role="status"><p>Օրբիտալի ամպը չհաջողվեց հաշվարկել։</p><button type="button" class="btn-secondary" @click="updateCloud">Կրկին փորձել</button></div>
-        <div v-if="viewMode === 'cloud'" class="atom-cloud-legend"><span>Կապույտ և ոսկեգույն՝ ալիքային ֆունկցիայի տարբեր նշաններ</span><small>Երկու գույնի հատվածներում էլ կարելի է հայտնաբերել էլեկտրոնը։ Գույները էլեկտրական լիցքեր չեն։</small><details><summary>Ինչո՞ւ երկու գույն</summary><p>Էլեկտրոնի վիճակը նկարագրող ալիքային ֆունկցիան՝ ψ-ն, կարող է դրական կամ բացասական նշան ունենալ։ Հայտնաբերման հավանականությունը որոշվում է |ψ|²-ով։ Նշանների տարբերությունն օգնում է ուսումնասիրել օրբիտալների փոխազդեցությունը։</p></details></div>
+        <div class="atom-cloud-legend"><span>Կապույտ և ոսկեգույն՝ ալիքային ֆունկցիայի տարբեր նշաններ</span><small>Երկու գույնի հատվածներում էլ կարելի է հայտնաբերել էլեկտրոնը։ Գույները էլեկտրական լիցքեր չեն։</small><details><summary>Ինչո՞ւ երկու գույն</summary><p>Էլեկտրոնի վիճակը նկարագրող ալիքային ֆունկցիան՝ ψ-ն, կարող է դրական կամ բացասական նշան ունենալ։ Հայտնաբերման հավանականությունը որոշվում է |ψ|²-ով։ Նշանների տարբերությունն օգնում է ուսումնասիրել օրբիտալների փոխազդեցությունը։</p></details></div>
         <div class="atom-stage-controls" aria-label="3D մոդելի կառավարում">
-          <button type="button" :disabled="loading || error" :aria-pressed="playing" @click="playing = !playing"><Pause v-if="playing" :size="17" aria-hidden="true" /><Play v-else :size="17" aria-hidden="true" />{{ playing ? 'Դադարեցնել' : 'Շարունակել' }}{{ viewMode === 'cloud' ? ' պտույտը' : '' }}</button>
+          <button type="button" :disabled="loading || error" :aria-pressed="playing" @click="playing = !playing"><Pause v-if="playing" :size="17" aria-hidden="true" /><Play v-else :size="17" aria-hidden="true" />{{ playing ? 'Դադարեցնել' : 'Շարունակել' }} պտույտը</button>
           <button type="button" :disabled="loading || error" aria-label="Մեծացնել մոդելը" @click="scene?.zoom(.85)"><Plus :size="18" aria-hidden="true" /></button>
           <button type="button" :disabled="loading || error" aria-label="Փոքրացնել մոդելը" @click="scene?.zoom(1.18)"><Minus :size="18" aria-hidden="true" /></button>
           <button type="button" :disabled="loading || error" aria-label="Վերականգնել մոդելի սկզբնական դիրքը" @click="scene?.resetView()"><RotateCcw :size="17" aria-hidden="true" /></button>
-          <button type="button" :disabled="loading || error" :aria-pressed="labelsVisible" @click="labelsVisible = !labelsVisible"><Tag :size="16" aria-hidden="true" />Անունները</button>
         </div>
-        <p v-if="viewMode === 'cloud'" class="atom-quantum-intro">Որտե՞ղ կարող ենք գտնել էլեկտրոնը։ Ամպի խիտ հատվածներում հայտնաբերման հավանականությունն ավելի մեծ է։ Կետերը հնարավոր դիտարկումներ են, ոչ թե առանձին էլեկտրոններ։</p>
+        <p class="atom-quantum-intro">Որտե՞ղ կարող ենք գտնել էլեկտրոնը։ Ամպի խիտ հատվածներում հայտնաբերման հավանականությունն ավելի մեծ է։ Կետերը հնարավոր դիտարկումներ են, ոչ թե առանձին էլեկտրոններ։</p>
         <p id="atom-keyboard-help" class="atom-interaction-help"><Move :size="14" aria-hidden="true" />Քաշիր՝ պտտելու համար։ Մեծացրու անիվով կամ երկու մատով։ Ստեղնաշար՝ սլաքներ, +/−, Home, բացատ։</p>
       </section>
       <aside class="panel atom-inspector" aria-label="Ատոմի տվյալները և իզոտոպի ընտրությունը">
@@ -217,6 +205,7 @@ onBeforeUnmount(() => {
           <div class="atom-field"><label for="atom-element">Քիմիական տարր</label><AtomSelect id="atom-element" :model-value="element.number" :options="elementSelectOptions" @update:model-value="emit('select', Number($event))"/></div>
           <div class="atom-field"><label for="atom-isotope">Իզոտոպ</label><AtomSelect id="atom-isotope" :model-value="massNumber" :options="isotopeSelectOptions" @update:model-value="massNumber = Number($event)"/></div>
         </div>
+        <ChemistryElementAppearance :element="element" />
         <dl class="atom-particle-counts" aria-live="polite">
           <div><dt>Զանգվածային թիվ · A</dt><dd>{{ massNumber }}</dd></div>
           <div class="atom-count-proton"><dt><i aria-hidden="true" />Պրոտոն · p⁺</dt><dd>{{ model.protons }}</dd><button type="button" @click="openLesson(0)">Ի՞նչ է պրոտոնը</button></div>
@@ -225,11 +214,7 @@ onBeforeUnmount(() => {
         </dl>
         <p class="atom-equation">Նեյտրոններ՝ <strong>{{ massNumber }} − {{ model.protons }} = {{ model.neutrons }}</strong></p>
         <p class="atom-note">A-ն ընտրված իզոտոպի պրոտոնների և նեյտրոնների գումարն է։ Այն տարրի հարաբերական ատոմային զանգվածի կլորացումը չէ։</p>
-        <template v-if="viewMode === 'shells'">
-        <div class="atom-field atom-shell-label"><label for="atom-shell">Էլեկտրոնային շերտ</label><AtomSelect id="atom-shell" :model-value="shell" :options="shellSelectOptions" @update:model-value="shell = Number($event)"/></div>
-        <div class="atom-shells" aria-label="Էլեկտրոնների բաշխումն ըստ շերտերի"><button v-for="item in model.shells" :key="item.number" type="button" :aria-pressed="shell === item.number" @click="shell = shell === item.number ? 0 : item.number"><span>{{ item.number }}{{ item.number === 1 ? '-ին' : '-րդ' }}</span><strong>{{ item.count }}</strong></button></div>
-        </template>
-        <section v-else class="atom-quantum-controls" aria-label="Օրբիտալի ընտրություն">
+        <section class="atom-quantum-controls" aria-label="Օրբիտալի ընտրություն">
           <div class="atom-field"><label for="atom-subshell">Զբաղեցված ենթաշերտ</label><AtomSelect id="atom-subshell" :model-value="subshellLabel" :options="subshellSelectOptions" @update:model-value="subshellLabel = String($event)"/></div>
           <div class="atom-field"><label for="atom-orientation">Օրբիտալի ձև և կողմնորոշում</label><AtomSelect id="atom-orientation" :model-value="orientation" :options="orientationSelectOptions" @update:model-value="orientation = Number($event)"/></div>
           <p class="atom-shape-description" aria-live="polite">{{ shapeDescription }}</p>
@@ -244,7 +229,7 @@ onBeforeUnmount(() => {
       </aside>
     </div>
     <div class="atom-footnotes">
-      <details class="panel atom-explanation"><summary>Ինչպե՞ս հասկանալ այս մոդելը</summary><p>Օրբիտալային տեսքում կետերը ընտրված են |ψ|² հավանականության խտությամբ՝ ջրածնանման Շրյոդինգերի հավասարման լուծումներից։ Հանգույցներն այն մակերևույթներն են, որտեղ այդ օրբիտալի հավանականության խտությունը զրո է։ Պտույտը միայն դիտման շարժում է, ոչ էլեկտրոնի ուղի։ Միջուկը մեծացված պայմանական նշիչ է։ Բազմաէլեկտրոն ատոմների համար հաշվի չեն առնվում էլեկտրոնների փոխազդեցությունը, էկրանավորումը և ռելյատիվիստական ուղղումները։</p><p>Օղակները ցույց են տալիս էլեկտրոնների բաշխումը գլխավոր էներգետիկ շերտերի միջև։ Իրական ատոմում էլեկտրոններն այսպիսի որոշակի շրջանաձև ուղեծրերով չեն շարժվում․ նրանց վիճակները նկարագրվում են քվանտային օրբիտալներով։</p><p>Մասնիկների չափերը, միջուկից հեռավորությունները, գույներն ու շարժման արագությունները պատկերավոր են և իրական մասշտաբները չեն ներկայացնում։ Միջուկի մասնիկների դիրքերը նույնպես ուսուցողական դասավորություն են։</p></details>
+      <details class="panel atom-explanation"><summary>Ինչպե՞ս հասկանալ այս մոդելը</summary><p>Օրբիտալային տեսքում կետերը ընտրված են |ψ|² հավանականության խտությամբ՝ ջրածնանման Շրյոդինգերի հավասարման լուծումներից։ Հանգույցներն այն մակերևույթներն են, որտեղ այդ օրբիտալի հավանականության խտությունը զրո է։ Պտույտը միայն դիտման շարժում է, ոչ էլեկտրոնի ուղի։ Միջուկը մեծացված պայմանական նշիչ է։ Բազմաէլեկտրոն ատոմների համար հաշվի չեն առնվում էլեկտրոնների փոխազդեցությունը, էկրանավորումը և ռելյատիվիստական ուղղումները։</p><p>Մասնիկների չափերը, միջուկից հեռավորությունները, գույներն ու շարժման արագությունները պատկերավոր են և իրական մասշտաբները չեն ներկայացնում։ Միջուկի մասնիկների դիրքերը նույնպես ուսուցողական դասավորություն են։</p></details>
       <div class="atom-sources"><p>Ատոմի կառուցվածք՝ <a href="https://www.nrc.gov/education-regulatory-research/the-student-corner/science-101/what-is-an-atom" target="_blank" rel="noopener noreferrer">NRC ↗</a> · Օրբիտալների տեսություն՝ <a :href="orbitalSource" target="_blank" rel="noopener noreferrer">MIT OpenCourseWare ↗</a> · Իզոտոպներ՝ <a :href="atomIsotopeSource.url" target="_blank" rel="noopener noreferrer">NIST ↗</a> · ատոմային համար և էլեկտրոնային կառուցվածք՝ <a :href="`https://pubchem.ncbi.nlm.nih.gov/element/${element.number}`" target="_blank" rel="noopener noreferrer">PubChem ↗</a></p><p>Ներկայացված են NIST-ի այս աղյուսակում նշված իզոտոպները, ոչ բոլոր հայտնի իզոտոպները։</p></div>
     </div>
   </div>
@@ -269,10 +254,6 @@ onBeforeUnmount(() => {
 @media (max-width: 700px) { .atom-lesson-sections { grid-template-columns: minmax(0, 1fr); gap: 22px; }.atom-guide .atom-lesson-sections p { font-size: 13px; } }
 .atom-shape-description { padding: 13px; color: #c8e4f5; background: #7dd3fc0b; border-radius: 10px; font-size: 12px; line-height: 1.9; }
 .atom-cloud-legend details { width: 100%; color: #b9cce4; line-height: 1.9; }.atom-cloud-legend summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; color: #dfc38f; }.atom-cloud-legend details p { max-width: 65ch; margin: 0 auto; }
-.atom-view-switch { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-.atom-view-switch button { flex: 1; min-width: 180px; text-align: left; border: 1px solid #8ca4cc44; border-radius: 14px; padding: 15px 18px; background: #101e35; color: #cbdaf0; font-size: 14px; font-weight: 700; }
-.atom-view-switch button[aria-pressed="true"] { border-color: #7dd3fc; background: linear-gradient(120deg,#16436688,#17243b); color: #e5f6ff; }
-.atom-view-switch small { display: block; margin-top: 7px; color: #9fb6d1; font-size: 11px; font-weight: 400; }
 .atom-quantum-intro { color: #bdcde1; font-size: 13px; line-height: 1.9; max-width: 95ch; margin: 0; padding: 0 20px 16px; }
 .atom-quantum-controls { display: grid; gap: 15px; }
 .atom-node-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; border-radius: 12px; background: #142a4488; }
@@ -322,11 +303,6 @@ onBeforeUnmount(() => {
 .atom-count-electron dd, .atom-count-electron i { color: #82ddff; }
 .atom-equation { color: #dce7f7; font-size: 12px; }
 .atom-note { color: #9cacc5; font-size: 10px; line-height: 1.9; margin: 8px 0 18px; }
-.atom-shells { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 18px; }
-.atom-shells button { display: grid; gap: 5px; min-width: 42px; padding: 9px; border: 1px solid #8ca4cc44; border-radius: 10px; color: #c6dcf7; background: #162844; }
-.atom-shells button span { font-size: 9px; }
-.atom-shells button strong { font-size: 17px; }
-.atom-shells button[aria-pressed="true"] { color: #fff; border-color: #82ddff; background: #82ddff20; }
 .atom-prediction { color: #f4cc8a; font-size: 11px; line-height: 1.8; margin-bottom: 12px; }
 .atom-configuration { display: grid; gap: 8px; border-top: 1px solid #94a3b833; padding-top: 16px; font-size: 10px; color: #aebfd5; }
 .atom-configuration code { color: #dfebfc; font-size: 12px; direction: ltr; }

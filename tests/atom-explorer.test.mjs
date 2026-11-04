@@ -56,16 +56,10 @@ test('atom interface compiles and switching elements/isotopes updates the real m
   app.viewer.massNumber.value = 54
   await vue.nextTick()
   assert.equal(app.viewer.model.value.neutrons, 28)
-  app.viewer.shell.value = 3
-  app.viewer.labelsVisible.value = true
-  await vue.nextTick()
-  assert.ok(app.calls.some(call => call[0] === 'setShell' && call[1] === 3))
-  assert.ok(app.calls.some(call => call[0] === 'setLabels' && call[1] === true))
   app.props.elementNumber = 1
   await vue.nextTick()
   assert.equal(app.viewer.massNumber.value, 1)
   assert.equal(app.viewer.model.value.neutrons, 0)
-  assert.equal(app.viewer.shell.value, 0)
   assert.equal(app.calls.filter(call => call[0] === 'setAtom').at(-1)[1].number, 1)
   app.dispose()
   assert.equal(app.calls.filter(call => call[0] === 'dispose').length, 1)
@@ -110,10 +104,9 @@ test('closing while the lazy renderer loads never creates a detached scene', asy
   assert.equal(app.calls.some(call => call[0] === 'create'), false)
 })
 
-test('quantum mode selects occupied subshells, orientations and real point clouds; schematic mode remains available', async () => {
+test('quantum-only viewer starts with a real cloud and updates occupied subshells and orientations', async () => {
   const app = setup()
   await tick()
-  app.viewer.viewMode.value = 'cloud'
   await vue.nextTick(); await tick()
   assert.equal(app.viewer.subshell.value.label, '4s')
   assert.ok(app.calls.some(call => call[0] === 'setOrbitalCloud' && call[1].positions.length === 384))
@@ -127,9 +120,9 @@ test('quantum mode selects occupied subshells, orientations and real point cloud
   app.viewer.density.value = .3
   await vue.nextTick()
   assert.ok(app.calls.some(call => call[0] === 'setCutaway' && call[1] === true))
-  app.viewer.viewMode.value = 'shells'
-  await vue.nextTick()
-  assert.ok(app.calls.some(call => call[0] === 'setView' && call[1] === 'shells'))
+  assert.ok(app.calls.filter(call => call[0] === 'setView').every(call => call[1] === 'cloud'))
+  assert.ok(!descriptor.template.content.includes('atom-view-switch'))
+  assert.ok(!descriptor.template.content.includes('atom-shells'))
   app.props.elementNumber = 1
   await vue.nextTick(); await tick()
   assert.equal(app.viewer.subshell.value.label, '1s')
@@ -141,11 +134,10 @@ test('lesson tabs only change explanatory text and never alter the scene or view
   await tick()
   app.viewer.playing.value = true
   app.viewer.cutaway.value = true
-  app.viewer.viewMode.value = 'cloud'
   app.viewer.orientation.value = 0
   await vue.nextTick(); await tick()
   const before = app.calls.length
-  const state = () => [app.viewer.viewMode.value,app.viewer.playing.value,app.viewer.cutaway.value,app.viewer.shell.value,app.viewer.subshellLabel.value,app.viewer.orientation.value]
+  const state = () => [app.viewer.playing.value,app.viewer.cutaway.value,app.viewer.subshellLabel.value,app.viewer.orientation.value]
   const initial = state()
   for(let i=0;i<5;i++) {
     app.viewer.startGuide(i)

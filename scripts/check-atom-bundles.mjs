@@ -5,8 +5,8 @@ const manifest = (await import('../.nuxt-build/dist/server/client.manifest.mjs')
 const rendererKey = 'utils/chemistry/atomScene.client.ts'
 const viewerKey = Object.keys(manifest).find(key => key === 'components/chemistry/AtomExplorer.client.vue' || manifest[key].name === 'AtomExplorer.client')
 const samplerKey = 'utils/chemistry/orbitalSampler.client.ts'
-const tableKey = 'pages/periodic-table.vue'
-assert.ok(viewerKey && manifest[rendererKey] && manifest[viewerKey] && manifest[tableKey], 'Build the atom viewer before running this check')
+const tableKey = Object.keys(manifest).find(key => key === 'pages/periodic-table.vue' || manifest[key].name === 'periodic-table')
+assert.ok(viewerKey && tableKey && manifest[rendererKey] && manifest[viewerKey] && manifest[tableKey], 'Build the atom viewer before running this check')
 function staticGraph(key, result = new Set()) {
   if (result.has(key)) return result
   result.add(key)

@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { elementSamples } from '~/data/chemistry/elementAppearance'
 import { elementFamilies, type PeriodicElement } from '~/data/periodicTable'
-defineProps<{ element: PeriodicElement; compact?: boolean }>()
+const props = defineProps<{ element: PeriodicElement; compact?: boolean }>()
+const thumbnail = computed(() => props.compact ? elementSamples[props.element.number] : undefined)
+const thumbnailFailed = ref(false)
+watch(() => props.element.number, () => { thumbnailFailed.value = false })
 </script>
 
 <template>
@@ -13,6 +18,18 @@ defineProps<{ element: PeriodicElement; compact?: boolean }>()
         <p class="element-info-family">{{ elementFamilies[element.family].name }}</p>
       </div>
     </div>
+    <figure v-if="thumbnail && !thumbnailFailed" class="element-info-thumbnail">
+      <img v-if="thumbnail.kind !== 'symbol'" :key="element.number" :src="`/images/elements/${thumbnail.file}${thumbnail.kind === 'symbol' ? '.svg' : '-360.jpg'}`" :width="thumbnail.width" :height="thumbnail.height" :alt="thumbnail.caption" decoding="async" @error="thumbnailFailed = true" />
+      <figcaption>
+        <span>{{ thumbnail.caption }}</span>
+        <details v-if="thumbnail.kind !== 'symbol'" class="element-thumbnail-credit">
+          <summary>Աղբյուր և լիցենզիա</summary>
+          <a :href="thumbnail.sourceUrl" target="_blank" rel="noopener noreferrer">{{ thumbnail.photographer }} ↗</a>
+          <a :href="thumbnail.licenseUrl" target="_blank" rel="noopener noreferrer">{{ thumbnail.license }} ↗</a>
+          <span v-if="thumbnail.kind !== 'symbol'">Չափը փոքրացված է։</span>
+        </details>
+      </figcaption>
+    </figure>
     <p v-if="!compact" class="element-info-description">{{ elementFamilies[element.family].description }}</p>
     <dl class="element-info-facts">
       <div><dt>Ատոմային համար</dt><dd>{{ element.number }}</dd></div>
@@ -29,6 +46,14 @@ defineProps<{ element: PeriodicElement; compact?: boolean }>()
 
 <style scoped>
 .element-info { min-width: 0; color: #e9eefb; }
+.element-info-thumbnail { display: flex; align-items: center; gap: 12px; margin: 14px 0 0; }
+.element-info-thumbnail img { width: 96px; height: 80px; object-fit: contain; border-radius: 8px; background: #14263e; flex-shrink: 0; }
+.element-info-thumbnail figcaption { display: grid; gap: 4px; min-width: 0; font-size: 9px; line-height: 1.5; color: #aebbd4; overflow-wrap: anywhere; }
+.element-info-thumbnail figcaption > span { font-size: 11px; color: var(--element-accent); }
+.element-thumbnail-credit summary { cursor: pointer; }
+.element-thumbnail-credit a, .element-thumbnail-credit > span { display: block; margin-top: 4px; }
+.element-info-thumbnail a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+:global(html.factum-light) .element-info-thumbnail figcaption { color: #4e6481; }
 .element-info-heading { display: flex; gap: 18px; align-items: center; }
 .element-info-badge { display: flex; flex-direction: column; justify-content: center; width: 82px; height: 90px; padding: 10px; flex-shrink: 0; border: 1px solid var(--element-accent); border-radius: 14px; color: var(--element-accent); background: #ffffff05; }
 .element-info-badge small { font-size: 12px; }

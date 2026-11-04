@@ -7,7 +7,7 @@
   },
   "scripts": {
     "voice:prepare": "node scripts/prepare-biography-audio.mjs",
-    "test:atoms": "node --test tests/atom-model.test.mjs tests/atom-explorer.test.mjs tests/atom-scene.test.mjs tests/atom-orbitals.test.mjs tests/atom-sampler.test.mjs tests/periodic-table-lab.test.mjs tests/atom-lessons.test.mjs tests/atom-select.test.mjs",
+    "test:atoms": "node --test tests/atom-model.test.mjs tests/atom-explorer.test.mjs tests/atom-scene.test.mjs tests/atom-orbitals.test.mjs tests/atom-sampler.test.mjs tests/periodic-table-lab.test.mjs tests/atom-lessons.test.mjs tests/atom-select.test.mjs tests/element-appearance.test.mjs",
     "test:speech": "node --test tests/biography-speech.test.mjs tests/game-speech.test.mjs tests/game-speech-player.test.mjs tests/voice-answers.test.mjs tests/game-feedback-audio.test.mjs tests/biography-player.test.mjs",
     "dev": "nuxt dev",
     "build": "nuxt build",
