@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { geniusStatements, type GeniusStatement } from '~/data/geniusStatements'
+import { geniusRecordKey, parseGeniusRecord } from '~/utils/geniusRecord'
 import GameDifficultyPicker from '~/components/GameDifficultyPicker.vue'
 import { difficultyIndex, difficultyTitle, requiredCorrectAnswers, saveDifficultyProgress, unlockedDifficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
 
@@ -8,6 +9,26 @@ const router = useRouter()
 
 const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, cancelNext } = useGameFeedback()
 
+const completedLevels = ref<GameDifficulty[]>([])
+const bestScore = ref(0)
+const bestLevel = ref<GameDifficulty | null>(null)
+const recordKey = geniusRecordKey
+function loadRecord() {
+  try {
+    const saved = parseGeniusRecord(localStorage.getItem(recordKey))
+    completedLevels.value = saved.completed
+    bestLevel.value = saved.bestLevel
+    bestScore.value = saved.best ?? 0
+  } catch { /* Storage may be unavailable. */ }
+}
+function saveRecord() {
+  if (score.value > bestScore.value || (score.value === bestScore.value && level.value && difficultyIndex(level.value) > difficultyIndex(bestLevel.value || undefined))) {
+    bestScore.value = score.value
+    bestLevel.value = level.value
+  }
+  if (passed.value && level.value && !completedLevels.value.includes(level.value)) completedLevels.value.push(level.value)
+  try { localStorage.setItem(recordKey, JSON.stringify({ completed: completedLevels.value, best: bestScore.value, bestLevel: bestLevel.value })) } catch { /* Keep session progress. */ }
+}
 const roundSize = 10
 const unlockedIndex = ref(0)
 const level = ref<GameDifficulty | null>(null)
@@ -71,8 +92,11 @@ function next() {
   stopSound()
   if (index.value === round.value.length - 1) {
     finished.value = true
-    if (passed.value && level.value) unlockedIndex.value = saveDifficultyProgress('genius', level.value)
-    void playSound(score.value === roundSize ? 'win' : 'stage')
+    saveRecord()
+    if (passed.value && level.value) {
+      unlockedIndex.value = saveDifficultyProgress('genius', level.value)
+    }
+    if (!passed.value) void playSound('stage')
   }
   else {
     index.value++
@@ -82,6 +106,7 @@ function next() {
 }
 onMounted(() => {
   unlockedIndex.value = unlockedDifficultyIndex('genius')
+  loadRecord()
   const requestedLevel = String(route.query.level || '')
   if (difficultyIndex(requestedLevel) >= 0 && difficultyIndex(requestedLevel) <= unlockedIndex.value) {
     startLevel(requestedLevel as GameDifficulty)
@@ -90,23 +115,24 @@ onMounted(() => {
 </script>
 
 <template>
-  <GameDifficultyPicker v-if="!level" game="genius" :unlocked-index="unlockedIndex" @select="startLevel" />
+  <GameDifficultyPicker v-if="!level" game="genius" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" @select="startLevel" />
 
   <main v-else class="shell genius-game">
     <p class="gold text-sm font-semibold">ՃԻՇՏ ԿԱՄ ՍԽԱԼ</p>
     <h1 class="heading mt-3">FACTUM Genius</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
-    <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · 10 պատահական պնդում։ Առնվազն 8 ճիշտ պատասխանով կբացվի հաջորդ մակարդակը։</p>
-    <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" />
+    <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · 10 պատահական պնդում։ {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխանով կանցնես այս փուլը և կբացվի հաջորդ մակարդակը։</p>
+    <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" />
 
-    <section v-if="finished" class="panel p-7 text-center" aria-live="polite">
-      <div class="text-5xl mb-4" aria-hidden="true">{{ score === roundSize ? '🏆' : '🧠' }}</div>
-      <h2 class="text-2xl font-bold">Խաղն ավարտված է</h2>
+    <section v-if="finished" class="panel p-7 text-center result-panel" aria-live="polite">
+      <h2 class="text-2xl font-bold">{{ passed ? 'Փուլն անցած է։ Ապրե՛ս։' : 'Խաղն ավարտված է' }}</h2>
       <p class="gold text-3xl font-bold my-5">{{ score }} / {{ roundSize }}</p>
       <p class="muted">{{ score === roundSize ? 'Գերազանց է․ բոլոր պնդումները ճիշտ գնահատեցիր։' : score >= 7 ? 'Շատ լավ արդյունք։ Շարունակիր բացահայտել նոր գիտելիքներ։' : 'Ամեն փորձ նոր գիտելիք է։ Փորձիր կրկին։' }}</p>
       <p v-if="passed && nextLevel" class="text-green-400 mt-4">Հաջորդ՝ {{ difficultyTitle(nextLevel) }} մակարդակը բացվեց։</p>
       <p v-else-if="!passed" class="muted mt-4">Հաջորդ մակարդակը բացելու համար պետք է առնվազն {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխան։</p>
-      <GameResultShare mode="genius" :score="score" />
+      <p v-if="passed && !nextLevel" class="text-green-400 mt-4">🏆 Բոլոր փուլերն անցած են, ներառյալ ամենադժվարը։</p>
+      <p class="gold mt-4">Լավագույն արդյունքը՝ {{ bestScore }} / {{ roundSize }}<span v-if="bestLevel"> · {{ difficultyTitle(bestLevel) }} մակարդակ</span></p>
+      <GameResultShare mode="genius" :score="bestScore" :level="bestLevel" />
       <div class="game-result-actions">
       <button v-if="passed && nextLevel" type="button" class="btn mt-6" @click="startLevel(nextLevel)">Անցնել {{ difficultyTitle(nextLevel) }} մակարդակին →</button>
       <button v-else type="button" class="btn mt-6" @click="newRound">Խաղալ նորից ↻</button>

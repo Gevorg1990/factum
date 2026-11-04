@@ -4,6 +4,7 @@ import { difficultyIndex, gameDifficulties, type GameDifficulty } from '~/utils/
 const props = defineProps<{
   current: GameDifficulty
   unlockedIndex: number
+  completedLevels?: GameDifficulty[]
 }>()
 
 const currentIndex = computed(() => difficultyIndex(props.current))
@@ -17,7 +18,7 @@ const currentIndex = computed(() => difficultyIndex(props.current))
       class="difficulty-step"
       :class="{
         'is-current': index === currentIndex,
-        'is-complete': index < unlockedIndex && index !== currentIndex,
+        'is-complete': (completedLevels?.includes(level.id) || index < unlockedIndex) && index !== currentIndex,
         'is-locked': index > unlockedIndex,
       }"
       :aria-current="index === currentIndex ? 'step' : undefined"
@@ -26,7 +27,7 @@ const currentIndex = computed(() => difficultyIndex(props.current))
       <span class="step-copy">
         <strong>{{ level.title }}</strong>
         <small>
-          {{ index === currentIndex ? 'Ընթացիկ փուլ' : index < unlockedIndex ? 'Անցած փուլ' : index === unlockedIndex ? 'Հաջորդը բաց է' : 'Փակ է' }}
+          {{ (completedLevels?.includes(level.id) || index < unlockedIndex) ? 'Անցած փուլ' : index === currentIndex ? 'Ընթացիկ փուլ' : index === unlockedIndex ? 'Հաջորդը բաց է' : 'Փակ է' }}
         </small>
       </span>
       <span v-if="index < gameDifficulties.length - 1" class="step-connector" aria-hidden="true" />

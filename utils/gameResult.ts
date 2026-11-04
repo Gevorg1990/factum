@@ -1,3 +1,10 @@
+export const resultLevels = { easy: 'Հեշտ', medium: 'Միջին', hard: 'Դժվար' } as const
+export type ResultLevel = keyof typeof resultLevels
+
+export function parseResultLevel(value: unknown): ResultLevel | null {
+  return typeof value === 'string' && Object.hasOwn(resultLevels, value) ? value as ResultLevel : null
+}
+
 export const shareableGames = {
   million: { title: 'FACTUM Million', total: 15, step: 1, playPath: '/games/million', image: '/images/million-art.jpg' },
   genius: { title: 'FACTUM Genius', total: 10, step: 1, playPath: '/games/genius', image: '/images/genius-art.jpg' },
@@ -16,8 +23,9 @@ export function parseGameResult(mode: string, score: string) {
   return { ...game, mode: mode as ShareableGame, score: value }
 }
 
-export function gameResultPath(mode: ShareableGame, score: number) {
-  return `/games/results/${mode}/${score}`
+export function gameResultPath(mode: ShareableGame, score: number, level?: ResultLevel | null) {
+  const path = `/games/results/${mode}/${score}`
+  return mode === 'genius' && level ? `${path}?level=${level}` : path
 }
 
 export function facebookShareUrl(resultUrl: string) {

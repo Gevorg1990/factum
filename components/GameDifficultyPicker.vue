@@ -4,6 +4,7 @@ import { gameDifficulties, type GameDifficulty } from '~/utils/gameDifficulty'
 const props = defineProps<{
   game: 'genius' | 'logic' | 'million'
   unlockedIndex: number
+  completedLevels?: GameDifficulty[]
   embedded?: boolean
 }>()
 
@@ -30,7 +31,7 @@ const gameTitles = {
         <div class="difficulty-icon" aria-hidden="true">{{ level.icon }}</div>
         <div class="difficulty-copy">
           <h2>{{ level.title }}</h2>
-          <p v-if="index < unlockedIndex" class="difficulty-status is-complete">Անցած է</p>
+          <p v-if="(completedLevels?.includes(level.id) || index < unlockedIndex)" class="difficulty-status is-complete">Անցած է</p>
           <p v-else-if="index === unlockedIndex" class="difficulty-status">Բաց է խաղալու համար</p>
           <p v-else class="difficulty-status">🔒 Բացվում է նախորդ մակարդակն անցնելուց հետո</p>
         </div>

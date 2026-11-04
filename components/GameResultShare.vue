@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Facebook } from 'lucide-vue-next'
-import { facebookShareUrl, gameResultPath, type ShareableGame } from '~/utils/gameResult'
+import { facebookShareUrl, gameResultPath, type ResultLevel, type ShareableGame } from '~/utils/gameResult'
 
-const props = defineProps<{ mode: ShareableGame; score: number }>()
+const props = defineProps<{ mode: ShareableGame; score: number; level?: ResultLevel | null }>()
 const origin = useRequestURL().origin
-const href = computed(() => facebookShareUrl(new URL(gameResultPath(props.mode, props.score), origin).href))
+const href = computed(() => facebookShareUrl(new URL(gameResultPath(props.mode, props.score, props.level), origin).href))
 </script>
 
 <template>

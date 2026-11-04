@@ -36,3 +36,20 @@ test('result preview exposes the score in server-rendered Open Graph metadata', 
   assert.match(page, /result.value!.score/)
   assert.match(page, /ogUrl: \(\) => url.value/)
 })
+
+test('Genius shares each difficulty in its own Facebook result URL', async () => {
+  const { parseResultLevel, resultLevels } = await import('../utils/gameResult.ts')
+  const urls = new Set()
+  for (const level of Object.keys(resultLevels)) {
+    const url = new URL(gameResultPath('genius', 10, level), 'https://factum.example')
+    assert.equal(parseResultLevel(url.searchParams.get('level')), level)
+    assert.equal(new URL(facebookShareUrl(url.href)).searchParams.get('u'), url.href)
+    urls.add(url.href)
+  }
+  assert.equal(urls.size, 3)
+  for (const invalid of [undefined, null, '', 'unknown', '__proto__', ['hard']]) {
+    assert.equal(parseResultLevel(invalid), null)
+  }
+  assert.equal(gameResultPath('genius', 10), '/games/results/genius/10')
+  assert.equal(gameResultPath('logic', 5, 'hard'), '/games/results/logic/5')
+})
