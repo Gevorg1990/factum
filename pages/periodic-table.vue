@@ -220,7 +220,7 @@ onBeforeUnmount(() => {
 .periodic-heading { margin: 26px 0; }
 .periodic-heading h1 { display: flex; align-items: center; gap: 12px; font-size: clamp(24px, 3vw, 38px); font-weight: 850; margin-bottom: 12px; }
 .periodic-heading h1 svg { flex-shrink: 0; color: #dfc38f; }
-.periodic-heading > p:last-child { max-width: 76ch; line-height: 1.9; }
+.periodic-heading > .muted { max-width: 76ch; font-size: 14px; line-height: 1.8; }
 .periodic-intro-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; margin-bottom: 24px; }
 .periodic-inspector, .periodic-guide { padding: 26px; }
 .periodic-inspector { scroll-margin-top: 105px; }
@@ -267,7 +267,7 @@ onBeforeUnmount(() => {
 .periodic-tooltip { position: fixed; z-index: 100; padding: 18px; border: 1px solid #667497; border-radius: 16px; background: #101a30; box-shadow: 0 18px 55px #0009; overflow-y: auto; }
 @media (max-width: 1150px) { .periodic-scroll-help { display: block; } }
 @media (max-width: 800px) { .periodic-intro-grid { grid-template-columns: minmax(0, 1fr); } .periodic-guide { display: none; } .periodic-inspector { padding: 20px; } .periodic-workspace { padding: 16px 8px; } }
-@media (max-width: 540px) { .periodic-family { flex-basis: 100%; } .periodic-heading h1 { font-size: 24px; } .periodic-heading > p:last-child { font-size: 13px; } }
+@media (max-width: 540px) { .periodic-family { flex-basis: 100%; } .periodic-heading h1 { font-size: 24px; } }
 @media (prefers-reduced-motion: reduce) { .periodic-cell { transition: none; } }
 :global(html.factum-light) .periodic-search,
 :global(html.factum-light) .periodic-family select,

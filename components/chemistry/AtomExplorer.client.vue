@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
     <p class="atom-quantum-intro">Քվանտային օրբիտալներ · Հավանականության ամպ</p>
     <section ref="lessonPanel" class="atom-guide panel" aria-label="Սովորիր ատոմի կառուցվածքը">
       <div class="atom-lesson-tabs" role="group" aria-label="Ընտրիր՝ ինչ ես ուզում ուսումնասիրել"><button v-for="(name, index) in lessonNames" :key="name" type="button" :aria-pressed="guideStep === index" :data-lesson-index="index" @click="startGuide(index)">{{ index + 1 }}. {{ name }}</button></div>
-      <div v-if="lessonExpanded" class="atom-lesson-heading"><h3 ref="lessonHeading" tabindex="-1">{{ guideTitle }}</h3><button type="button" class="atom-lesson-close" @click="closeReading"><X :size="15" aria-hidden="true"/>Փակել բացատրությունը</button></div>
+      <div v-if="lessonExpanded" class="atom-lesson-heading"><h3 ref="lessonHeading" tabindex="-1">{{ guideTitle }}</h3><button v-if="activeLesson" type="button" class="atom-lesson-close" @click="closeReading"><X :size="15" aria-hidden="true"/>Փակել բացատրությունը</button></div>
       <p v-if="lessonExpanded" class="atom-lesson-example" aria-live="polite">{{ guideDescription }}</p>
       <article v-if="activeLesson && lessonExpanded" class="atom-lesson-article" :aria-label="`${activeLesson.title}․ ուսուցողական բացատրություն`">
         <div class="atom-lesson-sections"><section v-for="section in activeLesson.sections" :key="section.title"><h4>{{ section.title }}</h4><p v-for="paragraph in section.paragraphs" :key="paragraph">{{ paragraph }}</p></section></div>
@@ -243,8 +243,9 @@ onBeforeUnmount(() => {
 .atom-particle-counts button { min-height: 44px; text-align: left; font-size: 10px; color: #cbe8ff; text-decoration: underline; text-underline-offset: 3px; }
 .atom-term-help { color: #aec6df; font-size: 11px; line-height: 1.9; }.atom-term-help summary { cursor: pointer; min-height: 44px; align-content: center; color: #dfc38f; }.atom-term-help p { margin-bottom: 12px; }
 .atom-guide { scroll-margin-top: 100px; padding: 20px; margin-bottom: 20px; border-color: #7dd3fc55; background: linear-gradient(120deg,#12304b,#101c30); }.atom-guide-heading span { color: #8dd9ff; font-size: 12px; }.atom-guide h3 { font-size: 18px; margin: 14px 0 8px; color: #e5f4ff; }.atom-guide p { color: #bfd3e8; font-size: 13px; line-height: 1.9; max-width: 95ch; }
-.atom-lesson-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-.atom-guide .atom-lesson-close { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; font-size: 11px; color: #adc1d8; background: transparent; border-color: #8ca4cc33; }
+.atom-lesson-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 10px; margin-top: 8px; }
+.atom-lesson-heading h3 { min-width: 0; overflow-wrap: anywhere; }
+.atom-guide .atom-lesson-close { grid-column: 2; justify-self: end; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; font-size: 11px; color: #adc1d8; background: transparent; border-color: #8ca4cc33; }
 .atom-lesson-example { padding-left: 14px; border-left: 2px solid #dfc38f88; }
 .atom-lesson-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 30px; margin-top: 26px; }
 .atom-lesson-sections h4 { color: #e6d3ad; font-size: 14px; font-weight: 700; line-height: 1.7; margin-bottom: 9px; }

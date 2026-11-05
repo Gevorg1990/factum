@@ -28,7 +28,7 @@ export function createAtomScene(host: HTMLElement, onError: () => void) {
   controls.enableDamping = false
   controls.minPolarAngle = .06
   controls.maxPolarAngle = Math.PI - .06
-  controls.minDistance = 3
+  controls.minDistance = 1
   controls.maxDistance = 40
   scene.add(new AmbientLight(0xc8daff, 1.8))
   const key = new DirectionalLight(0xffffff, 3)
