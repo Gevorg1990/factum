@@ -18,11 +18,11 @@ test('all atlas, globe and existing profile templates and responsive styles comp
   for(const style of d.styles)assert.deepEqual(sfc.compileStyle({source:style.content,filename:file,id:'geo-test',scoped:true}).errors,[],file)
  }
 })
-function setupGlobe({reduced=true,failLayer=false}={}){
+function setupGlobe({reduced=true,failLayer=false,mobile=false}={}){
  const d3scope={};runInNewContext(read('public/vendor/d3-7.9.0.min.js'),d3scope)
  const frames=new Map(),cleanup=[],mounted=[],emitted=[],props=vue.reactive({mapQuiz:false}),atlas={countries:vue.ref(countries),statistics:vue.ref(statistics),load:async()=>{}}
  let id=0
- const scope={...vue,exports:{},useGeographyAtlas:()=>atlas,usePopulationEstimates:()=>({estimates:vue.ref({}),status:vue.ref('ready')}),onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>cleanup.push(fn),window:{d3:d3scope.d3,matchMedia:()=>({matches:reduced})},document:{getElementById:()=>null},AbortController,setTimeout,clearTimeout,requestAnimationFrame:fn=>{const n=++id;frames.set(n,fn);return n},cancelAnimationFrame:n=>frames.delete(n),fetch:async()=>({ok:true,json:async()=>world}),$fetch:async path=>{if(path.includes('timezones')&&failLayer)throw Error('Unavailable');return JSON.parse(read('public'+path))},require:imports}
+ const scope={...vue,exports:{},useGeographyAtlas:()=>atlas,usePopulationEstimates:()=>({estimates:vue.ref({}),status:vue.ref('ready')}),onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>cleanup.push(fn),window:{d3:d3scope.d3,matchMedia:query=>({matches:query.includes('prefers-reduced-motion')?reduced:mobile})},document:{getElementById:()=>null},AbortController,setTimeout,clearTimeout,requestAnimationFrame:fn=>{const n=++id;frames.set(n,fn);return n},cancelAnimationFrame:n=>frames.delete(n),fetch:async()=>({ok:true,json:async()=>world}),$fetch:async path=>{if(path.includes('timezones')&&failLayer)throw Error('Unavailable');return JSON.parse(read('public'+path))},require:imports}
  runInNewContext(compile('components/InteractiveGlobe.client.vue'),scope)
  const app=scope.exports.default.setup(props,{expose(){},emit:(...args)=>emitted.push(args)})
  mounted.forEach(fn=>fn())
@@ -129,4 +129,18 @@ test('map answers remain visible for two seconds before returning and pending ti
  const timer=timers.values().next().value;assert.equal(timer.ms,2000);timers.clear();timer.fn()
  assert.equal(page.mapAnswerPending.value,false);assert.deepEqual(scrolls,['globe-games'])
  page.answerCountry('JPN');assert.equal(timers.size,1);cleanup.forEach(fn=>fn());assert.equal(timers.size,0)
+})
+
+
+test('mobile map selection previews without answering, offers nearby small countries and confirms once',async()=>{
+ const t=setupGlobe({mobile:true});await tick();t.props.mapQuiz=true;await tick()
+ t.app.chooseCode('ARM');assert.equal(t.app.quizCandidate.value,'ARM');assert.equal(t.emitted.length,0)
+ t.app.chooseCode('JPN');assert.equal(t.app.quizCandidate.value,'JPN');assert.equal(t.emitted.length,0)
+ t.app.rotation.value=[-50.55,-26.07,0]
+ t.app.stage.value={getBoundingClientRect:()=>({left:0,top:0,width:340,height:340})}
+ t.app.nearbyAt({clientX:170,clientY:170});assert.ok(t.app.nearbyQuizCountries.value.some(c=>c.cca3==='BHR'));assert.ok(t.app.nearbyQuizCountries.value.length<=5)
+ t.app.previewQuizCountry('BHR');assert.ok(t.app.marker.value);assert.equal(t.emitted.length,0)
+ t.app.confirmQuizCountry();assert.equal(t.emitted.at(-1)[1],'BHR');const count=t.emitted.length;t.app.confirmQuizCountry();assert.equal(t.emitted.length,count)
+ t.props.mapQuiz=false;await tick();assert.equal(t.app.quizCandidate.value,null);assert.equal(t.app.nearbyQuizCountries.value.length,0)
+ t.dispose()
 })

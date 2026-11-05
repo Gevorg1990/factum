@@ -13,6 +13,43 @@ const atlas=useGeographyAtlas()
 const night=ref(false),showPopulation=ref(false),lightsFailed=ref(false),populationMetric=ref<'total'|'density'>('total')
 const layerError=ref(''),selectedCode=ref('ARM'),location=ref<MapLocation|null>(null)
 const records=shallowRef<WorldRecord[]>([])
+const quizCandidate=ref<string|null>(null)
+const nearbyQuizCountries=shallowRef<AtlasCountry[]>([])
+const candidateCountry=computed(()=>atlas.countries.value.find(c=>c.cca3===quizCandidate.value))
+const needsQuizConfirmation=()=>props.mapQuiz&&window.matchMedia('(max-width: 900px), (pointer: coarse)').matches
+watch(()=>props.mapQuiz,()=>{quizCandidate.value=null;nearbyQuizCountries.value=[]})
+function previewQuizCountry(code:string){
+ if(props.selectionLocked)return
+ const country=atlas.countries.value.find(c=>c.cca3===code);if(!country)return
+ quizCandidate.value=code;selectedCode.value=code
+ selected.value=countries.value.find(c=>c.properties.ADM0_A3===code)||null
+ hovered.value=null;location.value=null
+}
+function confirmQuizCountry(){
+ if(!props.mapQuiz||props.selectionLocked||!quizCandidate.value)return
+ const code=quizCandidate.value,country=candidateCountry.value
+ quizCandidate.value=null;nearbyQuizCountries.value=[]
+ if(country){centerAt([country.latlng[1],country.latlng[0]]);if(!selected.value)location.value={coordinates:[country.latlng[1],country.latlng[0]],label:country.nameHy}}
+ emit('countrySelected',code)
+}
+function nearbyAt(event:PointerEvent,touched?:CountryFeature){
+ if(!projection||!stage.value)return
+ const bounds=stage.value.getBoundingClientRect(),x=(event.clientX-bounds.left)*viewSize/bounds.width,y=(event.clientY-bounds.top)*viewSize/bounds.height
+ const rad=Math.PI/180
+ const close=atlas.countries.value.flatMap(c=>{
+  const [lat,lon]=c.latlng
+  const visible=Math.sin(lat*rad)*Math.sin(-rotation.value[1]*rad)+Math.cos(lat*rad)*Math.cos(-rotation.value[1]*rad)*Math.cos((lon+rotation.value[0])*rad)>0
+  if(!visible)return []
+  const point=projection!.rotate(rotation.value).scale(270*zoom.value)([lon,lat]);if(!point)return []
+  const distance=Math.hypot(point[0]-x,point[1]-y)*bounds.width/viewSize
+  return distance<=48?[{country:c,distance}]:[]
+ }).sort((a,b)=>a.distance-b.distance).map(v=>v.country)
+ const hit=atlas.countries.value.find(c=>c.cca3===touched?.properties.ADM0_A3)
+ nearbyQuizCountries.value=[...(hit?[hit]:[]),...close.filter(c=>c.cca3!==hit?.cca3)].slice(0,5)
+ if(hit)previewQuizCountry(hit.cca3)
+ else if(nearbyQuizCountries.value[0])previewQuizCountry(nearbyQuizCountries.value[0].cca3)
+}
+
 const selectedAtlas=computed(()=>atlas.countries.value.find(c=>c.cca3===selectedCode.value))
 const selectedPopulation=computed(()=>{
  const c=selectedAtlas.value;if(!c)return undefined
@@ -26,7 +63,7 @@ const selectedPopulation=computed(()=>{
 watch([night,showPopulation],()=>{layerError.value='';selectedContinent.value=null;hovered.value=null})
 watch(night,()=>{lightsFailed.value=false})
 function rasterError(){lightsFailed.value=true;layerError.value='Լուսավորության պատկերը հասանելի չէ։ Նույն քարտեզի գիշերային գունավորումը շարունակում է աշխատել։'}
-const marker=computed(()=>{rotation.value;zoom.value;if(!location.value||!projection)return null;const [lon,lat]=location.value.coordinates;const rad=Math.PI/180;const visible=Math.sin(lat*rad)*Math.sin(-rotation.value[1]*rad)+Math.cos(lat*rad)*Math.cos(-rotation.value[1]*rad)*Math.cos((lon+rotation.value[0])*rad)>0;if(!visible)return null;return projection.rotate(rotation.value).scale(270*zoom.value)([lon,lat])})
+const marker=computed(()=>{rotation.value;zoom.value;const target=props.mapQuiz&&candidateCountry.value?{coordinates:[candidateCountry.value.latlng[1],candidateCountry.value.latlng[0]] as [number,number]}:location.value;if(!target||!projection)return null;const [lon,lat]=target.coordinates;const rad=Math.PI/180;const visible=Math.sin(lat*rad)*Math.sin(-rotation.value[1]*rad)+Math.cos(lat*rad)*Math.cos(-rotation.value[1]*rad)*Math.cos((lon+rotation.value[0])*rad)>0;if(!visible)return null;return projection.rotate(rotation.value).scale(270*zoom.value)([lon,lat])})
 function centerAt(coordinates:[number,number]){
  cancelAnimationFrame(frame);frame=0;queuedRotation=undefined
  const target:[number,number,number]=[-coordinates[0],-coordinates[1],0]
@@ -205,6 +242,7 @@ async function load() {
 }
 function choose(country: CountryFeature, center = true) {
   if(props.selectionLocked)return
+  if(needsQuizConfirmation()){previewQuizCountry(country.properties.ADM0_A3);return}
   if (selectedContinent.value !== country.properties.CONTINENT) selectedContinent.value = null
   selected.value = country
   selectedCode.value=country.properties.ADM0_A3
@@ -250,7 +288,10 @@ function pointerMove(event: PointerEvent) {
 function pointerUp(event: PointerEvent) {
   if (drag?.id !== event.pointerId) return
   suppressClick = drag.moved
-  if (!drag.moved && drag.country && event.type === 'pointerup') {choose(drag.country);suppressClick=true}
+  if (!drag.moved && event.type === 'pointerup') {
+    if(needsQuizConfirmation()&&!props.selectionLocked){nearbyAt(event,drag.country);suppressClick=true}
+    else if(drag.country){choose(drag.country);suppressClick=true}
+  }
   drag = undefined
   dragging.value = false
   const svg = event.currentTarget as SVGSVGElement
@@ -318,12 +359,18 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
           <circle class="globe-ocean" cx="340" cy="340" :r="radius" :fill="night?'url(#factum-night-ocean)':'url(#factum-ocean)'" stroke="#80c6e8" :stroke-opacity="night ? .2 : .6" />
           <g clip-path="url(#factum-globe-clip)">
             <path v-if="!night" :d="graticule" fill="none" stroke="#80b3c7" stroke-opacity=".22" stroke-width=".8" pointer-events="none" />
-            <path v-for="item in paths" :key="item.country.properties.ADM0_A3 + item.country.properties.NAME" :d="item.path" :data-country="item.country.properties.ADM0_A3" class="globe-country" :style="{ '--continent-color': countryFill(item.country) }" :class="{ 'is-active': !mapQuiz && active === item.country, 'is-night':night, 'is-continent-selected': selectedContinent === item.country.properties.CONTINENT, 'is-continent-muted': selectedContinent && selectedContinent !== item.country.properties.CONTINENT }" @pointerenter="!mapQuiz && !selectionLocked && !dragging && $event.pointerType !== 'touch' && (hovered = item.country)" @pointerleave="hovered = null" @click="!suppressClick && choose(item.country)"><title v-if="!mapQuiz">{{ name(item.country) }}</title></path>
+            <path v-for="item in paths" :key="item.country.properties.ADM0_A3 + item.country.properties.NAME" :d="item.path" :data-country="item.country.properties.ADM0_A3" class="globe-country" :style="{ '--continent-color': countryFill(item.country) }" :class="{ 'is-active': mapQuiz ? quizCandidate===item.country.properties.ADM0_A3 : active === item.country, 'is-night':night, 'is-continent-selected': selectedContinent === item.country.properties.CONTINENT, 'is-continent-muted': selectedContinent && selectedContinent !== item.country.properties.CONTINENT }" @pointerenter="!mapQuiz && !selectionLocked && !dragging && $event.pointerType !== 'touch' && (hovered = item.country)" @pointerleave="hovered = null" @click="!suppressClick && choose(item.country)"><title v-if="!mapQuiz">{{ name(item.country) }}</title></path>
           </g>
           <circle cx="340" cy="340" :r="radius" :fill="night?'url(#factum-night-shade)':'url(#factum-globe-shade)'" pointer-events="none" />
         </svg>
-        <svg v-if="marker && !mapQuiz" class="globe-markers" :viewBox="`0 0 ${viewSize} ${viewSize}`" aria-hidden="true"><g class="geo-marker" :transform="`translate(${marker[0]},${marker[1]})`" pointer-events="none"><circle r="13" fill="#dfc38f22" stroke="#dfc38f88"/><circle r="5" fill="#ffe0a3" stroke="#15233c" stroke-width="2"/></g></svg>
+        <svg v-if="marker && (!mapQuiz || candidateCountry)" class="globe-markers" :viewBox="`0 0 ${viewSize} ${viewSize}`" aria-hidden="true"><g class="geo-marker" :transform="`translate(${marker[0]},${marker[1]})`" pointer-events="none"><circle r="13" fill="#dfc38f22" stroke="#dfc38f88"/><circle r="5" fill="#ffe0a3" stroke="#15233c" stroke-width="2"/></g></svg>
         <div v-if="active && !dragging && !mapQuiz && !location" class="globe-tooltip" :class="{ 'is-selected': !hovered }" :style="hovered ? { left: `${tip.x}px`, top: `${tip.y}px` } : undefined" aria-hidden="true"><strong><CountryFlag :code="flagCode(active)" /> {{ name(active) }}</strong><small>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</small><small v-if="showPopulation" class="globe-tooltip-population">Բնակչություն՝ {{tooltipPopulation!=null?number.format(Math.round(tooltipPopulation)):'Տվյալը հասանելի չէ'}}<template v-if="tooltipPopulation!=null"> · {{atlas.statistics.value?.year}} թ․</template></small></div>
+      </div>
+      <div v-if="mapQuiz && candidateCountry" class="quiz-map-confirm" aria-live="polite">
+        <p>Ընտրված երկիրը՝ <strong>{{candidateCountry.nameHy}}</strong></p>
+        <div v-if="nearbyQuizCountries.length>1" class="quiz-nearby" role="group" aria-label="Հպման կետին մոտ երկրներ"><span>Մոտակայքում՝</span><button v-for="country in nearbyQuizCountries" :key="country.cca3" type="button" :aria-pressed="quizCandidate===country.cca3" @click="previewQuizCountry(country.cca3)">{{country.nameHy}}</button></div>
+        <button class="btn" type="button" :disabled="selectionLocked" @click="confirmQuizCountry">Հաստատել ընտրությունը</button>
+        <small>Կարող ես ընտրել այլ երկիր կամ մոտեցնել քարտեզը, ապա հաստատել։</small>
       </div>
       <p v-if="location&&!mapQuiz" class="globe-location-label" role="status"><MapPin :size="16"/>{{location.label}}<button type="button" aria-label="Հեռացնել նշիչը" @click="location=null">×</button></p>
       <ul class="globe-continent-legend" aria-label="Ընտրիր աշխարհամասը">
@@ -341,7 +388,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
     <aside class="globe-sidebar">
 
       <section id="globe-country-info" tabindex="-1" class="panel globe-info" aria-live="polite" aria-atomic="true">
-        <p v-if="mapQuiz" class="globe-data-note">Քարտեզի խաղը ակտիվ է։ Ընտրիր երկիրը երկրագնդի վրա։</p>
+        <p v-if="mapQuiz" class="globe-data-note">Քարտեզի խաղը ակտիվ է։ Ընտրիր երկիրը երկրագնդի վրա։ Մոբայլում ընտրությունը հաստատիր քարտեզի ներքևի կոճակով։</p>
         <GlobeCountryPanel v-else-if="selectedAtlas" :country="selectedAtlas" :countries="atlas.countries.value" :statistics="atlas.statistics.value" :population="selectedPopulation" @select="chooseCode"/>
         <div v-else class="globe-empty"><Globe2 :size="32" /><h2>Աշխարհը՝ քո ձեռքերում</h2><p>Ընտրիր երկիրը գլոբուսի վրա կամ գտիր որոնմամբ։</p></div>
       </section>
@@ -353,6 +400,8 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 </template>
 
 <style scoped>
+.quiz-map-confirm{margin:12px 20px;padding:16px;border:1px solid #dfc38f66;border-radius:12px;background:#101e32;display:grid;gap:14px}.quiz-map-confirm p{font-size:13px;line-height:1.8}.quiz-map-confirm strong{color:#dfc38f}.quiz-map-confirm small{font-size:11px;line-height:1.8;color:#a9bbd4}.quiz-map-confirm>.btn{min-height:48px}.quiz-nearby{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:11px}.quiz-nearby button{min-height:44px;padding:8px 12px;border:1px solid #8997c044;border-radius:10px}.quiz-nearby button[aria-pressed=true]{color:#dfc38f;border-color:#dfc38f;background:#dfc38f10}
+
 
 .globe-layout { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
 .globe-view { grid-column: 1; grid-row: 1 / span 2; overflow: hidden; background: radial-gradient(ellipse at 45% 45%, #122e4c, #061226 72%); }
