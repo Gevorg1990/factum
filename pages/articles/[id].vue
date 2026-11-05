@@ -3,7 +3,15 @@ import { allEncyclopediaQuestions, subjects, collectionSubjects } from '~/data/c
 import { atomFacts, atomParticles, atomSections } from '~/data/atomArticle'
 
 const route = useRoute()
-const question = allEncyclopediaQuestions.find(item => item.id === route.params.id)
+let question = allEncyclopediaQuestions.find(item => item.id === route.params.id)
+if (!question && typeof route.params.id === 'string' && /^literature-intro-[ab]-\d+-[ab]$/.test(route.params.id)) {
+  const { legacyLiteratureQuestions } = await import('~/data/encyclopedia/literatureLegacy')
+  question = legacyLiteratureQuestions.find(item => item.id === route.params.id)
+}
+if (!question && typeof route.params.id === 'string' && /^health-(?:heart|lungs|habits(?:-b)?|mind)-\d+-[ab]$/.test(route.params.id)) {
+  const { legacyHealthQuestions } = await import('~/data/encyclopedia/healthLegacy')
+  question = legacyHealthQuestions.find(item => item.id === route.params.id)
+}
 const subject = [...subjects, ...collectionSubjects].find(item => item.slug === question?.subject)
 const isAtomArticle = computed(() => question?.id === 'c1')
 const { saved, markRead, toggleSaved } = useProgress()

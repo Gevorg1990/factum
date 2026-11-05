@@ -1,10 +1,16 @@
 import type { Question } from '../content'
+import { literatureEnrichments } from './literatureEnrichments'
+import { healthEnrichments } from './healthEnrichments'
+import { financeEnrichments } from './financeEnrichments'
 
 /** Editorial expansions for the compact question bank. Keep each explanation
  * focused on the concept and add an example that clarifies, rather than repeats,
  * the short answer.
  */
 export const questionEnrichments: Record<string, Partial<Question>> = {
+  ...literatureEnrichments,
+  ...healthEnrichments,
+  ...financeEnrichments,
   'chemistry-intro-1': {
     sections: [
       { title: 'Ի՞նչ է փոխվում ռեակցիայի ընթացքում', text: 'Ռեակցիայի սկզբում եղած մասնիկները վերադասավորվում են․ հին քիմիական կապերի մի մասը խզվում է, և առաջանում են նոր կապեր։ Ատոմների տեսակներն ու ընդհանուր քանակը սովորական քիմիական ռեակցիայի ընթացքում պահպանվում են, բայց դրանց միացման ձևը փոխվում է։ Այդ պատճառով ստացվող նյութերի հատկությունները կարող են տարբերվել սկզբնական նյութերի հատկություններից։' },

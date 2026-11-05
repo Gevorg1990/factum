@@ -19,6 +19,7 @@ export function createEarthScene(host: HTMLElement, select: (id: EarthLayerId)=>
   scene.environment=environment
   scene.add(root,new AmbientLight(0xe4e0d5,.8))
   const key=new DirectionalLight(0xffedda,3.2); key.position.set(-3,5,7); scene.add(key)
+  const fill=new DirectionalLight(0xadcfff,1.3);fill.position.set(-5,1,-2);scene.add(fill)
   const rim=new DirectionalLight(0xd7e4ee,1.1); rim.position.set(4,-2,-3); scene.add(rim)
   const controls=new OrbitControls(camera,renderer.domElement)
   controls.enablePan=false; controls.enableDamping=false; controls.minDistance=3.2; controls.maxDistance=16
@@ -31,6 +32,8 @@ export function createEarthScene(host: HTMLElement, select: (id: EarthLayerId)=>
     for(const mesh of [surface,first,second]) { mesh.userData.layer=layer.id; root.add(mesh) }
     parts.push({surface,first,second,inner,outer,id:layer.id,material,cutMaterial})
   }
+  const boundaryMaterial=new LineBasicMaterial({color:'#ffd7a0',transparent:true,opacity:.42})
+  const boundaries=new LineSegments(new BufferGeometry(),boundaryMaterial);boundaries.name='earth-layer-boundaries';root.add(boundaries)
   const markerMaterial=new MeshStandardMaterial({color:'#d4f8ff',emissive:new Color('#4ce0ff'),emissiveIntensity:1.8,depthTest:false})
   const marker=new Mesh(new SphereGeometry(.035,16,12),markerMaterial);marker.renderOrder=10;root.add(marker)
   const routeMaterial=new LineBasicMaterial({color:'#b9eaff',transparent:true,opacity:.65,depthTest:false})
@@ -61,7 +64,7 @@ export function createEarthScene(host: HTMLElement, select: (id: EarthLayerId)=>
         for(let j=0;j<steps;j++)vertices.push(...point(a[0]!+delta*j/steps,a[1]!+(b[1]!-a[1]!)*j/steps),...point(a[0]!+delta*(j+1)/steps,a[1]!+(b[1]!-a[1]!)*(j+1)/steps))
       }
     }
-    if(vertices.length){const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(vertices,3));surfaceLines=new LineSegments(geometry,surfaceMaterial);root.add(surfaceLines)}
+    if(vertices.length){const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(vertices,3));surfaceLines=new LineSegments(geometry,surfaceMaterial);surfaceLines.name='earth-country-outlines';root.add(surfaceLines)}
     render()
   }
   let opening=0,target=EARTH_CUT_ANGLE,frame=0,last=0,disposed=false,visible=true,reduced=reducedMotion
@@ -71,6 +74,15 @@ export function createEarthScene(host: HTMLElement, select: (id: EarthLayerId)=>
   function render() { if(!disposed&&visible&&!document.hidden) renderer.render(scene,camera) }
   function applyOpening(value:number) {
     opening=value
+    const edges:number[]=[]
+    if(value>.001)for(const part of parts)for(const phi of [0,value])for(let i=0;i<64;i++){
+      for(const t of [i*Math.PI/64,(i+1)*Math.PI/64]){
+        const r=part.outer+0.001
+        edges.push(-r*Math.cos(phi)*Math.sin(t),r*Math.cos(t),r*Math.sin(phi)*Math.sin(t))
+      }
+    }
+    boundaries.geometry.dispose();boundaries.geometry=new BufferGeometry()
+    boundaries.geometry.setAttribute('position',new Float32BufferAttribute(edges,3))
     surfaceMaterial.uniforms.opening!.value=value
     for(const part of parts) {
       part.surface.geometry.dispose();part.surface.geometry=shellSurface(part.outer,value)
@@ -97,7 +109,7 @@ export function createEarthScene(host: HTMLElement, select: (id: EarthLayerId)=>
     render()
     if(!disposed&&visible&&!document.hidden&&opening!==target) frame=requestAnimationFrame(animate)
   }
-  function reset() { camera.position.set(-6,2.1,4); controls.target.set(0,0,0);controls.update();render() }
+  function reset() { camera.position.set(-5.2,1.6,3.3); controls.target.set(0,0,0);controls.update();render() }
   function resize() { const {width,height}=host.getBoundingClientRect();if(!width||!height||disposed)return;camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height);render() }
   function pointerDown(event:PointerEvent) { pointers.add(event.pointerId);if(pointers.size>1){pointer=undefined;return}if(event.isPrimary&&event.button===0)pointer={x:event.clientX,y:event.clientY,id:event.pointerId} }
   function pointerUp(event:PointerEvent) {
@@ -128,6 +140,6 @@ export function createEarthScene(host: HTMLElement, select: (id: EarthLayerId)=>
     zoom(factor:number){camera.position.setLength(Math.max(controls.minDistance,Math.min(controls.maxDistance,camera.position.length()*factor)));controls.update();render()},
     rotate(x:number,y:number){const s=new Spherical().setFromVector3(camera.position);s.theta+=x;s.phi=Math.max(.05,Math.min(Math.PI-.05,s.phi+y));camera.position.setFromSpherical(s);controls.update();render()},
     reset,
-    dispose(){if(disposed)return;disposed=true;cancelAnimationFrame(frame);resizeObserver.disconnect();intersection.disconnect();document.removeEventListener('visibilitychange',sync);controls.removeEventListener('change',render);controls.dispose();canvas.removeEventListener('pointerdown',pointerDown);canvas.removeEventListener('pointerup',pointerUp);canvas.removeEventListener('pointercancel',cancelPointer);canvas.removeEventListener('webglcontextlost',contextLost);for(const p of parts){p.surface.geometry.dispose();p.first.geometry.dispose();p.second.geometry.dispose();p.material.dispose();p.cutMaterial.dispose()}environment.dispose();surfaceTexture?.dispose();surfaceLines?.geometry.dispose();surfaceMaterial.dispose();marker.geometry.dispose();markerMaterial.dispose();route.geometry.dispose();routeMaterial.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove() },
+    dispose(){if(disposed)return;disposed=true;cancelAnimationFrame(frame);resizeObserver.disconnect();intersection.disconnect();document.removeEventListener('visibilitychange',sync);controls.removeEventListener('change',render);controls.dispose();canvas.removeEventListener('pointerdown',pointerDown);canvas.removeEventListener('pointerup',pointerUp);canvas.removeEventListener('pointercancel',cancelPointer);canvas.removeEventListener('webglcontextlost',contextLost);for(const p of parts){p.surface.geometry.dispose();p.first.geometry.dispose();p.second.geometry.dispose();p.material.dispose();p.cutMaterial.dispose()}boundaries.geometry.dispose();boundaryMaterial.dispose();environment.dispose();surfaceTexture?.dispose();surfaceLines?.geometry.dispose();surfaceMaterial.dispose();marker.geometry.dispose();markerMaterial.dispose();route.geometry.dispose();routeMaterial.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove() },
   }
 }

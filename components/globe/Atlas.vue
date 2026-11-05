@@ -1,0 +1,11 @@
+<script setup lang="ts">
+import type {MapLocation} from '~/utils/geography/types'
+const emit=defineEmits<{locate:[location:MapLocation]}>()
+const route=useRoute()
+const section=ref(typeof route.query.fact==='string'?'facts':'records')
+watch(()=>route.query.fact,value=>{if(typeof value==='string')section.value='facts'})
+const sections=[['records','Աշխարհի ռեկորդներ','31 բացահայտում'],['comparison','Համեմատել երկրները','Նույն տարվա ցուցանիշներ'],['facts','Գիտեի՞ր, որ…','105 փաստ'],['history','Ժամանակի մեքենա','Տվյալների հասանելիություն']]
+function change(value:string){section.value=value}
+</script>
+<template><div id="globe-atlas" class="geo-section atlas-hub"><header><p class="geo-kicker">FACTUM · ԱՇԽԱՐՀԱԳՐԱԿԱՆ ՀԱՆՐԱԳԻՏԱՐԱՆ</p><h2>Աշխարհը՝ շերտ առ շերտ</h2><p>Համեմատիր, գտիր, խաղա և հավաքիր քեզ հետաքրքրած բացահայտումները։</p></header><nav class="atlas-navigation" aria-label="Աշխարհագրական հանրագիտարանի բաժիններ"><button v-for="item in sections" :key="item[0]" type="button" :aria-pressed="section===item[0]" @click="change(item[0]!)"><strong>{{item[1]}}</strong><small>{{item[2]}}</small></button></nav><Suspense><div><LazyGlobeWorldRecords v-if="section==='records'" @locate="emit('locate',$event)"/><LazyGlobeCountryComparison v-else-if="section==='comparison'"/><LazyGlobeInterestingFacts v-else-if="section==='facts'" @locate="emit('locate',$event)"/><LazyGlobeHistoricalTimeline v-else-if="section==='history'"/></div><template #fallback><p role="status">Բեռնում ենք բաժինը…</p></template></Suspense></div></template>
+<style scoped>.atlas-navigation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.atlas-navigation button{min-height:86px;padding:16px 12px;text-align:left;border:1px solid #8997c033;border-radius:12px;background:linear-gradient(135deg,#14283d,#0c1629)}.atlas-navigation strong{display:block;font-size:12px;line-height:1.7}.atlas-navigation small{display:block;font-size:10px;color:#91a5bf;margin-top:8px;line-height:1.7}.atlas-navigation button[aria-pressed=true]{color:#dfc38f;border-color:#dfc38f88;background:linear-gradient(135deg,#3a352c66,#111d2e)}@media(max-width:900px){.atlas-navigation{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:500px){.atlas-navigation{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>

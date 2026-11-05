@@ -69,3 +69,14 @@ test('globe mode keeps the original selection and country links while returning 
   await page.setMode('interior');await page.showOnMap('FRA','world-facts-title')
   assert.equal(page.mode.value,'globe');assert.equal(page.mapFocus.value.code,'FRA');assert.equal(page.mapReturnTarget.value,'world-facts-title')
 })
+
+test('cut opening slider updates the scene independently from selected depth',async()=>{
+  const app=setup();await tick()
+  app.viewer.chooseDepth(3000);await vue.nextTick()
+  for(const opening of [0,.4,1]){
+    app.viewer.opening.value=opening;await vue.nextTick()
+    assert.equal(app.calls.filter(call=>call[0]==='setOpening').at(-1)[1],opening)
+    assert.equal(app.viewer.depth.value,3000)
+  }
+  app.dispose()
+})

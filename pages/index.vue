@@ -120,7 +120,7 @@ const tiles = computed(() => subjectOrder.value.map(slug => homeSubjects.find(su
   ...subject,
   img: optimizedImage(subjectImages[subject.slug] ?? `/images/${subject.img}-art.jpg`),
   icon: cardTheme(subject.slug).icon,
-  label: subject.shortName || subject.name,
+  label: ('shortName' in subject && typeof subject.shortName==='string' ? subject.shortName : undefined) || subject.name,
   accent: cardTheme(subject.slug).color,
 })))
 const games=[{id:'million',name:'FACTUM Million',desc:'15 հարց՝ 5 հեշտ ու հումորային, 5 միջին և 5 շատ բարդ։',button:'Խաղալ',tone:'gold'},{id:'genius',name:'FACTUM Genius',desc:'Հեշտ, միջին և դժվար մակարդակներ․ հաջորդը բացվում է հաջող ավարտից հետո։',button:'Խաղալ',tone:'blue'},{id:'logic',name:'FACTUM Logic',desc:'Երեք բարդության մակարդակ՝ նոր գլուխկոտրուկներով ու հաջորդական բացմամբ։',button:'Խաղալ',tone:'purple'}]

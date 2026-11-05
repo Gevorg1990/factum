@@ -7,7 +7,7 @@ import { createCapitalRounds, type CapitalQuizMode } from '~/utils/capitalQuiz'
 
 import { createElementRounds, symbolSpeechAliases } from '~/utils/elementQuiz'
 import { formatVoiceTranscript, isVoiceAnswerCorrect, type VoiceQuestion } from '~/utils/voiceQuiz'
-const props = withDefaults(defineProps<{ topic?: 'geography' | 'chemistry'; paused?: boolean }>(), { topic: 'geography', paused: false })
+const props = withDefaults(defineProps<{ topic?: 'geography' | 'chemistry'; paused?: boolean; embedded?: boolean }>(), { topic: 'geography', paused: false })
 const feedbackAudio = useMillionAudio()
 feedbackAudio.enabled.value = true
 const chemistry = computed(() => props.topic === 'chemistry')
@@ -279,9 +279,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="panel capital-quiz" :aria-labelledby="titleId">
+  <section class="panel capital-quiz" :class="{ 'capital-embedded': embedded }" :aria-labelledby="titleId">
     <div class="capital-intro">
-      <span class="capital-eyebrow"><Mic :size="16" /> ՓՈՐՁԻՐ ՔՈ ԳԻՏԵԼԻՔՆԵՐԸ</span>
+      <span v-if="!embedded" class="capital-eyebrow"><Mic :size="16" /> ՓՈՐՁԻՐ ՔՈ ԳԻՏԵԼԻՔՆԵՐԸ</span>
       <h2 :id="titleId">{{ chemistry ? 'Ճանաչիր քիմիական տարրերը' : 'Երկիր և մայրաքաղաք' }}</h2>
       <p>{{ chemistry ? 'Մենք ցույց ենք տալիս քիմիական նշանը, դու ասում ես տարրի հայերեն անունը։ Պատասխանիր ձայնով կամ գրիր պատասխանը և ստուգիր քո գիտելիքները։' : 'Մենք ասում ենք երկիրը, դու՝ մայրաքաղաքը։ Կամ հակառակը։ Պատասխանիր ձայնով և ստուգիր գիտելիքներդ։' }}</p>
     </div>
@@ -337,6 +337,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .capital-quiz { display: grid; grid-template-columns: .9fr 1.1fr; margin-top: 28px; overflow: hidden; border-color: #dfc38f66; }
+.capital-quiz.capital-embedded { margin-top: 0; border: 0; border-radius: 0; background: transparent; }
 .capital-intro { padding: 34px; background: radial-gradient(ellipse at 0 0, #dfc38f14, transparent 75%); }
 .capital-eyebrow { display: flex; align-items: center; gap: 9px; color: #dfc38f; font-size: 10px; letter-spacing: 1px; }
 .capital-intro h2 { font-size: clamp(23px, 2.8vw, 32px); font-weight: 850; margin: 22px 0 14px; }

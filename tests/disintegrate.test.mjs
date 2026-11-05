@@ -81,8 +81,8 @@ test('profile removes a bookmark once after the effect, including navigation can
  for(const navigating of [false,true]){
   const cleanup=[],effects=[],removed=[]
   const saved=ref(['q1'])
-  const scope={exports:{},ref,computed,nextTick:()=>Promise.resolve(),onBeforeUnmount:fn=>cleanup.push(fn),useProgress:()=>({saved,removeSaved:id=>{removed.push(id);saved.value=[]}}),disintegrate(){let resolve;const finished=new Promise(done=>{resolve=done});const effect={finished,cancel:()=>resolve()};effects.push(effect);return effect},document:{querySelector:()=>null},allEncyclopediaQuestions:[],people:[],facts:[],timeline:[],bibleBooks:[],findMillionBookmark(){}}
-  for(const icon of ['BookOpen','Trophy','ScrollText','Sparkles','Users','Landmark','Bookmark'])scope[icon]={}
+  const scope={...require('vue'),onMounted(){},window:{removeEventListener(){}},gameRecordsEvent:'factum-test-records',exports:{},ref,computed,nextTick:()=>Promise.resolve(),onBeforeUnmount:fn=>cleanup.push(fn),useProgress:()=>({saved,removeSaved:id=>{removed.push(id);saved.value=[]}}),disintegrate(){let resolve;const finished=new Promise(done=>{resolve=done});const effect={finished,cancel:()=>resolve()};effects.push(effect);return effect},document:{querySelector:()=>null},allEncyclopediaQuestions:[],people:[],facts:[],timeline:[],bibleBooks:[],findMillionBookmark(){}}
+  for(const icon of ['BookOpen','Trophy','ScrollText','Sparkles','Users','Landmark','Bookmark','Gamepad2','ArrowUpRight','Trash2','Check'])scope[icon]={}
   runInNewContext(js,scope)
   const card={nextElementSibling:null,previousElementSibling:null}
   const event={currentTarget:{closest:()=>card}}

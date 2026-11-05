@@ -78,10 +78,13 @@ rawQuestions.push(...expandedQuestions.filter(question => {
 }))
 const allQuestions = applyQuestionEnrichments(rawQuestions)
 
-/** Keep the strongest ten learning articles visible in each field. The full catalog
+/** Show ten articles per field, prioritizing the richest explanations. The full catalog
  * remains available for saved links and previously shared article URLs.
  */
 function explanationScore(question: Question): number {
+  if (['literature', 'health', 'finance'].includes(question.subject)) {
+    return [question.detail, ...(question.sections || []).map(section => section.text), question.example || '', question.takeaway || ''].join(' ').length
+  }
   return (question.sections?.length || 0) * 100
     + (question.example ? 45 : 0)
     + (question.takeaway ? 25 : 0)

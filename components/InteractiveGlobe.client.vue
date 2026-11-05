@@ -1,9 +1,52 @@
 <script setup lang="ts">
+import type {AtlasCountry,MapLocation,WorldRecord} from '~/utils/geography/types'
+import {normalizeGeoSearch,populationColor,validCoordinates,density} from '~/utils/geography/core'
+import {capitalName} from '~/data/geography/labels'
+import {geographicPlaces} from '~/data/geography/places'
 import { countryPopulation } from '~/data/countryPopulation'
 import { Globe2, RotateCcw, Minus, Plus, Search, MapPin, MousePointer2 } from 'lucide-vue-next'
 import { orientCountry, rotateGlobe, type CountryFeature, type CountryDetails, type GlobeApi, type GlobeProjection } from '~/utils/globe'
 
-const props = defineProps<{ focusCountry?: { code: string; requestId: number } }>()
+const props = defineProps<{ focusCountry?: { code: string; requestId: number }; focusLocation?:MapLocation; mapQuiz?:boolean; selectionLocked?:boolean }>()
+const emit=defineEmits<{countrySelected:[code:string]}>()
+const atlas=useGeographyAtlas()
+const night=ref(false),showPopulation=ref(false),lightsFailed=ref(false),populationMetric=ref<'total'|'density'>('total')
+const layerError=ref(''),selectedCode=ref('ARM'),location=ref<MapLocation|null>(null)
+const records=shallowRef<WorldRecord[]>([])
+const selectedAtlas=computed(()=>atlas.countries.value.find(c=>c.cca3===selectedCode.value))
+const selectedPopulation=computed(()=>{
+ const c=selectedAtlas.value;if(!c)return undefined
+ const f=countries.value.find(f=>f.properties.ADM0_A3===c.cca3),snapshot=atlas.statistics.value
+ const baseline=snapshot?.countries[c.cca3]?.population
+ const latest=countryPopulation(c.cca3,f?.properties.POP_EST??NaN,f?.properties.POP_YEAR??0,populationEstimates.value)
+ if(baseline!=null&&Number.isFinite(baseline)&&baseline>=0&&snapshot!.year>latest.year)return {value:baseline,year:snapshot!.year,source:snapshot!.source}
+ if(baseline!=null&&Number.isFinite(baseline)&&baseline>=0&&snapshot!.year===latest.year&&!populationEstimates.value[c.cca3])return {value:baseline,year:snapshot!.year,source:snapshot!.source}
+ return Number.isFinite(latest.value)&&latest.year>0?latest:undefined
+})
+watch([night,showPopulation],()=>{layerError.value='';selectedContinent.value=null;hovered.value=null})
+watch(night,()=>{lightsFailed.value=false})
+function rasterError(){lightsFailed.value=true;layerError.value='Լուսավորության պատկերը հասանելի չէ։ Նույն քարտեզի գիշերային գունավորումը շարունակում է աշխատել։'}
+const marker=computed(()=>{rotation.value;zoom.value;if(!location.value||!projection)return null;const [lon,lat]=location.value.coordinates;const rad=Math.PI/180;const visible=Math.sin(lat*rad)*Math.sin(-rotation.value[1]*rad)+Math.cos(lat*rad)*Math.cos(-rotation.value[1]*rad)*Math.cos((lon+rotation.value[0])*rad)>0;if(!visible)return null;return projection.rotate(rotation.value).scale(270*zoom.value)([lon,lat])})
+function centerAt(coordinates:[number,number]){
+ cancelAnimationFrame(frame);frame=0;queuedRotation=undefined
+ const target:[number,number,number]=[-coordinates[0],-coordinates[1],0]
+ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){rotation.value=target;return}
+ const start:[number,number,number]=[...rotation.value],delta=((target[0]-start[0]+540)%360)-180
+ let began=0,previous=0
+ const animate=(time:number)=>{frame=0;if(disposed)return;if(!began)began=time;const t=Math.min(1,(time-began)/650);if(time-previous>30||t===1){const ease=1-(1-t)**3;rotation.value=[start[0]+delta*ease,start[1]+(target[1]-start[1])*ease,0];previous=time}if(t<1)frame=requestAnimationFrame(animate)}
+ frame=requestAnimationFrame(animate)
+}
+function locate(target:MapLocation){if(!validCoordinates(target.coordinates))return;location.value=target;zoom.value=1;search.value='';centerAt(target.coordinates)}
+watch(()=>props.focusLocation,value=>{if(value&&api)locate(value)})
+function chooseCode(code:string){const feature=countries.value.find(c=>c.properties.ADM0_A3===code);if(feature){choose(feature,true);return}const country=atlas.countries.value.find(c=>c.cca3===code);if(country){selected.value=null;selectedCode.value=code;locate({coordinates:[country.latlng[1],country.latlng[0]],label:country.nameHy});emit('countrySelected',code)}}
+function countryFill(feature:CountryFeature){
+ const c=details.value[feature.properties.ADM0_A3],stats=atlas.statistics.value?.countries[feature.properties.ADM0_A3]
+ let color=continentColors[feature.properties.CONTINENT]||'#427c79'
+ if(showPopulation.value)color=populationMetric.value==='density'?populationColor(density(stats,c?.area||0)==null?undefined:density(stats,c?.area||0)!*1e5):populationColor(stats?.population)
+ if(!night.value)return color
+ return '#'+[1,3,5].map(i=>Math.round(parseInt(color.slice(i,i+2),16)*.42).toString(16).padStart(2,'0')).join('')
+}
+
 
 
 const { estimates: populationEstimates, status: populationStatus } = usePopulationEstimates()
@@ -56,6 +99,7 @@ function toggleContinent(continent: string) {
   selectedContinent.value = continent
   hovered.value = null
   selected.value = null
+  selectedCode.value=''
   const center = continentCenters[continent]
   if (center) {
     cancelAnimationFrame(frame)
@@ -73,12 +117,14 @@ function name(country: CountryFeature) {
 }
 const active = computed(() => hovered.value ?? selected.value)
 const activePopulation = computed(() => active.value ? countryPopulation(active.value.properties.ADM0_A3, active.value.properties.POP_EST, active.value.properties.POP_YEAR, populationEstimates.value) : undefined)
+const tooltipPopulation=computed(()=>active.value?atlas.statistics.value?.countries[active.value.properties.ADM0_A3]?.population:undefined)
 const activeDetails = computed(() => active.value ? info(active.value) : undefined)
 const results = computed(() => {
-  const query = search.value.trim().toLocaleLowerCase()
-  if (!query) return []
-  return countries.value.filter(country => [name(country), country.properties.NAME, info(country)?.capital?.join(' ') ?? ''].some(value => value.toLocaleLowerCase().includes(query))).slice(0, 8)
+  const query=normalizeGeoSearch(search.value)
+  if(!query)return []
+  return atlas.countries.value.filter(country=>[country.nameHy,country.nameEn,...country.capital,capitalName(country.cca3,country.capital)].some(value=>normalizeGeoSearch(value).includes(query))).slice(0,7)
 })
+const placeResults=computed(()=>{const q=normalizeGeoSearch(search.value);return q?[...geographicPlaces,...records.value].filter(p=>normalizeGeoSearch([p.title,'measure' in p?p.measure:'',p.category].join(' ')).includes(q)).slice(0,6):[]})
 const paths = computed(() => {
   if (!api || !projection || !countries.value.length) return []
   projection.rotate(rotation.value).scale(270 * zoom.value)
@@ -113,7 +159,7 @@ async function loadApi(signal: AbortSignal): Promise<GlobeApi> {
   if (existing?.geoOrthographic) return existing
   await new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = 'https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js'
+    script.src = '/vendor/d3-7.9.0.min.js'
     script.async = true
     const cleanup = () => { script.onload = null; script.onerror = null; signal.removeEventListener('abort', abort) }
     const abort = () => { cleanup(); script.remove(); reject(new Error('Cancelled')) }
@@ -134,19 +180,22 @@ async function load() {
   loading.value = true
   error.value = false
   try {
-    const [loadedApi, worldResponse, detailResponse] = await Promise.all([
+    const [loadedApi, worldResponse] = await Promise.all([
       loadApi(signal),
-      fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson', { signal }),
-      fetch('https://raw.githubusercontent.com/mledoze/countries/master/countries.json', { signal }),
+      fetch('/data/geography/world-v1.json', { signal }),
+      atlas.load(),
     ])
-    if (!worldResponse.ok || !detailResponse.ok) throw new Error('Country data unavailable')
-    const [world, countryInfo] = await Promise.all([worldResponse.json(), detailResponse.json()]) as [{ features: CountryFeature[] }, CountryDetails[]]
+    if (!worldResponse.ok) throw new Error('Country data unavailable')
+    const world = await worldResponse.json() as { features: CountryFeature[] }
+    const countryInfo = atlas.countries.value
     if (disposed || signal.aborted) return
     api = loadedApi
     projection = api.geoOrthographic().translate([viewSize / 2, viewSize / 2]).clipAngle(90).precision(.4)
     details.value = Object.fromEntries(countryInfo.map(country => [country.cca3, country]))
     countries.value = world.features.map(feature => orientCountry(feature, loadedApi.geoArea))
     selected.value = countries.value.find(country => country.properties.ADM0_A3 === 'ARM') ?? null
+    if(props.focusLocation)locate(props.focusLocation)
+    if(props.focusCountry)chooseCode(props.focusCountry.code)
   } catch {
     if (!disposed) error.value = true
   } finally {
@@ -154,13 +203,17 @@ async function load() {
     if (!disposed) loading.value = false
   }
 }
-function choose(country: CountryFeature, center = false) {
+function choose(country: CountryFeature, center = true) {
+  if(props.selectionLocked)return
   if (selectedContinent.value !== country.properties.CONTINENT) selectedContinent.value = null
   selected.value = country
+  selectedCode.value=country.properties.ADM0_A3
+  location.value=null
+  emit('countrySelected',country.properties.ADM0_A3)
   hovered.value = null
   if (center) {
     const coordinates = info(country)?.latlng
-    if (coordinates) rotation.value = [-coordinates[1], -coordinates[0], 0]
+    if (coordinates) centerAt([coordinates[1],coordinates[0]])
     hovered.value = null
     search.value = ''
   }
@@ -168,10 +221,11 @@ function choose(country: CountryFeature, center = false) {
 function moveTip(event: PointerEvent) {
   if (dragging.value || !stage.value) return
   const bounds = stage.value.getBoundingClientRect()
-  tip.value = { x: Math.max(8, Math.min(event.clientX - bounds.left + 14, bounds.width - 210)), y: Math.max(8, Math.min(event.clientY - bounds.top + 14, bounds.height - 80)) }
+  tip.value = { x: Math.max(8, Math.min(event.clientX - bounds.left + 14, bounds.width - 210)), y: Math.max(8, Math.min(event.clientY - bounds.top + 14, bounds.height - 120)) }
 }
 function pointerDown(event: PointerEvent) {
   if (event.button !== 0 || !projection) return
+  cancelAnimationFrame(frame);frame=0;queuedRotation=undefined
   const countryCode = (event.target as Element).getAttribute('data-country')
   drag = { id: event.pointerId, x: event.clientX, y: event.clientY, rotation: [...rotation.value], moved: false, country: countries.value.find(country => country.properties.ADM0_A3 === countryCode) }
   suppressClick = false
@@ -196,7 +250,7 @@ function pointerMove(event: PointerEvent) {
 function pointerUp(event: PointerEvent) {
   if (drag?.id !== event.pointerId) return
   suppressClick = drag.moved
-  if (!drag.moved && drag.country && event.type === 'pointerup') choose(drag.country)
+  if (!drag.moved && drag.country && event.type === 'pointerup') {choose(drag.country);suppressClick=true}
   drag = undefined
   dragging.value = false
   const svg = event.currentTarget as SVGSVGElement
@@ -204,6 +258,10 @@ function pointerUp(event: PointerEvent) {
 }
 function changeZoom(amount: number) { zoom.value = Math.max(.75, Math.min(1.8, zoom.value + amount)) }
 function keyRotate(event: KeyboardEvent) {
+  cancelAnimationFrame(frame);frame=0
+  if(event.key==='+'||event.key==='='){event.preventDefault();changeZoom(.15);return}
+  if(event.key==='-'){event.preventDefault();changeZoom(-.15);return}
+  if(event.key==='Home'){event.preventDefault();reset();return}
   const changes: Record<string, [number, number]> = { ArrowLeft: [-12, 0], ArrowRight: [12, 0], ArrowUp: [0, -12], ArrowDown: [0, 12] }
   const delta = changes[event.key]
   if (!delta) return
@@ -211,8 +269,8 @@ function keyRotate(event: KeyboardEvent) {
   rotation.value = rotateGlobe(rotation.value, delta[0], delta[1], 100)
   hovered.value = null
 }
-function reset() { selectedContinent.value = null; rotation.value = [-45, -25, 0]; zoom.value = 1; hovered.value = null }
-onMounted(load)
+function reset() { cancelAnimationFrame(frame);frame=0;location.value=null; selectedContinent.value = null; rotation.value = [-45, -25, 0]; zoom.value = 1; hovered.value = null }
+onMounted(()=>{void load();void $fetch<WorldRecord[]>('/data/geography/records-v1.json',{timeout:10000}).then(value=>{if(!disposed)records.value=value}).catch(()=>{})})
 onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFrame(frame) })
 defineExpose({ getSurfaceFeatures: () => countries.value })
 </script>
@@ -220,12 +278,14 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 <template>
   <div class="globe-layout">
       <section class="panel globe-search-panel">
-        <label for="globe-country-search"><Search :size="17" /> Գտիր երկիրը</label>
-        <input id="globe-country-search" v-model="search" class="input" type="search" placeholder="Օրինակ՝ Հայաստան" autocomplete="off" :disabled="loading || error" />
-        <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.properties.ADM0_A3"><button type="button" @click="choose(country, true)"><CountryFlag :code="flagCode(country)" /><span class="globe-result-name">{{ name(country) }}</span> <MapPin :size="14" /></button></li></ul>
-        <p v-else-if="search.trim()" class="muted globe-no-results" role="status">Երկիր չի գտնվել։ Փորձիր այլ անուն։</p>
+        <label for="globe-country-search"><Search :size="17" /> Որոնիր աշխարհում</label>
+        <input id="globe-country-search" v-model="search" class="input" type="search" placeholder="Երկիր, մայրաքաղաք, ծով, լեռ…" autocomplete="off" :disabled="loading || error || mapQuiz" />
+        <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.cca3"><button type="button" @click="chooseCode(country.cca3)"><CountryFlag :code="country.cca2"/><span class="globe-result-name">{{country.nameHy}}<small>{{capitalName(country.cca3,country.capital)}}</small></span><MapPin :size="14"/></button></li></ul>
+        <ul v-if="placeResults.length" class="globe-results"><li v-for="place in placeResults" :key="place.id"><button type="button" @click="place.coordinates && locate({coordinates:place.coordinates,label:place.title})"><span class="globe-result-name">{{place.title}}<small>{{place.category}}</small></span><MapPin :size="14"/></button></li></ul>
+        <p v-if="search.trim()&&!results.length&&!placeResults.length" class="muted globe-no-results" role="status">Արդյունք չի գտնվել։ Փորձիր այլ անվանում։</p>
+        <p v-if="mapQuiz" class="globe-data-note">Քարտեզի խաղի ընթացքում որոնումը ժամանակավորապես փակ է։</p>
       </section>
-    <section class="panel globe-view" aria-label="Ինտերակտիվ երկրագունդ">
+    <section class="panel globe-view" :class="{'is-night':night}" aria-label="Ինտերակտիվ երկրագունդ">
       <div class="globe-toolbar">
         <span><Globe2 :size="16" /> Բացահայտիր աշխարհը</span>
         <div class="globe-controls">
@@ -234,56 +294,60 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
           <button type="button" aria-label="Վերականգնել սկզբնական դիրքը" @click="reset"><RotateCcw :size="17" /></button>
         </div>
       </div>
+      <div class="globe-display-options" role="group" aria-label="Նույն քարտեզի շերտերը"><label :class="{'is-enabled':showPopulation}"><input v-model="showPopulation" type="checkbox">Ցույց տալ բնակչությունը</label><label :class="{'is-enabled':night}"><input v-model="night" type="checkbox">Գիշերային տեսք</label></div>
+      <p v-if="layerError" role="status" class="globe-layer-note">{{layerError}}</p>
+      <div v-if="showPopulation" class="globe-population-key" :class="{'is-night':night}">
+        <label>Ցուցանիշ<select v-model="populationMetric"><option value="total">Բնակչության թիվ</option><option value="density">Բնակչության խտություն</option></select></label>
+        <p class="globe-scale-unit">{{populationMetric==='total'?'Մարդկանց թիվը':'Մարդ / կմ²'}}</p>
+        <ul class="globe-color-scale" aria-label="Գույների և արժեքների համապատասխանությունը"><li v-for="(color,index) in ['#83c8b4','#4d9d98','#b6ac69','#d58b51','#b84d57']" :key="color"><span>{{(populationMetric==='total'?['< 1 մլն','1–10 մլն','10–50 մլն','50–200 մլն','≥ 200 մլն']:['< 10','10–100','100–500','500–2000','≥ 2000'])[index]}}</span><i :style="{background:color}" aria-hidden="true"/></li></ul>
+        <p class="globe-missing-key"><i aria-hidden="true"/>Մոխրագույն՝ այս ցուցանիշի տվյալը բացակայում է։</p><p class="globe-scale-source">Գունավորումը՝ Համաշխարհային բանկի {{atlas.statistics.value?.year}} թ․ տվյալներով։</p>
+      </div>
       <div ref="stage" class="globe-stage" :class="{ 'is-dragging': dragging }">
         <div v-if="loading" class="globe-message" role="status"><Globe2 :size="40" /><p>Բեռնում ենք երկրագունդը…</p></div>
         <div v-else-if="error" class="globe-message" role="alert"><Globe2 :size="40" /><p>Չհաջողվեց բեռնել քարտեզը։ Ստուգիր ինտերնետ կապը։</p><button class="btn-secondary" @click="load">Փորձել կրկին</button></div>
-        <svg v-else :viewBox="`0 0 ${viewSize} ${viewSize}`" :class="{ 'has-pointer-focus': pointerFocused }" tabindex="0" role="group" aria-label="Պտտվող երկրագունդ․ պտտիր մկնիկով, հպումով կամ ստեղնաշարի սլաքներով։ Երկրները կարող ես ընտրել նաև որոնմամբ։" @keydown="pointerFocused = false; keyRotate($event)" @pointerdown="pointerFocused = true; pointerDown($event)" @blur="pointerFocused = false" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @pointerleave="hovered = null">
+        <LazyGlobeRasterLayer v-if="!loading&&!error&&projection&&night&&!lightsFailed" :projection="projection" :rotation="rotation" :zoom="zoom" mode="night" @error="rasterError"/>
+        <svg v-if="!loading&&!error" :viewBox="`0 0 ${viewSize} ${viewSize}`" :class="{ 'has-pointer-focus': pointerFocused }" tabindex="0" role="group" aria-label="Պտտվող երկրագունդ․ պտտիր մկնիկով, հպումով կամ ստեղնաշարի սլաքներով։ Երկրները կարող ես ընտրել նաև որոնմամբ։" @keydown="pointerFocused = false; keyRotate($event)" @pointerdown="pointerFocused = true; pointerDown($event)" @blur="pointerFocused = false" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @pointerleave="hovered = null">
           <defs>
             <radialGradient id="factum-ocean" cx="32%" cy="28%" r="80%"><stop stop-color="#22678a" /><stop offset=".6" stop-color="#103e62" /><stop offset="1" stop-color="#04142a" /></radialGradient>
             <radialGradient id="factum-globe-shade" cx="32%" cy="28%" r="75%"><stop offset=".3" stop-color="#fff" stop-opacity=".06" /><stop offset=".75" stop-color="#020918" stop-opacity=".08" /><stop offset="1" stop-color="#010612" stop-opacity=".8" /></radialGradient>
+            <radialGradient id="factum-night-shade" cx="32%" cy="28%" r="75%"><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".75" stop-color="#020918" stop-opacity=".08"/><stop offset="1" stop-color="#010612" stop-opacity=".8"/></radialGradient>
+            <radialGradient id="factum-night-ocean" cx="32%" cy="28%" r="80%"><stop stop-color="#10283d"/><stop offset=".6" stop-color="#081a2b"/><stop offset="1" stop-color="#030b17"/></radialGradient>
             <clipPath id="factum-globe-clip"><circle cx="340" cy="340" :r="radius" /></clipPath>
           </defs>
-          <circle cx="340" cy="340" :r="radius + 7" fill="none" stroke="#71b9ed" stroke-opacity=".12" stroke-width="12" />
-          <circle class="globe-ocean" cx="340" cy="340" :r="radius" fill="url(#factum-ocean)" stroke="#80c6e8" stroke-opacity=".6" />
+          <circle v-if="!night" cx="340" cy="340" :r="radius + 7" fill="none" stroke="#71b9ed" stroke-opacity=".12" stroke-width="12" />
+          <circle class="globe-ocean" cx="340" cy="340" :r="radius" :fill="night?'url(#factum-night-ocean)':'url(#factum-ocean)'" stroke="#80c6e8" :stroke-opacity="night ? .2 : .6" />
           <g clip-path="url(#factum-globe-clip)">
-            <path :d="graticule" fill="none" stroke="#80b3c7" stroke-opacity=".13" stroke-width=".7" pointer-events="none" />
-            <path v-for="item in paths" :key="item.country.properties.ADM0_A3 + item.country.properties.NAME" :d="item.path" :data-country="item.country.properties.ADM0_A3" class="globe-country" :style="{ '--continent-color': continentColors[item.country.properties.CONTINENT] || '#427c79' }" :class="{ 'is-active': active === item.country, 'is-continent-selected': selectedContinent === item.country.properties.CONTINENT, 'is-continent-muted': selectedContinent && selectedContinent !== item.country.properties.CONTINENT }" @pointerenter="!dragging && $event.pointerType !== 'touch' && (hovered = item.country)" @pointerleave="hovered = null" @click="!suppressClick && choose(item.country)"><title>{{ name(item.country) }}</title></path>
+            <path v-if="!night" :d="graticule" fill="none" stroke="#80b3c7" stroke-opacity=".13" stroke-width=".7" pointer-events="none" />
+            <path v-for="item in paths" :key="item.country.properties.ADM0_A3 + item.country.properties.NAME" :d="item.path" :data-country="item.country.properties.ADM0_A3" class="globe-country" :style="{ '--continent-color': countryFill(item.country) }" :class="{ 'is-active': !mapQuiz && active === item.country, 'is-night':night, 'is-continent-selected': selectedContinent === item.country.properties.CONTINENT, 'is-continent-muted': selectedContinent && selectedContinent !== item.country.properties.CONTINENT }" @pointerenter="!mapQuiz && !selectionLocked && !dragging && $event.pointerType !== 'touch' && (hovered = item.country)" @pointerleave="hovered = null" @click="!suppressClick && choose(item.country)"><title v-if="!mapQuiz">{{ name(item.country) }}</title></path>
           </g>
-          <circle cx="340" cy="340" :r="radius" fill="url(#factum-globe-shade)" pointer-events="none" />
+          <circle cx="340" cy="340" :r="radius" :fill="night?'url(#factum-night-shade)':'url(#factum-globe-shade)'" pointer-events="none" />
         </svg>
-        <div v-if="active && !dragging" class="globe-tooltip" :class="{ 'is-selected': !hovered }" :style="hovered ? { left: `${tip.x}px`, top: `${tip.y}px` } : undefined" aria-hidden="true"><strong><CountryFlag :code="flagCode(active)" /> {{ name(active) }}</strong><small>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</small></div>
+        <svg v-if="marker && !mapQuiz" class="globe-markers" :viewBox="`0 0 ${viewSize} ${viewSize}`" aria-hidden="true"><g class="geo-marker" :transform="`translate(${marker[0]},${marker[1]})`" pointer-events="none"><circle r="13" fill="#dfc38f22" stroke="#dfc38f88"/><circle r="5" fill="#ffe0a3" stroke="#15233c" stroke-width="2"/></g></svg>
+        <div v-if="active && !dragging && !mapQuiz && !location" class="globe-tooltip" :class="{ 'is-selected': !hovered }" :style="hovered ? { left: `${tip.x}px`, top: `${tip.y}px` } : undefined" aria-hidden="true"><strong><CountryFlag :code="flagCode(active)" /> {{ name(active) }}</strong><small>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</small><small v-if="showPopulation" class="globe-tooltip-population">Բնակչություն՝ {{tooltipPopulation!=null?number.format(Math.round(tooltipPopulation)):'Տվյալը հասանելի չէ'}}<template v-if="tooltipPopulation!=null"> · {{atlas.statistics.value?.year}} թ․</template></small></div>
       </div>
-      <ul class="globe-continent-legend" aria-label="Աշխարհամասերի գույները">
+      <p v-if="location&&!mapQuiz" class="globe-location-label" role="status"><MapPin :size="16"/>{{location.label}}<button type="button" aria-label="Հեռացնել նշիչը" @click="location=null">×</button></p>
+      <ul class="globe-continent-legend" aria-label="Ընտրիր աշխարհամասը">
         <li v-for="(color, continent) in continentColors" :key="continent">
           <button type="button" :aria-pressed="selectedContinent === continent" :disabled="loading || error" @click="toggleContinent(String(continent))">
-            <span class="globe-continent-swatch" :style="{ backgroundColor: color }" aria-hidden="true" />
+
             {{ continents[continent] }}
           </button>
         </li>
       </ul>
-      <p class="globe-continent-help" role="status">{{ selectedContinent ? `${continents[selectedContinent]}․ կրկին սեղմիր՝ ընդգծումը հանելու համար։` : 'Սեղմիր գույնի վրա՝ աշխարհամասը տեսնելու համար։' }}</p>
+      <p class="globe-continent-help" role="status">{{ selectedContinent ? `${continents[selectedContinent]}․ կրկին սեղմիր՝ ընդգծումը հանելու համար։` : 'Ընտրիր աշխարհամասը՝ այն տեսնելու համար։' }}</p>
       <p class="globe-hint"><MousePointer2 :size="15" /> Քաշիր՝ պտտելու, պահիր երկրի վրա՝ տեսնելու, սեղմիր՝ ընտրելու համար։</p>
     </section>
 
     <aside class="globe-sidebar">
 
       <section id="globe-country-info" tabindex="-1" class="panel globe-info" aria-live="polite" aria-atomic="true">
-        <template v-if="active">
-          <span class="globe-eyebrow">{{ hovered ? 'ԲԱՑԱՀԱՅՏՈՒՄ ԵՍ' : 'ԸՆՏՐՎԱԾ ԵՐԿԻՐ' }}</span>
-          <div class="globe-country-title"><CountryFlag class="globe-flag" :code="flagCode(active)" /><div><h2>{{ name(active) }}</h2><p>{{ active.properties.NAME }}</p></div></div>
-          <dl>
-            <div><dt>Մայրաքաղաք</dt><dd>{{ activeDetails?.capital?.join(', ') || 'Տվյալ չկա' }}</dd></div>
-            <div><dt>Աշխարհամաս</dt><dd>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</dd></div>
-            <div v-if="activePopulation"><dt>Բնակչություն <small>({{ activePopulation.year }} թ․ գնահատական)</small></dt><dd>{{ activePopulation.value >= 0 ? number.format(Math.round(activePopulation.value)) : 'Տվյալ չկա' }}</dd></div>
-            <div><dt>Տարածք</dt><dd>{{ activeDetails?.area ? `${number.format(activeDetails.area)} կմ²` : 'Տվյալ չկա' }}</dd></div>
-            <div v-if="activeDetails?.languages"><dt>Լեզուներ</dt><dd>{{ Object.values(activeDetails.languages).join(', ') }}</dd></div>
-          </dl>
-        </template>
+        <p v-if="mapQuiz" class="globe-data-note">Քարտեզի խաղը ակտիվ է։ Ընտրիր երկիրը երկրագնդի վրա։</p>
+        <GlobeCountryPanel v-else-if="selectedAtlas" :country="selectedAtlas" :countries="atlas.countries.value" :statistics="atlas.statistics.value" :population="selectedPopulation" @select="chooseCode"/>
         <div v-else class="globe-empty"><Globe2 :size="32" /><h2>Աշխարհը՝ քո ձեռքերում</h2><p>Ընտրիր երկիրը գլոբուսի վրա կամ գտիր որոնմամբ։</p></div>
       </section>
       <p v-if="populationStatus === 'loading'" class="globe-data-note" role="status">Թարմացնում ենք բնակչության տվյալները…</p>
       <p v-else-if="populationStatus === 'error'" class="globe-data-note" role="status">Բնակչության թարմացումն այս պահին անհասանելի է․ ցուցադրված են պահպանված տվյալները՝ իրենց տարեթվերով։</p>
-      <p class="globe-data-note">Բնակչությունը՝ յուրաքանչյուր երկրի համար հասանելի վերջին տարեթվով։ Քարտեզը՝ պարզեցված սահմաններով։ Փոքր երկրներն ու կղզիները կարող են չերևալ։ Մայրաքաղաքների և լեզուների անունները ներկայացված են աղբյուրի լեզվով։</p>
+      <p class="globe-data-note">Բնակչությունը՝ յուրաքանչյուր երկրի համար հասանելի վերջին տարեթվով։ Քարտեզը՝ պարզեցված սահմաններով։ Փոքր երկրներն ու կղզիները կարող են չերևալ։ Թվերը ներկայացվում են աղբյուրով և տարեթվով։ Քարտեզի սահմանները իրավական դիրքորոշում չեն։</p>
     </aside>
   </div>
 </template>
@@ -298,7 +362,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 .globe-controls button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #8291b140; border-radius: 10px; color: #e9d5ae; background: #15233c; }
 .globe-controls button:hover:not(:disabled) { border-color: #dfc38f; background: #243452; }
 .globe-controls button:disabled { opacity: .35; cursor: default; }
-.globe-stage { position: relative; width: 100%; aspect-ratio: 1; max-height: 680px; }
+.globe-stage { position: relative; width: min(100%, 680px); aspect-ratio: 1; margin-inline: auto; }
 .globe-stage svg { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; }
 .globe-stage svg, .globe-ocean, .globe-country { cursor: url('/images/globe-pointer.svg') 5 5, crosshair; }
 .globe-stage.is-dragging :is(svg, .globe-ocean, .globe-country) { cursor: grabbing; }
@@ -308,7 +372,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 .globe-country.is-continent-muted { opacity: .25; }
 .globe-country.is-continent-selected { stroke: #f1f5ff; stroke-width: 1; }
 .globe-country.is-active { opacity: 1; fill: #dfbb76; stroke: #ffe8b4; stroke-width: 1.3; }
-.globe-tooltip { position: absolute; width: 200px; padding: 11px 14px; border: 1px solid #dfc38f88; border-radius: 12px; background: #081326ed; color: #ffe4b2; box-shadow: 0 8px 24px #0005; pointer-events: none; }
+.globe-tooltip { position: absolute; z-index: 5; max-width: calc(100% - 16px); width: 200px; padding: 11px 14px; border: 1px solid #dfc38f88; border-radius: 12px; background: #081326ed; color: #ffe4b2; box-shadow: 0 8px 24px #0005; pointer-events: none; }
 .globe-tooltip strong, .globe-tooltip small { display: block; }
 .globe-tooltip strong { display: flex; align-items: center; gap: 7px; font-size: 13px; }
 .globe-tooltip small { font-size: 11px; color: #b8c7db; margin-top: 4px; }
@@ -355,4 +419,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
   .globe-tooltip.is-selected small { flex-shrink: 0; margin-top: 0; }
 }
 @media (max-width: 600px) { .globe-sidebar { grid-template-columns: 1fr; }.globe-toolbar { padding: 14px 12px 0; }.globe-toolbar > span { font-size: 10px; }.globe-layout { gap: 18px; }.globe-search-panel, .globe-info { padding: 18px; } }
+
+.globe-display-options{display:flex;flex-wrap:wrap;gap:8px;padding:16px 20px;border-bottom:1px solid #8ba2c022}.globe-display-options label{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:10px 13px;border:1px solid #8997c033;border-radius:10px;color:#b6c7dc;font-size:11px;cursor:pointer}.globe-display-options label.is-enabled{border-color:#dfc38f88;color:#dfc38f;background:#dfc38f10}.globe-display-options input{accent-color:#dfc38f;width:16px;height:16px}.globe-display-options label:focus-within{outline:2px solid #dfc38f;outline-offset:3px}.globe-tooltip .globe-tooltip-population{color:#dfc38f;font-size:10px;flex-basis:100%;line-height:1.7}.globe-tooltip.is-selected{flex-wrap:wrap}.globe-stage{isolation:isolate}
+.globe-stage>svg{position:relative;z-index:1}.globe-country.is-night{stroke:#7291ab66;stroke-width:.65}.globe-country.is-night.is-active{fill:#dfbb76;stroke:#ffe8b4;stroke-width:1.3}.globe-stage>svg.globe-markers{position:absolute;inset:0;z-index:3;pointer-events:none}.globe-layer-note{padding:12px 20px;color:#dfc38f;font-size:11px;line-height:1.8}.globe-population-key{padding:14px 20px;color:#adc1d9;font-size:10px;line-height:1.8}.globe-population-key label{display:flex;align-items:center;gap:12px}.globe-population-key select{background:#0d1e33;border:1px solid #8997c044;border-radius:8px;min-height:40px;padding:8px;color:#dfc38f}.globe-population-key.is-night i{filter:brightness(.42)}.globe-population-key .globe-scale-unit{margin-top:14px;color:#b9c9dc}.globe-color-scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;list-style:none;padding:0;margin:8px 0 12px;max-width:560px}.globe-color-scale li{display:flex;flex-direction:column;gap:7px;min-width:0;text-align:center}.globe-color-scale span{font-size:10px;line-height:1.6;color:#d2ddeb;white-space:nowrap}.globe-color-scale i{display:block;height:10px;width:100%;border-radius:3px}.globe-missing-key{display:flex;align-items:center;gap:7px}.globe-missing-key i{width:11px;height:11px;border-radius:3px;background:#36445a;flex-shrink:0}@media(max-width:400px){.globe-color-scale{gap:3px}.globe-color-scale span{font-size:8px}}.globe-location-label{display:flex;justify-content:center;align-items:center;gap:10px;font-size:12px;color:#dfc38f;margin:12px 20px;line-height:1.8}.globe-location-label button{min-width:44px;min-height:44px;font-size:22px}.globe-results small{display:block;font-size:10px;color:#91a5bf;margin-top:5px}.globe-controls button{width:44px;height:44px}.globe-country{transition:fill .25s,opacity .25s}@media(prefers-reduced-motion:reduce){.globe-country{transition:none}}
 </style>

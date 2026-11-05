@@ -82,7 +82,7 @@ test('country outlines reuse supplied globe polygons, follow the cutaway and dis
   const app=setup()
   const feature={type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[179,0],[-179,0],[-179,10],[179,0]]]}}
   app.scene.setSurface([feature])
-  const outline=app.objects().find(o=>o instanceof THREE.LineSegments)
+  const outline=app.objects().find(o=>o.name==='earth-country-outlines')
   assert.ok(outline)
   const positions=outline.geometry.getAttribute('position')
   assert.ok(positions.count>6&&positions.count<100)
@@ -92,7 +92,7 @@ test('country outlines reuse supplied globe polygons, follow the cutaway and dis
   let disposed=false;outline.geometry.addEventListener('dispose',()=>disposed=true)
   app.scene.setSurface([])
   assert.equal(disposed,true)
-  assert.equal(app.objects().filter(o=>o instanceof THREE.LineSegments).length,0)
+  assert.equal(app.objects().filter(o=>o.name==='earth-country-outlines').length,0)
   app.scene.dispose()
 })
 
@@ -104,4 +104,18 @@ test('small cut retains five sixths of the globe and preserves global texture lo
   assert.ok(Math.abs(uv.getX(middleRow)-1/6)<1e-6)
   assert.ok(Math.abs(uv.getX(middleRow+64)-1)<1e-6)
   geometry.dispose()
+})
+
+test('layer boundary arcs follow the cut opening and release replaced geometry',()=>{
+  const app=setup()
+  const boundaries=app.objects().find(o=>o.name==='earth-layer-boundaries')
+  assert.ok(boundaries.geometry.getAttribute('position').count>0)
+  const old=boundaries.geometry
+  let released=false;old.addEventListener('dispose',()=>released=true)
+  app.scene.setOpening(0)
+  assert.equal(released,true)
+  assert.equal(boundaries.geometry.getAttribute('position').count,0)
+  app.scene.setOpening(1)
+  assert.ok(boundaries.geometry.getAttribute('position').count>0)
+  app.scene.dispose()
 })

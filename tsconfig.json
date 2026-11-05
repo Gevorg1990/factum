@@ -1,0 +1,11 @@
+{
+  "extends": "./.nuxt/tsconfig.json",
+  "exclude": [
+    "dist",
+    ".data",
+    "node_modules/runtime/server",
+    "node_modules/dist/runtime/server",
+    ".nuxt/dev",
+    "data-test"
+  ]
+}

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type {Question} from '~/data/content'
+import type {GeoFact} from '~/utils/geography/types'
 import { allEncyclopediaQuestions, people, facts, timeline, subjects, collectionSubjects } from '~/data/content'
 import { resultLevels, shareableGames, type ShareableGame } from '~/utils/gameResult'
 import { optimizedImage } from '~/data/optimizedImages'
@@ -10,6 +12,24 @@ import { findGameBookmark } from '~/utils/gameBookmarks'
 import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Gamepad2, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
 
 const { saved, removeSaved } = useProgress()
+const geographyFacts=shallowRef<GeoFact[]>([])
+let geographyPending=false
+watch(saved,async ids=>{if(geographyPending||geographyFacts.value.length||!ids.some(id=>id.startsWith('geo-')))return;geographyPending=true;try{geographyFacts.value=await $fetch<GeoFact[]>('/data/geography/facts-v1.json',{timeout:10000,retry:1})}catch{}finally{geographyPending=false}},{immediate:true})
+const legacyLiterature=shallowRef<Question[]>([])
+let literaturePending=false
+watch(saved,async ids=>{
+  if(literaturePending||legacyLiterature.value.length||!ids.some(id=>/^literature-intro-[ab]-\d+-[ab]$/.test(id)))return
+  literaturePending=true
+  try{const {legacyLiteratureQuestions}=await import('~/data/encyclopedia/literatureLegacy');legacyLiterature.value=legacyLiteratureQuestions}catch{ /* Keep the saved article link available if its archive chunk cannot load. */ }finally{literaturePending=false}
+},{immediate:true})
+const legacyHealth=shallowRef<Question[]>([])
+let healthPending=false
+watch(saved,async ids=>{
+  if(healthPending||legacyHealth.value.length||!ids.some(id=>/^health-(?:heart|lungs|habits(?:-b)?|mind)-\d+-[ab]$/.test(id)))return
+  healthPending=true
+  try{const {legacyHealthQuestions}=await import('~/data/encyclopedia/healthLegacy');legacyHealth.value=legacyHealthQuestions}catch{ /* The original saved article link remains available. */ }finally{healthPending=false}
+},{immediate:true})
+const geographyById=computed(()=>new Map(geographyFacts.value.map(f=>[`geo-${f.id}`,f])))
 const removing = ref(new Set<string>())
 const removalMessage = ref('')
 const removalEffects = new Set<Disintegration>()
@@ -85,6 +105,7 @@ const sectionDefinitions = [
 ] as const
 
 function describeEntry(id: string): SavedEntry {
+  if(id.startsWith('geo-')){const fact=geographyById.value.get(id);return {id,title:fact?.title||'Աշխարհագրական փաստ',to:`/globe?fact=${encodeURIComponent(id.slice(4))}#globe-atlas`,kind:'Աշխարհագրություն',category:'facts',explanation:fact?.detail}}
   if (id.startsWith('million-')) {
     const question = findMillionBookmark(id)
     return question
@@ -97,14 +118,18 @@ function describeEntry(id: string): SavedEntry {
       ? { id, title: question.question, to: `/games/questions/${id}#saved-game-question`, kind: question.gameTitle, category: 'games', answer: question.answers[question.correct], explanation: question.explanation }
       : { id, title: 'Պահպանված խաղի հարցը հասանելի չէ', to: '/games', kind: 'Խաղի հարց', category: 'games' }
   }
-  const question = allEncyclopediaQuestions.find(item => item.id === id)
+  const question = allEncyclopediaQuestions.find(item => item.id === id) || legacyLiterature.value.find(item => item.id === id) || legacyHealth.value.find(item => item.id === id)
   if (question) {
     const section = [...subjects, ...collectionSubjects].find(section => section.slug === question.subject)
     const sourceSection = section
-      ? (('shortName' in section ? section.shortName : undefined) || section.name)
+      ? (('shortName' in section && typeof section.shortName==='string' ? section.shortName : undefined) || section.name)
       : 'Հանրագիտարան'
     return { id, title: question.title, to: `/articles/${id}#saved-article`, kind: 'Հոդված', category: 'encyclopedia', sourceSection }
   }
+
+  if(/^literature-intro-[ab]-\d+-[ab]$/.test(id))return {id,title:'Գրականություն · պահպանված հոդված',to:`/articles/${id}#saved-article`,kind:'Հոդված',category:'encyclopedia',sourceSection:'Գրականություն'}
+
+  if(/^health-(?:heart|lungs|habits(?:-b)?|mind)-\d+-[ab]$/.test(id))return {id,title:'Առողջություն · պահպանված հոդված',to:`/articles/${id}#saved-article`,kind:'Հոդված',category:'encyclopedia',sourceSection:'Առողջություն'}
 
   const fact = facts.find(item => item.id === id)
   if (fact) return { id, title: fact.title, to: `/facts?fact=${encodeURIComponent(id)}`, kind: 'Հետաքրքիր փաստ', category: 'facts' }

@@ -1,4 +1,4 @@
-export const historyDetails: Record<string, {
+export const historyDetails: Record<string, { intro: string; sections: { heading: string; body: string }[]; facts: string[] }> = {
   "մ.թ.ա. 859": {
   "intro": "Ասորեստանյան սեպագիր աղբյուրներում հիշատակվում է Ուրարտուի արքա Արամեն։ Սա Վանի թագավորության վաղ պատմության ուսումնասիրման կարևոր վկայություններից է։",
   "sections": [
@@ -134,7 +134,7 @@ export const historyDetails: Record<string, {
     "ԱՄՆ-ն Հայաստանի անկախությունը ճանաչել էր 1991 թվականի դեկտեմբերի 25-ին։"
   ]
 },
- intro: string; sections: { heading: string; body: string }[]; facts: string[] }> = {
+
   "մ.թ.ա. 9-րդ դար": {
   "intro": "Հայկական լեռնաշխարհում ձևավորվեց Վանի թագավորությունը՝ Ուրարտուն, որի կենտրոնը Տուշպան էր։",
   "sections": [

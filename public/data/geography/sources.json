@@ -1,0 +1,69 @@
+{
+  "retrieved": "2026-11-05",
+  "countries": {
+    "source": "https://github.com/mledoze/countries",
+    "license": "ODbL 1.0",
+    "note": "Selected fields only; Armenian region labels from Intl/CLDR, capital labels in data/geography/labels.ts. This is not REST Countries v5. Original capitals retained in the JSON.",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "adaptation": "Selected fields, Armenian display names and IANA zone associations added; adapted database distributed under ODbL 1.0."
+  },
+  "boundaries": {
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson",
+    "license": "Public domain",
+    "note": "1:110m generalized contemporary boundaries, retrieved 2026-11-05. Not a legal statement, historical map, or guarantee of current de facto control."
+  },
+  "statistics": {
+    "source": "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&date=2024&per_page=400",
+    "year": 2024,
+    "lastUpdated": "2026-10-08",
+    "license": "CC BY 4.0, World Bank datasets terms and third-party exceptions apply",
+    "indicators": [
+      "SP.POP.TOTL",
+      "NY.GDP.MKTP.CD",
+      "NY.GDP.PCAP.CD"
+    ],
+    "note": "GDP and GDP per capita in current US dollars. Missing values remain absent. Density uses Countries total area, not World Bank land-area density.",
+    "densitySource": "https://data.worldbank.org/indicator/EN.POP.DNST"
+  },
+  "timezones": {
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_time_zones.geojson",
+    "license": "Public domain",
+    "note": "Generalized at 0.025 degree tolerance. Cartographic UTC offsets; not a live daylight-saving-time map. Country panel offsets computed at viewing time from IANA zones and browser Intl rules.",
+    "status": "Archived data; not loaded as a map layer. Only country IANA offset information is shown in the right panel."
+  },
+  "iana": {
+    "source": "https://www.iana.org/time-zones",
+    "license": "Public domain",
+    "note": "Country-to-zone associations from system zone.tab; UTC offsets depend on browser time-zone database. Zones shared between countries can have incomplete coverage."
+  },
+  "physicalImage": {
+    "source": "https://github.com/turban/webgl-earth/blob/master/images/2_no_clouds_4k.jpg",
+    "originalCredit": "NASA Visible Earth / Blue Marble; mirrored by turban/webgl-earth",
+    "reference": "https://science.nasa.gov/earth/earth-observatory/collections/blue-marble/",
+    "license": "NASA imagery usage guidelines; no endorsement implied",
+    "note": "Resized to 1024 px; surface composite, not live imagery or an elevation dataset. Exact acquisition dates not supplied by the mirror.",
+    "status": "Archived asset; not used in current interface."
+  },
+  "nightImage": {
+    "source": "https://github.com/vasturiano/three-globe/blob/master/example/img/earth-night.jpg",
+    "originalCredit": "NASA Earth at Night; example asset mirror in three-globe",
+    "license": "NASA imagery usage guidelines; mirror project MIT",
+    "note": "Resized to 1024 px; archived composite, not current electricity use or population data. Exact acquisition dates not supplied by the mirror.",
+    "display": "Only the luminance-derived light signal is overlaid on the same vector-country map; land/ocean image backdrop is omitted."
+  },
+  "recordsAndFacts": {
+    "sources": "Source links on every record and fact. Site positions are representative markers, not surveyed borders.",
+    "note": "31 records; 105 facts. 64 facts derive from country/capital reference data. UNESCO-based country stories initially cover 12 countries; unavailable editorial data is shown explicitly."
+  },
+  "historical": {
+    "source": "https://icr.ethz.ch/data/cshapes/",
+    "license": "CC BY-NC-SA 4.0",
+    "status": "Not integrated: non-commercial license is not assumed compatible with all FACTUM uses. No historical borders have been invented."
+  },
+  "d3": {
+    "version": "7.9.0",
+    "source": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js",
+    "license": "ISC",
+    "note": "Existing D3 dependency vendored locally; no new browser library."
+  }
+}

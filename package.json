@@ -20,7 +20,9 @@
     "test:encyclopedia": "node --test tests/encyclopedia.test.mjs",
     "test:people": "node --test tests/people.test.mjs",
     "test:monuments": "node --test tests/monuments.test.mjs",
-    "test:earth": "node --test tests/earth-interior.test.mjs tests/earth-interface.test.mjs tests/earth-scene.test.mjs tests/earth-materials.test.mjs tests/earth-surface.test.mjs"
+    "test:earth": "node --test tests/earth-interior.test.mjs tests/earth-interface.test.mjs tests/earth-scene.test.mjs tests/earth-materials.test.mjs tests/earth-surface.test.mjs",
+    "test:geography": "node --test tests/geography.test.mjs tests/geography-interface.test.mjs",
+    "test:content": "node --test tests/literature.test.mjs tests/health-content.test.mjs tests/finance-content.test.mjs tests/profile-game-records.test.mjs"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",
@@ -33,6 +35,7 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@types/node": "^24.19.2",
     "@types/three": "^0.187.0",
     "typescript": "^5.8.0",
     "vue-tsc": "^2.2.0"

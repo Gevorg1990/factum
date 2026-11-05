@@ -3,10 +3,10 @@ import type { EarthLayerId } from '../../data/earth/interior'
 
 /** Illustrative material appearance, not observed deep-Earth textures or mineral maps. */
 const finishes = {
-  crust: { color: '#467c89', cut: '#817969', roughness: .96, metalness: 0, glow: '#35271c', emission: 0 },
-  mantle: { color: '#875a31', cut: '#b36c34', roughness: .9, metalness: .02, glow: '#bd5b1c', emission: .14 },
-  'outer-core': { color: '#9b5629', cut: '#bc5c2b', roughness: .27, metalness: .72, glow: '#e88d31', emission: .2 },
-  'inner-core': { color: '#c7b78e', cut: '#e5d7ad', roughness: .46, metalness: .65, glow: '#ffd16c', emission: .32 },
+  crust: { color: '#467c89', cut: '#777263', roughness: .97, metalness: 0, glow: '#35271c', emission: 0 },
+  mantle: { color: '#73523d', cut: '#ac6947', roughness: .94, metalness: .01, glow: '#b95124', emission: .09 },
+  'outer-core': { color: '#b87942', cut: '#d59855', roughness: .34, metalness: .78, glow: '#ed9439', emission: .28 },
+  'inner-core': { color: '#c3b49c', cut: '#dfcda6', roughness: .57, metalness: .62, glow: '#ffc77b', emission: .22 },
 } as const
 const noiseShader = `
   varying vec3 vEarthPosition;
@@ -26,7 +26,7 @@ export function createInteriorMaterial(id: EarthLayerId, cutFace: boolean, radii
   const finish = finishes[id]
   const material = new MeshStandardMaterial({
     color: id === 'crust' && !cutFace ? '#ffffff' : cutFace ? finish.cut : finish.color, roughness: finish.roughness,
-    metalness: finish.metalness, emissive: finish.glow, emissiveIntensity: finish.emission,
+    metalness: cutFace ? finish.metalness * .45 : finish.metalness, emissive: finish.glow, emissiveIntensity: finish.emission,
     envMapIntensity: id.includes('core') ? .95 : .3,
   })
   material.userData.baseEmission = finish.emission
@@ -47,28 +47,40 @@ export function createInteriorMaterial(id: EarthLayerId, cutFace: boolean, radii
       float earthDetail=earthNoise(earthSample*82.0);
       float earthMineral=earthGrain(earthSample*6.0);
       float earthRadius=length(vEarthPosition);
-      float earthHeight=earthTexture*(earthKind<1.5?0.013:earthKind<2.5?0.0007:0.0025);
+      float earthDepth=clamp((earthRadii.y-earthRadius)/max(0.001,earthRadii.y-earthRadii.x),0.0,1.0);
+      // Domain-warped mineral seams: irregular rock, without invented concentric strata.
+      float earthSeam=1.0-smoothstep(0.015,0.075,abs(earthMineral-0.48));
+      float earthHeight=earthTexture*(earthKind<1.5?0.008:earthKind<2.5?0.0003:0.0012);
+      if(earthKind>0.5&&earthKind<1.5)earthHeight+=earthSeam*0.0015;
       if(earthKind<0.5) {
-        diffuseColor.rgb*=0.78+earthTexture*0.36+0.04*(earthDetail-0.5);
+        diffuseColor.rgb*=0.80+earthTexture*0.32+0.05*(earthDetail-0.5);
+        if(earthCutFace>0.5)diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.72,0.76,0.69),earthSeam*0.3);
         if(earthCutFace<0.5) {
           float clouds=smoothstep(0.65,0.82,earthGrain(vEarthPosition*5.2+earthWarp)*0.65+earthCloud(vEarthPosition)*0.35);
           diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.86,0.91,0.94),clouds*0.88);
         }
       } else if(earthKind<1.5) {
-        float rockDetail=smoothstep(0.30,0.72,earthTexture*0.6+earthMineral*0.4);
-        diffuseColor.rgb*=0.54+0.56*rockDetail+0.11*earthDetail;
-        diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.64,0.31,0.14),smoothstep(0.6,0.8,earthTexture)*0.52);
+        float rockDetail=smoothstep(0.24,0.76,earthTexture*0.65+earthMineral*0.35);
+        vec3 earthRock=mix(vec3(0.31,0.34,0.25),vec3(0.67,0.40,0.25),rockDetail);
+        vec3 earthHotRock=mix(earthRock,vec3(0.76,0.36,0.18),earthDepth*0.42);
+        diffuseColor.rgb*=earthHotRock*1.65;
+        diffuseColor.rgb*=0.86+0.20*earthTexture+0.06*earthDetail;
+        diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.58,0.62,0.52),earthSeam*0.22);
       } else if(earthKind<2.5) {
         // Smooth irregular tones; no periodic concentric stripes or simulated convection.
-        float metalVariation=earthGrain(vEarthPosition*3.4+earthWarp*1.6);
-        diffuseColor.rgb*=0.55+0.38*metalVariation+0.16*earthTexture;
+        float metalVariation=earthGrain(vEarthPosition*2.6+earthWarp*1.2);
+        diffuseColor.rgb*=0.78+0.25*metalVariation+0.04*earthTexture;
+        diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.12,0.97,0.78),earthDepth*0.35);
       } else {
-        diffuseColor.rgb*=0.81+0.29*earthTexture+0.035*earthDetail;
+        // Fine subdued grain distinguishes solid metal from the smooth liquid core.
+        diffuseColor.rgb*=0.88+0.16*earthTexture+0.025*earthDetail;
+        diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.82,0.85,0.87),earthSeam*0.08);
       }`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor+(earthTexture-0.5)*(earthKind<1.5?0.12:0.05),0.16,1.0);')
     shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       float earthHotGrain=smoothstep(0.28,0.75,earthTexture);
-      totalEmissiveRadiance*=earthKind<0.5?1.0:0.48+0.70*earthHotGrain;
+      float earthHeat=earthKind<1.5?mix(0.20,1.1,earthDepth):mix(0.8,1.15,earthDepth);
+      totalEmissiveRadiance*=earthKind<0.5?1.0:earthHeat*(0.80+0.22*earthHotGrain);
     `)
     // Surface-gradient bump shading alters lighting only, never PREM geometry or picking.
     shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
@@ -85,7 +97,7 @@ export function createInteriorMaterial(id: EarthLayerId, cutFace: boolean, radii
       reflectedLight.indirectSpecular*=earthEdgeShade;
     `)
   }
-  material.customProgramCacheKey = () => `factum-earth-material-v4-compact-cut-${id}-${cutFace ? 'section' : 'shell'}`
+  material.customProgramCacheKey = () => `factum-earth-material-v5-mineral-${id}-${cutFace ? 'section' : 'shell'}`
   return material
 }
 export function selectInteriorMaterial(material: MeshStandardMaterial, selected: boolean) {

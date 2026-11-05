@@ -1,6 +1,7 @@
 import { collectionSubjects, people, subjects } from './data/content'
 
 const prerenderedContentRoutes = [
+  '/globe',
   '/subjects',
   ...subjects.map(({ slug }) => `/subjects/${slug}`),
   ...collectionSubjects.map(({ slug }) => `/subjects/${slug}`),
@@ -23,12 +24,19 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
   nitro: {
+    hooks: {
+      // Render current source during prerender, rather than serving HTML left by another build preset.
+      'prerender:config': (config) => { config.serveStatic = false },
+    },
     vercel: { functions: { maxDuration: 60 } },
     prerender: { crawlLinks: false, routes: prerenderedContentRoutes },
   },
   routeRules: {
     '/games/results/**': { headers: { 'cache-control': 'public, max-age=3600, s-maxage=86400' } },
     '/': { prerender: true },
+    '/data/geography/**': { headers: { 'cache-control': 'public, max-age=86400, s-maxage=604800' } },
+    '/vendor/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    '/images/geography/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/fonts/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/images/optimized/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/videos/previews/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },

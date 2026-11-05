@@ -5,6 +5,7 @@ import { createRequire } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { moduleUrl } from './helpers/catalog.mjs'
 const records = await import(moduleUrl(new URL('../utils/gameRecords.ts', import.meta.url)))
+const { legacyHealthQuestions } = await import(moduleUrl(new URL('../data/encyclopedia/healthLegacy.ts', import.meta.url)))
 const gameResult = await import(moduleUrl(new URL('../utils/gameResult.ts', import.meta.url)))
 const { optimizedImage } = await import(moduleUrl(new URL('../data/optimizedImages.ts', import.meta.url)))
 const require = createRequire(import.meta.url)
@@ -24,6 +25,7 @@ function setup(savedIds = []) {
   const mounted = [], exports = {}
   runInNewContext(code, {
     ...vue, exports,
+    $fetch: async () => JSON.parse(readFileSync(new URL('../public/data/geography/facts-v1.json', import.meta.url), 'utf8')),
     useProgress: () => ({ saved: vue.ref(savedIds), removeSaved() {} }),
     onMounted: fn => mounted.push(fn), onBeforeUnmount() {},
     window: { addEventListener() {}, removeEventListener() {} },
@@ -42,6 +44,7 @@ function setup(savedIds = []) {
       if (name.includes('disintegrate')) return { disintegrate() {} }
       if (name.includes('millionBookmarks')) return { findMillionBookmark: () => ({ question: 'Պահպանված Միլիոնատերի հարց', answers: ['Ճիշտ', 'Սխալ', 'Այլ', 'Չորրորդ'], correct: 0, explanation: 'Պահպանված բացատրությունը։' }) }
       if (name.includes('gameBookmarks')) return { findGameBookmark() {} }
+      if (name.includes('healthLegacy')) return { legacyHealthQuestions }
       if (name === 'lucide-vue-next') return {}
       throw Error('Unexpected import ' + name)
     },
@@ -89,4 +92,25 @@ test('Million bookmarks and all three records share the Games section without lo
   assert.equal(games.items[0].to, '/games/questions/million-example#saved-million-question')
   assert.equal(profile.savedCount.value, 4)
   assert.equal(profile.categoryTabs.value.some(tab => tab.id === 'million'), false)
+})
+
+test('saved geography facts resolve in My FACTUM after a fresh profile load and link back to the exact fact', async () => {
+  for (let refresh = 0; refresh < 2; refresh++) {
+    const profile = setup(['geo-record-everest'])
+    await new Promise(resolve => setImmediate(resolve))
+    const fact = profile.savedEntries.value.find(entry => entry.id === 'geo-record-everest')
+    assert.equal(fact.title, 'Ամենաբարձր լեռը')
+    assert.equal(fact.category, 'facts')
+    assert.equal(fact.to, '/globe?fact=record-everest#globe-atlas')
+    assert.ok(fact.explanation.length > 40)
+  }
+})
+
+test('saved legacy health articles restore their original titles and destinations after a fresh profile load', async () => {
+  const profile = setup(['health-heart-1-a'])
+  await new Promise(resolve => setImmediate(resolve))
+  const article = profile.savedEntries.value.find(entry => entry.id === 'health-heart-1-a')
+  assert.equal(article.title, 'Ի՞նչ է անում սիրտը')
+  assert.equal(article.category, 'encyclopedia')
+  assert.equal(article.to, '/articles/health-heart-1-a#saved-article')
 })

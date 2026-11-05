@@ -22,6 +22,7 @@ export type CountryDetails = {
 }
 export interface GlobeProjection {
   (point: [number, number]): [number, number] | null
+  invert(point: [number, number]): [number, number] | null
   rotate(): [number, number, number]
   rotate(rotation: [number, number, number]): GlobeProjection
   scale(value: number): GlobeProjection
@@ -38,7 +39,7 @@ export type GlobeApi = {
 }
 
 // D3 uses clockwise exterior rings; GeoJSON providers may use the opposite order.
-export function orientCountry(feature: CountryFeature, area: (feature: CountryFeature) => number): CountryFeature {
+export function orientCountry<T extends CountryFeature>(feature: T, area: (feature: CountryFeature) => number): T {
   if (area(feature) <= 2 * Math.PI) return feature
   const geometry = feature.geometry
   return {
