@@ -4,7 +4,7 @@ const emit=defineEmits<{locate:[location:MapLocation]}>()
 const route=useRoute()
 const section=ref(typeof route.query.fact==='string'?'facts':'records')
 watch(()=>route.query.fact,value=>{if(typeof value==='string')section.value='facts'})
-const sections=[['records','Աշխարհի ռեկորդներ','31 բացահայտում'],['comparison','Համեմատել երկրները','Նույն տարվա ցուցանիշներ'],['facts','Գիտեի՞ր, որ…','105 փաստ'],['history','Ժամանակի մեքենա','Տվյալների հասանելիություն']]
+const sections=[['records','Աշխարհի ռեկորդներ','31 բացահայտում'],['comparison','Համեմատել երկրները','Նույն տարվա ցուցանիշներ'],['facts','Գիտեի՞ր, որ…','Բնություն և աշխարհագրություն'],['history','Ժամանակի մեքենա','Տվյալների հասանելիություն']]
 function change(value:string){section.value=value}
 </script>
 <template><div id="globe-atlas" class="geo-section atlas-hub"><header><p class="geo-kicker">FACTUM · ԱՇԽԱՐՀԱԳՐԱԿԱՆ ՀԱՆՐԱԳԻՏԱՐԱՆ</p><h2>Աշխարհը՝ շերտ առ շերտ</h2><p>Համեմատիր, գտիր, խաղա և հավաքիր քեզ հետաքրքրած բացահայտումները։</p></header><nav class="atlas-navigation" aria-label="Աշխարհագրական հանրագիտարանի բաժիններ"><button v-for="item in sections" :key="item[0]" type="button" :aria-pressed="section===item[0]" @click="change(item[0]!)"><strong>{{item[1]}}</strong><small>{{item[2]}}</small></button></nav><Suspense><div><LazyGlobeWorldRecords v-if="section==='records'" @locate="emit('locate',$event)"/><LazyGlobeCountryComparison v-else-if="section==='comparison'"/><LazyGlobeInterestingFacts v-else-if="section==='facts'" @locate="emit('locate',$event)"/><LazyGlobeHistoricalTimeline v-else-if="section==='history'"/></div><template #fallback><p role="status">Բեռնում ենք բաժինը…</p></template></Suspense></div></template>

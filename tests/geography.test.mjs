@@ -8,7 +8,7 @@ const core=await import(moduleUrl(new URL('../utils/geography/core.ts',import.me
 const engine=await import(moduleUrl(new URL('../utils/geography/games.ts',import.meta.url)))
 const labels=await import(moduleUrl(new URL('../data/geography/labels.ts',import.meta.url)))
 test('100+ facts and 30+ records have unique IDs, source links, Armenian content and valid representative markers',()=>{
- assert.ok(facts.length>=100);assert.ok(records.length>=30)
+ assert.ok(facts.length>=100);assert.ok(records.length>=30);assert.ok(facts.filter(f=>f.category==='Բնություն').length>=10)
  for(const collection of [facts,records]){assert.equal(new Set(collection.map(f=>f.id)).size,collection.length);for(const f of collection){assert.match(f.title,/[Ա-ֆ]/);assert.match(f.detail,/[Ա-ֆ]/);assert.ok(new URL(f.source.url).protocol==='https:');if(f.coordinates)assert.ok(core.validCoordinates(f.coordinates))}}
  assert.ok(new Set(facts.map(f=>f.category)).size>=6)
 })
