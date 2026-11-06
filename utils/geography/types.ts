@@ -1,6 +1,6 @@
 import type { CountryDetails } from '../globe'
 export type Coordinates = [longitude: number, latitude: number]
-export type MapLocation = { coordinates: Coordinates; label: string; requestId?: number }
+export type MapLocation = { coordinates: Coordinates; label: string; requestId?: number; detail?: string; source?: GeoSource }
 export type AtlasCountry = CountryDetails & {
   nameHy: string; nameEn: string; region: string; subregion: string; independent: boolean | null; timezones?: string[]
   currencies: Record<string, { name: string; symbol?: string }>; borders: string[]; landlocked: boolean

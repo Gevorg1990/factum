@@ -17,7 +17,7 @@ const zones=computed(()=>(props.country.timezones||[]).map(zone=>{try{return new
 </script>
 <template>
 <div class="atlas-country">
-  <div class="country-title"><CountryFlag :code="country.cca2"/><div><span class="geo-eyebrow">ԸՆՏՐՎԱԾ ԵՐԿԻՐ</span><h2>{{country.nameHy}}</h2></div></div>
+  <div class="country-title"><CountryFlag :code="country.cca2"/><div><h2 :title="country.nameHy">{{country.nameHy}}</h2></div></div>
   <dl>
     <div><dt>Մայրաքաղաք՝ ըստ բազայի</dt><dd>{{capitalName(country.cca3,country.capital)}}</dd></div>
     <div><dt>Աշխարհամաս</dt><dd>{{regions[country.region]||missing}}</dd></div>
@@ -35,5 +35,6 @@ const zones=computed(()=>(props.country.timezones||[]).map(zone=>{try{return new
 </div>
 </template>
 <style scoped>
-.density-note{display:block;margin-top:6px;font-size:10px;color:#a9bbd4}.country-title{display:flex;align-items:center;gap:14px;margin-bottom:20px}.country-title :deep(img){width:46px;height:32px}.country-title h2{font-size:24px;font-weight:800;margin-top:6px}.geo-eyebrow{color:#dfc38f;font-size:9px;letter-spacing:1px}dl>div{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid #8997c022}dt{font-size:11px;color:#a9bbd4}dt small{display:block}dd{font-size:12px;overflow-wrap:anywhere;max-width:100%}p{font-size:12px;line-height:1.95;color:#c1cfe1}h3{font-size:14px;color:#dfc38f;margin:15px 0 10px}.border-countries{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.border-countries button{padding:8px 10px;min-height:40px;border-radius:8px;background:#dfc38f10;font-size:11px;color:#dfc38f}.country-sources{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #8997c022}.country-sources a{font-size:10px;color:#dfc38f;text-decoration:underline}button:focus-visible,a:focus-visible{outline:2px solid #dfc38f;outline-offset:3px}
+.atlas-country{min-width:0;max-width:100%}.density-note{display:block;margin-top:6px;font-size:10px;color:#a9bbd4}.country-title{display:flex;align-items:center;gap:14px;margin-bottom:20px}.country-title :deep(img){width:46px;height:32px}.country-title>div{flex:1;min-width:0}.country-title :deep(.country-flag){flex-shrink:0}.country-title h2{min-width:0;font-size:24px;font-weight:800;margin:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4}dl>div{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid #8997c022}dt{font-size:11px;color:#a9bbd4}dt small{display:block}dd{font-size:12px;overflow-wrap:anywhere;max-width:100%}p{font-size:12px;line-height:1.95;color:#c1cfe1}h3{font-size:14px;color:#dfc38f;margin:15px 0 10px}.border-countries{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.border-countries button{padding:8px 10px;min-height:40px;border-radius:8px;background:#dfc38f10;font-size:11px;color:#dfc38f}.country-sources{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #8997c022}.country-sources a{font-size:10px;color:#dfc38f;text-decoration:underline}button:focus-visible,a:focus-visible{outline:2px solid #dfc38f;outline-offset:3px}
+@media(max-width:600px){.country-title{gap:8px}.country-title>div{gap:8px}.country-title :deep(img){width:32px;height:23px}.country-title h2{font-size:18px}}
 </style>

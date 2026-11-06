@@ -18,11 +18,11 @@ test('all atlas, globe and existing profile templates and responsive styles comp
   for(const style of d.styles)assert.deepEqual(sfc.compileStyle({source:style.content,filename:file,id:'geo-test',scoped:true}).errors,[],file)
  }
 })
-function setupGlobe({reduced=true,failLayer=false,mobile=false}={}){
+function setupGlobe({reduced=true,failLayer=false,mobile=false,remoteSearch=async()=>({items:[]})}={}){
  const d3scope={};runInNewContext(read('public/vendor/d3-7.9.0.min.js'),d3scope)
  const frames=new Map(),cleanup=[],mounted=[],emitted=[],props=vue.reactive({mapQuiz:false}),atlas={countries:vue.ref(countries),statistics:vue.ref(statistics),load:async()=>{}}
  let id=0
- const scope={...vue,exports:{},useGeographyAtlas:()=>atlas,usePopulationEstimates:()=>({estimates:vue.ref({}),status:vue.ref('ready')}),onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>cleanup.push(fn),window:{d3:d3scope.d3,matchMedia:query=>({matches:query.includes('prefers-reduced-motion')?reduced:mobile})},document:{getElementById:()=>null},AbortController,setTimeout,clearTimeout,requestAnimationFrame:fn=>{const n=++id;frames.set(n,fn);return n},cancelAnimationFrame:n=>frames.delete(n),fetch:async()=>({ok:true,json:async()=>world}),$fetch:async path=>{if(path.includes('timezones')&&failLayer)throw Error('Unavailable');return JSON.parse(read('public'+path))},require:imports}
+ const scope={...vue,exports:{},useGeographyAtlas:()=>atlas,usePopulationEstimates:()=>({estimates:vue.ref({}),status:vue.ref('ready')}),onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>cleanup.push(fn),window:{d3:d3scope.d3,matchMedia:query=>({matches:query.includes('prefers-reduced-motion')?reduced:mobile})},document:{getElementById:()=>null},AbortController,setTimeout,clearTimeout,requestAnimationFrame:fn=>{const n=++id;frames.set(n,fn);return n},cancelAnimationFrame:n=>frames.delete(n),fetch:async()=>({ok:true,json:async()=>world}),$fetch:async (path,options)=>{if(path==='/api/geography/search')return remoteSearch(options);if(path.includes('timezones')&&failLayer)throw Error('Unavailable');return JSON.parse(read('public'+path))},require:imports}
  runInNewContext(compile('components/InteractiveGlobe.client.vue'),scope)
  const app=scope.exports.default.setup(props,{expose(){},emit:(...args)=>emitted.push(args)})
  mounted.forEach(fn=>fn())
@@ -30,10 +30,10 @@ function setupGlobe({reduced=true,failLayer=false,mobile=false}={}){
 }
 test('search, country centering, small-country markers, geographic markers and map-answer events use real data',async()=>{
  const t=setupGlobe();await tick();assert.equal(t.app.error.value,false)
- t.app.search.value='ԵՐԵՒԱՆ';assert.ok(t.app.results.value.some(c=>c.cca3==='ARM'))
- t.app.search.value='սեւ ծով';assert.ok(t.app.placeResults.value.some(p=>p.id==='black-sea'))
+ t.app.search.value='ՀԱՅԱՍՏԱՆ';assert.ok(t.app.results.value.some(c=>c.cca3==='ARM'))
+ t.app.search.value='Տրոմելեն';assert.ok(t.app.placeResults.value.some(p=>p.id==='tromelin'))
  t.app.chooseCode('FRA');assert.equal(t.app.selectedCode.value,'FRA');assert.equal(t.emitted.at(-1)[1],'FRA');assert.equal(t.app.rotation.value[0],-2)
- t.app.chooseCode('VAT');assert.equal(t.app.selectedCode.value,'VAT');assert.ok(t.app.location.value);assert.ok(t.app.marker.value)
+ t.app.chooseCode('VAT');assert.equal(t.app.selectedCode.value,'VAT');assert.ok(t.app.islandPoints.value.some(p=>p.code==='VAT'))
  t.app.locate({coordinates:[-72.545,-13.163],label:'Մաչու Պիկչու'});assert.ok(t.app.marker.value);assert.equal(t.app.location.value.label,'Մաչու Պիկչու')
  t.dispose();assert.equal(t.frames.size,0)
 })
@@ -61,9 +61,9 @@ test('map game accepts one answer, scores once, advances and clears the map task
  game.revealAnswer();assert.ok(!emitted.some(e=>e[0]==='mapReveal'))
  const correct=game.current.value.answer;props.mapAnswer={code:correct,requestId:1};await tick();assert.equal(game.score.value,10)
  props.mapAnswer={code:correct,requestId:2};await tick();assert.equal(game.score.value,10)
- game.revealAnswer();assert.equal(emitted.at(-1)[0],'mapReveal');assert.equal(emitted.at(-1)[1],correct)
- game.next();assert.equal(game.index.value,1);assert.equal(game.answer.value,null)
- const nextCorrect=game.current.value.answer;props.mapAnswer={code:nextCorrect==='ARM'?'JPN':'ARM',requestId:3};await tick();game.revealAnswer();assert.equal(emitted.at(-1)[1],nextCorrect);assert.equal(game.score.value,10)
+ assert.equal(game.isCorrect.value,true);assert.equal(game.canRevealAnswer.value,false);game.revealAnswer();assert.ok(!emitted.some(e=>e[0]==='mapReveal'))
+ game.next();assert.equal(game.index.value,1);assert.equal(game.answer.value,null);assert.equal(game.isCorrect.value,false);assert.equal(game.canRevealAnswer.value,false)
+ const nextCorrect=game.current.value.answer;props.mapAnswer={code:nextCorrect==='ARM'?'JPN':'ARM',requestId:3};await tick();assert.equal(game.canRevealAnswer.value,true);game.revealAnswer();assert.equal(emitted.at(-1)[1],nextCorrect);assert.equal(game.score.value,10)
  cleanup.forEach(fn=>fn());assert.equal(emitted.at(-1)[1],null)
 })
 test('raster projection samples geographic pixels, keeps the globe outside transparent and releases scheduled frames',async()=>{
@@ -118,7 +118,7 @@ test('latest population wins over the snapshot and density follows its actual ye
  t.dispose()
 })
 
-test('map answers remain visible for two seconds before returning and pending timers are cancelled',()=>{
+test('mobile map answers remain visible for one second before returning and pending timers are cancelled',()=>{
  const timers=new Map(),cleanup=[],scrolls=[];let id=0
  const scope={...vue,exports:{},useHead(){},onBeforeUnmount:fn=>cleanup.push(fn),require:name=>name.endsWith('.css')?{}:imports(name),setTimeout:(fn,ms)=>{timers.set(++id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),window:{matchMedia:()=>({matches:true})},document:{getElementById:id=>({scrollIntoView:()=>scrolls.push(id),setAttribute(){},focus(){}})}}
  runInNewContext(compile('pages/globe.vue'),scope)
@@ -126,7 +126,7 @@ test('map answers remain visible for two seconds before returning and pending ti
  page.mapTask.value={label:'Գտիր երկիրը'};page.answerCountry('ARM')
  assert.equal(page.mapAnswerPending.value,true);assert.equal(page.mapAnswer.value.code,'ARM');assert.equal(scrolls.length,0)
  page.answerCountry('JPN');assert.equal(page.mapAnswer.value.code,'ARM');assert.equal(timers.size,1)
- const timer=timers.values().next().value;assert.equal(timer.ms,2000);timers.clear();timer.fn()
+ const timer=timers.values().next().value;assert.equal(timer.ms,1000);timers.clear();timer.fn()
  assert.equal(page.mapAnswerPending.value,false);assert.deepEqual(scrolls,['globe-games'])
  page.answerCountry('JPN');assert.equal(timers.size,1);cleanup.forEach(fn=>fn());assert.equal(timers.size,0)
 })
@@ -142,5 +142,104 @@ test('mobile map selection previews without answering, offers nearby small count
  t.app.previewQuizCountry('BHR');assert.ok(t.app.marker.value);assert.equal(t.emitted.length,0)
  t.app.confirmQuizCountry();assert.equal(t.emitted.at(-1)[1],'BHR');const count=t.emitted.length;t.app.confirmQuizCountry();assert.equal(t.emitted.length,count)
  t.props.mapQuiz=false;await tick();assert.equal(t.app.quizCandidate.value,null);assert.equal(t.app.nearbyQuizCountries.value.length,0)
+ t.dispose()
+})
+
+ test('mapped islands have visible selectable land points and mobile quiz selection waits for confirmation',async()=>{
+ const t=setupGlobe({mobile:true});await tick()
+ assert.ok(t.app.countries.value.some(c=>c.properties.ADM0_A3==='MDV'&&c.properties.POINT))
+ t.app.chooseCode('MDV');await tick()
+ assert.ok(t.app.islandPoints.value.some(p=>p.code==='MDV'))
+ const island=countries.find(c=>c.cca3==='MDV')
+ t.app.rotation.value=[180-island.latlng[1],island.latlng[0],0];await tick()
+ assert.ok(!t.app.islandPoints.value.some(p=>p.code==='MDV'))
+ t.props.mapQuiz=true;await tick();const count=t.emitted.length
+ t.app.chooseCode('MDV');assert.equal(t.app.quizCandidate.value,'MDV');assert.equal(t.emitted.length,count)
+ t.app.confirmQuizCountry();assert.equal(t.emitted.at(-1)[1],'MDV')
+ t.dispose()
+})
+
+test('all island markers are on their own actual land geometry',()=>{
+ const scope={};runInNewContext(read('public/vendor/d3-7.9.0.min.js'),scope)
+ for(const feature of world.features){
+  const point=feature.properties.POINT;if(!point)continue
+  const oriented=modules.globe.orientCountry(feature,scope.d3.geoArea)
+  assert.ok(scope.d3.geoContains(oriented,point),feature.properties.ADM0_A3)
+ }
+})
+
+test('mixed winding island polygons never paint the globe as a country',()=>{
+ const scope={};runInNewContext(read('public/vendor/d3-7.9.0.min.js'),scope)
+ for(const feature of world.features){
+  const oriented=modules.globe.orientCountry(feature,scope.d3.geoArea)
+  assert.ok(scope.d3.geoArea(oriented)<2*Math.PI,feature.properties.ADM0_A3)
+  const polygons=oriented.geometry.type==='Polygon'?[oriented.geometry.coordinates]:oriented.geometry.coordinates
+  for(const coordinates of polygons)assert.ok(scope.d3.geoArea({type:'Polygon',coordinates})<=2*Math.PI,feature.properties.ADM0_A3)
+ }
+})
+
+ test('Bishop Rock is searchable and uses Trinity House lighthouse coordinates',async()=>{
+ const t=setupGlobe();await tick()
+ for(const query of ['Բիշոփ Ռոք','Bishop Rock']){t.app.search.value=query;assert.ok(t.app.placeResults.value.some(p=>p.id==='bishop-rock'))}
+ const place=t.app.placeResults.value.find(p=>p.id==='bishop-rock')
+ assert.ok(Math.abs(place.coordinates[0]-(-(6+26.734/60)))<1e-8)
+ assert.ok(Math.abs(place.coordinates[1]-(49+52.371/60))<1e-8)
+ t.app.locate({coordinates:place.coordinates,label:place.title});await tick()
+ assert.ok(t.app.landmarkPoints.value.some(p=>p.place.id==='bishop-rock'));assert.ok(t.app.marker.value)
+ t.dispose()
+})
+
+test('Bouvet Island is searchable with the Armenian definite article and centers its land marker',async()=>{
+ const t=setupGlobe();await tick()
+ for(const query of ['Բուվե','Բուվե կղզի','Բուվե կղզին','Bouvet Island']){t.app.search.value=query;assert.ok(t.app.results.value.some(c=>c.cca3==='BVT'),query)}
+ t.app.chooseCode('BVT');await tick()
+ assert.equal(t.app.selectedCode.value,'BVT');assert.ok(t.app.islandPoints.value.some(p=>p.code==='BVT'))
+ assert.equal(t.app.rotation.value[0],-3.4);assert.equal(t.app.rotation.value[1],54.43333333)
+ t.dispose()
+})
+
+test('Tromelin is searchable in Armenian with its article and English and has a map point',async()=>{
+ const t=setupGlobe();await tick()
+ for(const query of ['Տրոմելեն','Տրոմելեն կղզին','Tromelin']){t.app.search.value=query;assert.ok(t.app.placeResults.value.some(p=>p.id==='tromelin'),query)}
+ const place=t.app.placeResults.value.find(p=>p.id==='tromelin')
+ t.app.locate({coordinates:place.coordinates,label:place.title});await tick()
+ assert.ok(t.app.landmarkPoints.value.some(p=>p.place.id==='tromelin'));assert.ok(t.app.marker.value)
+ t.dispose()
+})
+
+test('global results center a source-linked map marker and stale searches cannot replace new ones',async()=>{
+ let resolve
+ const t=setupGlobe({remoteSearch:async()=>await new Promise(r=>resolve=r)});await tick()
+ const place={id:'node/1',label:'Reykjavík',context:'Iceland',coordinates:[-21.94,64.15],url:'https://www.openstreetmap.org/node/1'}
+ t.app.search.value='Reykjavik';await tick();const request=t.app.searchWorld()
+ assert.equal(t.app.worldSearchState.value,'loading');resolve({items:[place]});await request
+ assert.equal(t.app.worldResults.value[0].label,'Reykjavík')
+ t.app.chooseWorldPlace(place);await tick()
+ assert.equal(t.app.location.value.source.url,place.url);assert.ok(t.app.marker.value);assert.equal(t.app.rotation.value[0],21.94)
+ t.app.search.value='Paris';await tick();const stale=t.app.searchWorld()
+ t.app.search.value='Tokyo';await tick();resolve({items:[place]});await stale
+ assert.equal(t.app.worldResults.value.length,0);assert.equal(t.app.worldSearchState.value,'idle')
+ t.dispose()
+})
+
+test('world search errors preserve local matches and map quizzes prevent external selection',async()=>{
+ const t=setupGlobe({remoteSearch:async()=>{throw Error('offline')}});await tick()
+ t.app.search.value='Բուվե';await tick();await t.app.searchWorld()
+ assert.equal(t.app.worldSearchState.value,'error');assert.ok(t.app.results.value.some(c=>c.cca3==='BVT'))
+ t.props.mapQuiz=true;await tick()
+ t.app.chooseWorldPlace({id:'node/1',label:'Test',context:'',coordinates:[0,0],url:'https://www.openstreetmap.org/node/1'})
+ assert.equal(t.app.location.value,null);assert.equal(t.app.worldResults.value.length,0)
+ t.dispose()
+})
+
+test('typing automatically searches after a pause without Enter and excludes internal local places',async()=>{
+ let calls=0
+ const t=setupGlobe({remoteSearch:async()=>{calls++;return {items:[]}}});await tick()
+ t.app.search.value='school';await tick();assert.equal(calls,0)
+ t.app.search.value='island';await tick()
+ await new Promise(resolve=>setTimeout(resolve,650));await tick()
+ assert.equal(calls,1);assert.equal(t.app.worldSearchState.value,'ready')
+ t.app.search.value='Երևան';await tick();assert.equal(t.app.results.value.length,0)
+ t.app.search.value='Մաչու Պիկչու';await tick();assert.equal(t.app.placeResults.value.length,0)
  t.dispose()
 })

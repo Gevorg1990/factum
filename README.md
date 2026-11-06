@@ -104,3 +104,9 @@ Directus + PostgreSQL Docker կազմաձևը պահպանվել է նախորդ
 ## Կայքի հրապարակում
 
 Vercel-ում՝ ձայնային ընթերցման և որոնման սերվերային գործառույթներով հրապարակելու քայլերը՝ [հրապարակման ուղեցույցում](docs/DEPLOYMENT.md)։
+
+### Globe place search
+
+The globe keeps local country/place matches and uses `/api/geography/search?q=...` automatically after a typing pause (500 ms debounce and at least 1.1 seconds between requests). Photon/OpenStreetMap searches are restricted at the provider and validated again on the server to countries, islands/islets/archipelagos, rocks and reefs. Cities, addresses, schools and other internal points of interest are excluded. Results provide a point marker, place context and source link. The provider does not guarantee every name, language or small feature; ambiguous names return up to six choices. No full worldwide place catalog is shipped to the browser.
+
+The default provider is the public Photon demo, intended for moderate traffic with no availability guarantee. For growing production traffic, point `NUXT_GEOGRAPHY_SEARCH_URL` at a dedicated Photon instance or compatible managed endpoint (base URL without `/api`). See https://github.com/komoot/photon#demo-server. The proxy uses eight-second timeouts, single-flight requests, a bounded 500-query cache, 24-hour positive/5-minute empty-result TTLs, and a one-second per-worker request interval. This local limiter is not a distributed site-wide quota. Configure provider capacity and edge limits for the deployment's expected traffic. The URL is server configuration, never supplied by the user.

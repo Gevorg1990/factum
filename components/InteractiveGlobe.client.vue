@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type {PlaceSearchResult} from '~/utils/geography/placeSearch'
 import type {AtlasCountry,MapLocation,WorldRecord} from '~/utils/geography/types'
 import {normalizeGeoSearch,populationColor,validCoordinates,density} from '~/utils/geography/core'
 import {capitalName} from '~/data/geography/labels'
@@ -10,6 +11,41 @@ import { orientCountry, rotateGlobe, type CountryFeature, type CountryDetails, t
 const props = defineProps<{ focusCountry?: { code: string; requestId: number }; focusLocation?:MapLocation; mapQuiz?:boolean; selectionLocked?:boolean }>()
 const emit=defineEmits<{countrySelected:[code:string]}>()
 const atlas=useGeographyAtlas()
+const search = ref('')
+const worldResults=shallowRef<PlaceSearchResult[]>([])
+const worldSearchState=ref<'idle'|'loading'|'ready'|'error'>('idle')
+const worldSearchMessage=ref('')
+let worldSearchController:AbortController|undefined
+let worldSearchVersion=0
+let worldSearchTimer:ReturnType<typeof setTimeout>|undefined
+let lastWorldSearchAt=0
+function cancelWorldSearchTimer(){if(worldSearchTimer!==undefined)clearTimeout(worldSearchTimer);worldSearchTimer=undefined}
+watch(search,()=>{
+ worldSearchVersion++;worldSearchController?.abort();cancelWorldSearchTimer();worldResults.value=[];worldSearchState.value='idle';worldSearchMessage.value=''
+ if(search.value.trim().length<2||props.mapQuiz||disposed)return
+ worldSearchTimer=setTimeout(()=>{worldSearchTimer=undefined;void searchWorld()},Math.max(500,1100-(Date.now()-lastWorldSearchAt)))
+})
+async function searchWorld(){
+ cancelWorldSearchTimer()
+ const query=search.value.trim()
+ if(props.mapQuiz||query.length<2||worldSearchState.value==='loading')return
+ worldSearchController?.abort()
+ const controller=new AbortController(),version=++worldSearchVersion
+ lastWorldSearchAt=Date.now();worldSearchController=controller;worldSearchState.value='loading';worldSearchMessage.value=''
+ try{
+  const response=await $fetch<{items:PlaceSearchResult[]}>('/api/geography/search',{query:{q:query},signal:controller.signal,timeout:10000,retry:0})
+  if(disposed||version!==worldSearchVersion)return
+  worldResults.value=response.items;worldSearchState.value='ready'
+ }catch(error){
+  if(disposed||version!==worldSearchVersion)return
+  worldSearchState.value='error'
+  worldSearchMessage.value=(error as {statusCode?:number}).statusCode===429?'Մի պահ սպասիր և կրկին փորձիր։':'Համաշխարհային որոնումը ժամանակավորապես անհասանելի է։ Փորձիր կրկին։'
+ }
+}
+function chooseWorldPlace(place:PlaceSearchResult){
+ if(props.mapQuiz)return
+ locate({coordinates:place.coordinates,label:place.label,detail:place.context,source:{name:'OpenStreetMap',url:place.url}})
+}
 const night=ref(false),showPopulation=ref(false),lightsFailed=ref(false),populationMetric=ref<'total'|'density'>('total')
 const layerError=ref(''),selectedCode=ref('ARM'),location=ref<MapLocation|null>(null)
 const records=shallowRef<WorldRecord[]>([])
@@ -17,7 +53,7 @@ const quizCandidate=ref<string|null>(null)
 const nearbyQuizCountries=shallowRef<AtlasCountry[]>([])
 const candidateCountry=computed(()=>atlas.countries.value.find(c=>c.cca3===quizCandidate.value))
 const needsQuizConfirmation=()=>props.mapQuiz&&window.matchMedia('(max-width: 900px), (pointer: coarse)').matches
-watch(()=>props.mapQuiz,()=>{quizCandidate.value=null;nearbyQuizCountries.value=[]})
+watch(()=>props.mapQuiz,()=>{quizCandidate.value=null;nearbyQuizCountries.value=[];worldSearchVersion++;worldSearchController?.abort();worldResults.value=[];worldSearchState.value='idle';cancelWorldSearchTimer()})
 function previewQuizCountry(code:string){
  if(props.selectionLocked)return
  const country=atlas.countries.value.find(c=>c.cca3===code);if(!country)return
@@ -64,6 +100,32 @@ watch([night,showPopulation],()=>{layerError.value='';selectedContinent.value=nu
 watch(night,()=>{lightsFailed.value=false})
 function rasterError(){lightsFailed.value=true;layerError.value='Լուսավորության պատկերը հասանելի չէ։ Նույն քարտեզի գիշերային գունավորումը շարունակում է աշխատել։'}
 const marker=computed(()=>{rotation.value;zoom.value;const target=props.mapQuiz&&candidateCountry.value?{coordinates:[candidateCountry.value.latlng[1],candidateCountry.value.latlng[0]] as [number,number]}:location.value;if(!target||!projection)return null;const [lon,lat]=target.coordinates;const rad=Math.PI/180;const visible=Math.sin(lat*rad)*Math.sin(-rotation.value[1]*rad)+Math.cos(lat*rad)*Math.cos(-rotation.value[1]*rad)*Math.cos((lon+rotation.value[0])*rad)>0;if(!visible)return null;return projection.rotate(rotation.value).scale(270*zoom.value)([lon,lat])})
+// Marker positions are interior land points derived from the actual outlines.
+const islandPoints=computed(()=>{
+ if(!projection)return []
+ const rad=Math.PI/180,rot=rotation.value,scale=270*zoom.value
+ return countries.value.flatMap(feature=>{
+  const coordinates=feature.properties.POINT
+  if(!coordinates)return []
+  const [lon,lat]=coordinates
+  const visible=Math.sin(lat*rad)*Math.sin(-rot[1]*rad)+Math.cos(lat*rad)*Math.cos(-rot[1]*rad)*Math.cos((lon+rot[0])*rad)>0
+  if(!visible)return []
+  const point=projection!.rotate(rot).scale(scale)(coordinates)
+  return point?[{feature,code:feature.properties.ADM0_A3,x:point[0],y:point[1]}]:[]
+ })
+})
+const landmarkPoints=computed(()=>{
+ rotation.value;zoom.value;countries.value
+ if(!projection)return []
+ const rad=Math.PI/180
+ return geographicPlaces.filter(place=>['bishop-rock','tromelin'].includes(place.id)&&place.coordinates).flatMap(place=>{
+  const [lon,lat]=place.coordinates!
+  const visible=Math.sin(lat*rad)*Math.sin(-rotation.value[1]*rad)+Math.cos(lat*rad)*Math.cos(-rotation.value[1]*rad)*Math.cos((lon+rotation.value[0])*rad)>0
+  if(!visible)return []
+  const point=projection!.rotate(rotation.value).scale(270*zoom.value)([lon,lat])
+  return point?[{place,x:point[0],y:point[1]}]:[]
+ })
+})
 function centerAt(coordinates:[number,number]){
  cancelAnimationFrame(frame);frame=0;queuedRotation=undefined
  const target:[number,number,number]=[-coordinates[0],-coordinates[1],0]
@@ -75,7 +137,7 @@ function centerAt(coordinates:[number,number]){
 }
 function locate(target:MapLocation){if(!validCoordinates(target.coordinates))return;location.value=target;zoom.value=1;search.value='';centerAt(target.coordinates)}
 watch(()=>props.focusLocation,value=>{if(value&&api)locate(value)})
-function chooseCode(code:string){const feature=countries.value.find(c=>c.properties.ADM0_A3===code);if(feature){choose(feature,true);return}const country=atlas.countries.value.find(c=>c.cca3===code);if(country){selected.value=null;selectedCode.value=code;locate({coordinates:[country.latlng[1],country.latlng[0]],label:country.nameHy});emit('countrySelected',code)}}
+function chooseCode(code:string){if(props.selectionLocked)return;if(needsQuizConfirmation()){previewQuizCountry(code);return}const feature=countries.value.find(c=>c.properties.ADM0_A3===code);if(feature){choose(feature,true);return}const country=atlas.countries.value.find(c=>c.cca3===code);if(country){selected.value=null;selectedCode.value=code;locate({coordinates:[country.latlng[1],country.latlng[0]],label:country.nameHy});emit('countrySelected',code)}}
 function countryFill(feature:CountryFeature){
  const c=details.value[feature.properties.ADM0_A3],stats=atlas.statistics.value?.countries[feature.properties.ADM0_A3]
  let color=continentColors[feature.properties.CONTINENT]||'#427c79'
@@ -94,7 +156,6 @@ const selected = shallowRef<CountryFeature | null>(null)
 const hovered = shallowRef<CountryFeature | null>(null)
 const loading = ref(true)
 const error = ref(false)
-const search = ref('')
 const zoom = ref(1)
 const rotation = ref<[number, number, number]>([-45, -25, 0])
 const dragging = ref(false)
@@ -159,9 +220,17 @@ const activeDetails = computed(() => active.value ? info(active.value) : undefin
 const results = computed(() => {
   const query=normalizeGeoSearch(search.value)
   if(!query)return []
-  return atlas.countries.value.filter(country=>[country.nameHy,country.nameEn,...country.capital,capitalName(country.cca3,country.capital)].some(value=>normalizeGeoSearch(value).includes(query))).slice(0,7)
+  const find=(term:string)=>atlas.countries.value.filter(country=>[country.nameHy,country.nameEn].some(value=>normalizeGeoSearch(value).includes(term))).slice(0,7)
+  const exact=find(query)
+  // Accept the Armenian definite article without changing official display names.
+  return exact.length||query.length<4?exact:find(query.replace(/[ըն]$/u,''))
 })
-const placeResults=computed(()=>{const q=normalizeGeoSearch(search.value);return q?[...geographicPlaces,...records.value].filter(p=>normalizeGeoSearch([p.title,'measure' in p?p.measure:'',p.category].join(' ')).includes(q)).slice(0,6):[]})
+const placeResults=computed(()=>{
+ const q=normalizeGeoSearch(search.value);if(!q)return []
+ const find=(term:string)=>geographicPlaces.filter(p=>p.category==='Կղզիներ և ժայռեր').filter(p=>normalizeGeoSearch([p.title,'measure' in p?p.measure:'',p.category].join(' ')).includes(term)).slice(0,6)
+ const exact=find(q)
+ return exact.length||q.length<4?exact:find(q.replace(/[ըն]$/u,''))
+})
 const paths = computed(() => {
   if (!api || !projection || !countries.value.length) return []
   projection.rotate(rotation.value).scale(270 * zoom.value)
@@ -312,7 +381,7 @@ function keyRotate(event: KeyboardEvent) {
 }
 function reset() { cancelAnimationFrame(frame);frame=0;location.value=null; selectedContinent.value = null; rotation.value = [-45, -25, 0]; zoom.value = 1; hovered.value = null }
 onMounted(()=>{void load();void $fetch<WorldRecord[]>('/data/geography/records-v1.json',{timeout:10000}).then(value=>{if(!disposed)records.value=value}).catch(()=>{})})
-onBeforeUnmount(() => { disposed = true; controller?.abort(); cancelAnimationFrame(frame) })
+onBeforeUnmount(() => { disposed = true; controller?.abort(); worldSearchController?.abort(); cancelWorldSearchTimer(); cancelAnimationFrame(frame) })
 defineExpose({ getSurfaceFeatures: () => countries.value })
 </script>
 
@@ -320,10 +389,17 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
   <div class="globe-layout">
       <section class="panel globe-search-panel">
         <label for="globe-country-search"><Search :size="17" /> Որոնիր աշխարհում</label>
-        <input id="globe-country-search" v-model="search" class="input" type="search" placeholder="Երկիր, մայրաքաղաք, ծով, լեռ…" autocomplete="off" :disabled="loading || error || mapQuiz" />
+        <div class="globe-world-search">
+          <input id="globe-country-search" v-model="search" class="input" type="search" maxlength="160" placeholder="Երկիր, տարածք, կղզի…" autocomplete="off" :disabled="loading || error || mapQuiz" />
+        </div>
         <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.cca3"><button type="button" @click="chooseCode(country.cca3)"><CountryFlag :code="country.cca2"/><span class="globe-result-name">{{country.nameHy}}<small>{{capitalName(country.cca3,country.capital)}}</small></span><MapPin :size="14"/></button></li></ul>
-        <ul v-if="placeResults.length" class="globe-results"><li v-for="place in placeResults" :key="place.id"><button type="button" @click="place.coordinates && locate({coordinates:place.coordinates,label:place.title})"><span class="globe-result-name">{{place.title}}<small>{{place.category}}</small></span><MapPin :size="14"/></button></li></ul>
-        <p v-if="search.trim()&&!results.length&&!placeResults.length" class="muted globe-no-results" role="status">Արդյունք չի գտնվել։ Փորձիր այլ անվանում։</p>
+        <ul v-if="placeResults.length" class="globe-results"><li v-for="place in placeResults" :key="place.id"><button type="button" @click="place.coordinates && locate({coordinates:place.coordinates,label:place.title,detail:place.detail,source:place.source})"><span class="globe-result-name">{{place.title}}<small>{{place.category}}</small></span><MapPin :size="14"/></button></li></ul>
+        <ul v-if="worldResults.length" class="globe-results"><li v-for="place in worldResults" :key="place.id"><button type="button" @click="chooseWorldPlace(place)"><MapPin :size="17"/><span class="globe-result-name">{{place.label}}<small>{{place.context}}</small></span></button></li></ul>
+        <p v-if="worldSearchState==='loading'" class="globe-data-note" role="status">Որոնում ենք աշխարհի տեղանուններում…</p>
+        <p v-else-if="worldSearchState==='error'" class="globe-data-note" role="status">{{worldSearchMessage}}</p>
+        <p v-else-if="worldSearchState==='ready'&&!worldResults.length" class="globe-data-note" role="status">Այդ անվամբ վայր չի գտնվել։ Փորձիր նաև երկրի կամ կղզու միջազգային անվանումը։</p>
+        <p v-else-if="search.trim().length>=2&&!results.length&&!placeResults.length&&!worldResults.length" class="globe-data-note">Փնտրում ենք երկրներ, տարածքներ և կղզիներ…</p>
+        <p v-if="worldSearchState!=='idle'" class="globe-search-credit">Համաշխարհային որոնում՝ Photon · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></p>
         <p v-if="mapQuiz" class="globe-data-note">Քարտեզի խաղի ընթացքում որոնումը ժամանակավորապես փակ է։</p>
       </section>
     <section class="panel globe-view" :class="{'is-night':night}" aria-label="Ինտերակտիվ երկրագունդ">
@@ -362,8 +438,21 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
             <path v-for="item in paths" :key="item.country.properties.ADM0_A3 + item.country.properties.NAME" :d="item.path" :data-country="item.country.properties.ADM0_A3" class="globe-country" :style="{ '--continent-color': countryFill(item.country) }" :class="{ 'is-active': mapQuiz ? quizCandidate===item.country.properties.ADM0_A3 : active === item.country, 'is-night':night, 'is-continent-selected': selectedContinent === item.country.properties.CONTINENT, 'is-continent-muted': selectedContinent && selectedContinent !== item.country.properties.CONTINENT }" @pointerenter="!mapQuiz && !selectionLocked && !dragging && $event.pointerType !== 'touch' && (hovered = item.country)" @pointerleave="hovered = null" @click="!suppressClick && choose(item.country)"><title v-if="!mapQuiz">{{ name(item.country) }}</title></path>
           </g>
           <circle cx="340" cy="340" :r="radius" :fill="night?'url(#factum-night-shade)':'url(#factum-globe-shade)'" pointer-events="none" />
+          <g v-for="point in islandPoints" :key="point.code" class="globe-island" :class="{'is-selected':(mapQuiz ? quizCandidate : selectedCode)===point.code}" @pointerenter="!mapQuiz && !selectionLocked && !dragging && (hovered = point.feature)" @pointerleave="hovered = null" @focus="!mapQuiz && (hovered = point.feature)" @blur="hovered = null" :transform="`translate(${point.x},${point.y})`" role="button" tabindex="0" :aria-label="mapQuiz ? 'Ընտրել կղզին կամ փոքր երկիրը' : name(point.feature)" @pointerdown.stop @click.stop="chooseCode(point.code)" @keydown.enter.stop.prevent="chooseCode(point.code)" @keydown.space.stop.prevent="chooseCode(point.code)">
+            <circle r="9" fill="transparent"/>
+            <circle class="island-selection-halo" r="13" fill="#f4d79c20" stroke="#ffe0a3" stroke-opacity=".35" stroke-width="1" pointer-events="none"/>
+            <circle class="island-ring" r="6" fill="#dfc38f18" stroke="#dfc38faa" stroke-width="1" pointer-events="none"/>
+            <circle r="2.5" :fill="(mapQuiz ? quizCandidate : selectedCode)===point.code ? '#fff1cd' : '#dfc38f'" stroke="#fff1cd" stroke-opacity=".5" stroke-width=".5" pointer-events="none"/>
+            <title v-if="!mapQuiz">{{name(point.feature)}}</title>
+          </g>
+          <g v-if="!mapQuiz">
+            <g v-for="point in landmarkPoints" :key="point.place.id" class="globe-island" :transform="`translate(${point.x},${point.y})`" role="button" tabindex="0" :aria-label="point.place.title" @pointerdown.stop @click.stop="locate({coordinates:point.place.coordinates!,label:point.place.title,detail:point.place.detail,source:point.place.source})" @keydown.enter.stop.prevent="locate({coordinates:point.place.coordinates!,label:point.place.title,detail:point.place.detail,source:point.place.source})" @keydown.space.stop.prevent="locate({coordinates:point.place.coordinates!,label:point.place.title,detail:point.place.detail,source:point.place.source})">
+              <circle r="9" fill="transparent"/><circle class="island-ring" r="6" fill="#dfc38f18" stroke="#dfc38faa"/><circle r="2.5" fill="#dfc38f"/>
+              <title>{{point.place.title}}</title>
+            </g>
+          </g>
         </svg>
-        <svg v-if="marker && (!mapQuiz || candidateCountry)" class="globe-markers" :viewBox="`0 0 ${viewSize} ${viewSize}`" aria-hidden="true"><g class="geo-marker" :transform="`translate(${marker[0]},${marker[1]})`" pointer-events="none"><circle r="13" fill="#dfc38f22" stroke="#dfc38f88"/><circle r="5" fill="#ffe0a3" stroke="#15233c" stroke-width="2"/></g></svg>
+        <svg v-if="marker && (!mapQuiz || candidateCountry)" class="globe-markers" :viewBox="`0 0 ${viewSize} ${viewSize}`" aria-hidden="true"><g class="geo-marker" :transform="`translate(${marker[0]},${marker[1]})`" pointer-events="none"><circle r="13" fill="#dfc38f22" stroke="#dfc38f88"/><circle r="5" fill="#ffe0a3" stroke="#fff1cd" stroke-width="1"/></g></svg>
         <div v-if="active && !dragging && !mapQuiz && !location" class="globe-tooltip" :class="{ 'is-selected': !hovered }" :style="hovered ? { left: `${tip.x}px`, top: `${tip.y}px` } : undefined" aria-hidden="true"><strong><CountryFlag :code="flagCode(active)" /> {{ name(active) }}</strong><small>{{ continents[active.properties.CONTINENT] || active.properties.CONTINENT }}</small><small v-if="showPopulation" class="globe-tooltip-population">Բնակչություն՝ {{tooltipPopulation!=null?number.format(Math.round(tooltipPopulation)):'Տվյալը հասանելի չէ'}}<template v-if="tooltipPopulation!=null"> · {{atlas.statistics.value?.year}} թ․</template></small></div>
       </div>
       <div v-if="mapQuiz && candidateCountry" class="quiz-map-confirm" aria-live="polite">
@@ -389,6 +478,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 
       <section id="globe-country-info" tabindex="-1" class="panel globe-info" aria-live="polite" aria-atomic="true">
         <p v-if="mapQuiz" class="globe-data-note">Քարտեզի խաղը ակտիվ է։ Ընտրիր երկիրը երկրագնդի վրա։ Մոբայլում ընտրությունը հաստատիր քարտեզի ներքևի կոճակով։</p>
+        <article v-else-if="location" class="globe-place-info"><p class="gold">ԸՆՏՐՎԱԾ ՎԱՅՐ</p><h2>{{location.label}}</h2><p v-if="location.detail">{{location.detail}}</p><p>{{Math.abs(location.coordinates[1]).toFixed(5)}}° {{location.coordinates[1]>=0?'N':'S'}} · {{Math.abs(location.coordinates[0]).toFixed(5)}}° {{location.coordinates[0]>=0?'E':'W'}}</p><a v-if="location.source" :href="location.source.url" target="_blank" rel="noopener noreferrer">{{location.source.name}} ↗</a></article>
         <GlobeCountryPanel v-else-if="selectedAtlas" :country="selectedAtlas" :countries="atlas.countries.value" :statistics="atlas.statistics.value" :population="selectedPopulation" @select="chooseCode"/>
         <div v-else class="globe-empty"><Globe2 :size="32" /><h2>Աշխարհը՝ քո ձեռքերում</h2><p>Ընտրիր երկիրը գլոբուսի վրա կամ գտիր որոնմամբ։</p></div>
       </section>
@@ -400,6 +490,9 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 </template>
 
 <style scoped>
+.globe-world-search{margin:0}.globe-search-credit{font-size:10px;line-height:1.7;color:#a9bbd4;margin-top:12px}.globe-search-credit a,.globe-place-info a{color:#dfc38f;text-decoration:underline}.globe-place-info{min-width:0;overflow-wrap:anywhere}.globe-place-info h2{font-size:23px;line-height:1.5;margin:8px 0 14px}.globe-place-info p{font-size:12px;line-height:1.9;margin:10px 0}.globe-place-info a{font-size:12px}
+
+.globe-island{cursor:pointer}.globe-island:focus{outline:none}.island-selection-halo{display:none}.globe-island.is-selected .island-selection-halo{display:block}.globe-island.is-selected .island-ring{r:9}.globe-island.is-selected circle:last-of-type{r:4;fill:#fff1cd;stroke:#ffe0a3;stroke-width:1}.globe-island.is-selected .island-ring,.globe-island:focus-visible .island-ring{fill:#dfc38f30;stroke:#ffe0a3;stroke-width:1.5}.globe-island:focus-visible .island-ring{r:8}.globe-island:focus-visible circle:last-of-type,.globe-island:hover circle:last-of-type{fill:#fff1cd;stroke:#ffe0a3;stroke-width:1.5}
 .quiz-map-confirm{margin:12px 20px;padding:16px;border:1px solid #dfc38f66;border-radius:12px;background:#101e32;display:grid;gap:14px}.quiz-map-confirm p{font-size:13px;line-height:1.8}.quiz-map-confirm strong{color:#dfc38f}.quiz-map-confirm small{font-size:11px;line-height:1.8;color:#a9bbd4}.quiz-map-confirm>.btn{min-height:48px}.quiz-nearby{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:11px}.quiz-nearby button{min-height:44px;padding:8px 12px;border:1px solid #8997c044;border-radius:10px}.quiz-nearby button[aria-pressed=true]{color:#dfc38f;border-color:#dfc38f;background:#dfc38f10}
 
 
@@ -434,9 +527,9 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 .globe-continent-swatch { width: 11px; height: 11px; border-radius: 3px; border: 1px solid #ffffff55; flex-shrink: 0; }
 .globe-hint { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 0 18px 20px; color: #a9bbd4; font-size: 11px; line-height: 1.8; }
 .globe-hint svg { flex-shrink: 0; }
-.globe-sidebar { display: grid; gap: 18px; grid-column: 2; grid-row: 2; }
+.globe-sidebar { min-width: 0; grid-template-columns: minmax(0, 1fr); display: grid; gap: 18px; grid-column: 2; grid-row: 2; }
 .globe-search-panel { grid-column: 2; grid-row: 1; }
-.globe-info { scroll-margin-top: 110px; }
+.globe-info { min-width: 0; scroll-margin-top: 110px; }
 .globe-tooltip.is-selected { display: none; left: 50%; top: 12px; transform: translateX(-50%); }
 .globe-search-panel, .globe-info { padding: 22px; }
 .globe-search-panel label { display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 14px; font-size: 14px; }

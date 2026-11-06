@@ -14,7 +14,8 @@ function answerCountry(code:string){
   if(!mapTask.value||mapAnswerPending.value)return
   mapAnswerPending.value=true
   mapAnswer.value={code,requestId:(mapAnswer.value?.requestId||0)+1}
-  mapReturnTimer=setTimeout(()=>{mapReturnTimer=undefined;mapAnswerPending.value=false;scrollToSection('globe-games')},2000)
+  const returnDelay=window.matchMedia('(max-width: 900px), (pointer: coarse)').matches?1000:2000
+  mapReturnTimer=setTimeout(()=>{mapReturnTimer=undefined;mapAnswerPending.value=false;scrollToSection('globe-games')},returnDelay)
 }
 onBeforeUnmount(cancelMapReturn)
 watch(mapTask,task=>{if(task)cancelMapReturn()})
@@ -44,7 +45,7 @@ async function showOnMap(code: string, returnTarget = 'capital-quiz-title') {
   if (mode.value !== 'globe') { mode.value = 'globe'; await nextTick() }
   mapReturnTarget.value = returnTarget
   mapFocus.value = { code, requestId: (mapFocus.value?.requestId ?? 0) + 1 }
-  scrollToSection(window.matchMedia('(max-width: 900px)').matches ? 'globe-country-info' : 'interactive-globe')
+  scrollToSection(returnTarget === 'globe-games' || !window.matchMedia('(max-width: 900px)').matches ? 'interactive-globe' : 'globe-country-info')
 }
 useHead({ title: 'Երկրագունդ — FACTUM', meta: [{ name: 'description', content: 'Պտտիր ինտերակտիվ երկրագունդը, բացահայտիր երկրները, մայրաքաղաքները և աշխարհամասերը։' }] })
 </script>

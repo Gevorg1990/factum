@@ -8,9 +8,11 @@
     "adaptation": "Selected fields, Armenian display names and IANA zone associations added; adapted database distributed under ODbL 1.0."
   },
   "boundaries": {
-    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_admin_0_map_units.geojson",
     "license": "Public domain",
-    "note": "1:110m generalized contemporary boundaries, retrieved 2026-11-05. Not a legal statement, historical map, or guarantee of current de facto control."
+    "note": "Natural Earth 1:10m map units grouped by atlas ISO codes; all 250 atlas countries/territories covered. Simplified at 0.04 degrees with small rings preserved and coordinates rounded to 4 decimals. POINT markers are scanline interior points on the largest land polygon, not country centroids. Cartographic outlines, not surveyed or legal boundaries.",
+    "retrieved": "2026-11-06",
+    "sha256": "57da82be755f4afccd8f3b14251bb2752f5df1395f47d2d86f817470c4a48862"
   },
   "statistics": {
     "source": "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&date=2024&per_page=400",
@@ -65,5 +67,12 @@
     "source": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js",
     "license": "ISC",
     "note": "Existing D3 dependency vendored locally; no new browser library."
+  },
+  "worldSearch": {
+    "source": "https://github.com/komoot/photon",
+    "data": "OpenStreetMap contributors",
+    "license": "ODbL 1.0",
+    "licenseUrl": "https://www.openstreetmap.org/copyright",
+    "note": "On-demand named-place search through Photon. Results are representative point positions, not newly drawn boundaries. Availability, names and coverage depend on the provider. Search runs after a typing debounce; restricted to countries, islands/islets/archipelagos, rocks and reefs. Cities, addresses and points of interest are excluded."
   }
 }

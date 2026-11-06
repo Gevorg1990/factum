@@ -1,4 +1,5 @@
 export type CountryProperties = {
+  POINT?: [number, number]
   ADM0_A3: string
   ISO_A2: string
   NAME: string
@@ -40,13 +41,16 @@ export type GlobeApi = {
 
 // D3 uses clockwise exterior rings; GeoJSON providers may use the opposite order.
 export function orientCountry<T extends CountryFeature>(feature: T, area: (feature: CountryFeature) => number): T {
-  if (area(feature) <= 2 * Math.PI) return feature
+  const orientPolygon = (coordinates: number[][][]): number[][][] => {
+    const polygon: CountryFeature = { ...feature, geometry: { type: 'Polygon', coordinates } }
+    return area(polygon) > 2 * Math.PI ? coordinates.map(ring => [...ring].reverse()) : coordinates
+  }
   const geometry = feature.geometry
   return {
     ...feature,
     geometry: geometry.type === 'Polygon'
-      ? { type: 'Polygon', coordinates: geometry.coordinates.map(ring => [...ring].reverse()) }
-      : { type: 'MultiPolygon', coordinates: geometry.coordinates.map(polygon => polygon.map(ring => [...ring].reverse())) },
+      ? { type: 'Polygon', coordinates: orientPolygon(geometry.coordinates) }
+      : { type: 'MultiPolygon', coordinates: geometry.coordinates.map(orientPolygon) },
   }
 }
 

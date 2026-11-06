@@ -43,9 +43,9 @@ test('reference capitals agree with the preserved source data and translated lab
  for(const p of capitalPairs){const c=countries.find(c=>c.cca3===p.countryCode);assert.ok(c.capital.some(n=>p.capitalAliases.includes(n)),p.countryCode);assert.equal(labels.capitalName(c.cca3,c.capital),p.capital)}
 })
 test('assets have bounded sizes, valid geometries and a source/license manifest',()=>{
- const world=read('world-v1.json'),zones=read('timezones-v1.json');assert.equal(world.features.length,177);assert.ok(zones.features.length>20)
+ const world=read('world-v1.json'),zones=read('timezones-v1.json');assert.equal(world.features.length,250);assert.deepEqual(new Set(world.features.map(f=>f.properties.ADM0_A3)),new Set(countries.map(c=>c.cca3)));assert.ok(zones.features.length>20)
  for(const f of [...world.features,...zones.features])assert.ok(['Polygon','MultiPolygon'].includes(f.geometry.type))
- for(const path of ['world-v1.json','timezones-v1.json'])assert.ok(statSync(new URL('../public/data/geography/'+path,import.meta.url)).size<750000)
+ for(const path of ['world-v1.json','timezones-v1.json'])assert.ok(statSync(new URL('../public/data/geography/'+path,import.meta.url)).size<(path==='world-v1.json'?1800000:750000))
  for(const path of ['earth-surface-v1.jpg','earth-night-v1.jpg'])assert.ok(statSync(new URL('../public/images/geography/'+path,import.meta.url)).size<150000)
  const sources=read('sources.json');assert.match(sources.historical.license,/NC/);assert.match(sources.boundaries.license,/Public domain/)
 })
