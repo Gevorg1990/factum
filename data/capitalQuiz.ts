@@ -17,7 +17,7 @@ const entries: [string, string, string, string][] = [
   ['Իսպանիա', 'Մադրիդ', 'Spain', 'Madrid'],
   ['Պորտուգալիա', 'Լիսաբոն', 'Portugal', 'Lisbon'],
   ['Հունաստան', 'Աթենք', 'Greece', 'Athens'],
-  ['Մեծ Բրիտանիա', 'Լոնդոն', 'United Kingdom', 'London'],
+  ['Միացյալ Թագավորություն', 'Լոնդոն', 'United Kingdom', 'London'],
   ['Իռլանդիա', 'Դուբլին', 'Ireland', 'Dublin'],
   ['Ավստրիա', 'Վիեննա', 'Austria', 'Vienna'],
   ['Լեհաստան', 'Վարշավա', 'Poland', 'Warsaw'],
@@ -51,7 +51,7 @@ export const capitalPairs: CapitalPair[] = entries.map(([country, capital, count
 capitalPairs.find(pair => pair.countryCode === 'ARM')!.capitalAliases.push('Erevan', 'Երեվան')
 capitalPairs.find(pair => pair.country === 'ԱՄՆ')!.countryAliases.push('Ամերիկայի Միացյալ Նահանգներ', 'Միացյալ Նահանգներ', 'USA', 'US', 'United States of America')
 capitalPairs.find(pair => pair.country === 'ԱՄՆ')!.capitalAliases.push('Washington DC', 'Washington D.C.', 'Վաշինգտոն Դի Սի')
-capitalPairs.find(pair => pair.country === 'Մեծ Բրիտանիա')!.countryAliases.push('Միացյալ Թագավորություն', 'UK', 'Great Britain')
+capitalPairs.find(pair => pair.countryCode === 'GBR')!.countryAliases.push('Մեծ Բրիտանիա', 'Մեծ Բրիտանիայի և Հյուսիսային Իռլանդիայի Միացյալ Թագավորություն', 'UK', 'Great Britain')
 capitalPairs.find(pair => pair.country === 'Չեխիա')!.countryAliases.push('Չեխիայի Հանրապետություն', 'Czech Republic')
 capitalPairs.find(pair => pair.country === 'Բրազիլիա')!.capitalAliases.push('Բրազիլյա', 'Brasília')
 capitalPairs.find(pair => pair.country === 'Հնդկաստան')!.capitalAliases.push('Նյու-Դելի')

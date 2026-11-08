@@ -101,3 +101,18 @@ test('a country name anywhere in a phrase is accepted without a filler word list
   assert.equal(formatVoiceTranscript('Իսպանիա երևի', countries, 'hy-AM'), 'Իսպանիա')
   assert.equal(formatVoiceTranscript('անհայտ երևի', countries, 'hy-AM'), 'անհայտ երևի')
 })
+
+
+test('London accepts both United Kingdom and the previous Armenian country label', () => {
+  const pair = capitalPairs.find(pair => pair.countryCode === 'GBR')
+  assert.equal(pair.country, 'Միացյալ Թագավորություն')
+  const question = { expected: pair.country, aliases: pair.countryAliases }
+  const candidates = capitalPairs.map(item => ({ expected: item.country, aliases: item.countryAliases }))
+  for (const answer of ['միացյալ թագավորություն', 'Միացյալ Թագավորությունն է', 'Մեծ Բրիտանիա', 'Մեծ Բրիտանիան', 'United Kingdom', 'UK', 'Great Britain']) {
+    assert.equal(isVoiceAnswerCorrect(question, answer), true, answer)
+    assert.equal(isCapitalAnswerCorrect({ pair, direction: 'country' }, answer), true, answer)
+    assert.equal(formatVoiceTranscript(answer, candidates, 'hy-AM'), pair.country, answer)
+  }
+  assert.equal(isVoiceAnswerCorrect(question, 'Միացյալ Նահանգներ'), false)
+  assert.equal(isVoiceAnswerCorrect(question, 'Իռլանդիա'), false)
+})
