@@ -7,6 +7,7 @@ import { cardTheme, gameAccents } from '~/data/cardThemes'
 import { ArrowRight, Sparkles, BookOpen, CircleHelp, Brain, Users, Globe2, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 const search=ref('')
 const personIndex=ref(0)
+const peopleReady = ref(false)
 function timelineYear(value: string) {
   const year = Number(value.match(/\d+/)?.[0] || 0)
   return value.startsWith('մ.թ.ա.') ? -year : year
@@ -58,6 +59,7 @@ onMounted(()=>{
   // Client-only random start avoids SSR hydration mismatch.
   popularIndex.value=Math.floor(Math.random()*popularSets.length)
   refreshHomePeople()
+  peopleReady.value = true
   rotationTimer=setInterval(rotateHighlights,60000)
 })
 onUnmounted(()=>{if(rotationTimer)clearInterval(rotationTimer)})
@@ -150,7 +152,7 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
       <button type="button" aria-label="Հաջորդ փաստը" :disabled="homeFacts.length < 2" @click="nextFact(1)"><ChevronRight :size="18" /></button>
     </div>
   </article>
-</div><div class="history-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/history" class="encyclopedia-heading-link">✦ Հայոց պատմություն <ArrowRight :size="18" /></NuxtLink></h2></div><article class="history-card"><div class="history-scroll" tabindex="0" role="region" aria-label="Հայոց պատմության ժամանակագրություն"><div class="history-track"><NuxtLink prefetch-on="interaction" v-for="e in homeTimeline" :key="e.year" :to="{ path: '/history', query: { event: e.year } }" class="history-entry"><span class="history-year">{{e.year}}</span><div class="history-event"><strong>{{e.title}}</strong><small>{{e.era}}</small></div></NuxtLink></div></div></article></div><div class="people-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/people" class="encyclopedia-heading-link">✦ Հայ հայտնիներ <ArrowRight :size="18" /></NuxtLink></h2></div><article class="people-card"><div class="person-feature"><div class="person-photo"><img v-if="chosenPerson.img" :src="chosenPerson.img" :alt="chosenPerson.name"/><PersonPortrait v-else :key="chosenPerson.id" :person="chosenPerson" size="large"/></div><div class="person-description"><h3>{{chosenPerson.name}}</h3><small>{{chosenPerson.years}} · {{chosenPerson.role}}</small><p>{{chosenPerson.bio}}</p><NuxtLink prefetch-on="interaction" :to="`/people/${chosenPerson.id}`">Կարդալ ավելին <ArrowRight :size="15"/></NuxtLink></div></div><div class="person-controls"><button aria-label="Նախորդ մարդը" @click="nextPerson(-1)"><ChevronLeft :size="18"/></button><span class="muted text-xs" aria-live="polite">{{ personIndex + 1 }} / {{ featuredPeople.length }}</span><button aria-label="Հաջորդ մարդը" @click="nextPerson(1)"><ChevronRight :size="18"/></button></div></article></div></section>
+</div><div class="history-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/history" class="encyclopedia-heading-link">✦ Հայոց պատմություն <ArrowRight :size="18" /></NuxtLink></h2></div><article class="history-card"><div class="history-scroll" tabindex="0" role="region" aria-label="Հայոց պատմության ժամանակագրություն"><div class="history-track"><NuxtLink prefetch-on="interaction" v-for="e in homeTimeline" :key="e.year" :to="{ path: '/history', query: { event: e.year } }" class="history-entry"><span class="history-year">{{e.year}}</span><div class="history-event"><strong>{{e.title}}</strong><small>{{e.era}}</small></div></NuxtLink></div></div></article></div><div class="people-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/people" class="encyclopedia-heading-link">✦ Հայ հայտնիներ <ArrowRight :size="18" /></NuxtLink></h2></div><article class="people-card" :aria-busy="!peopleReady"><div v-if="peopleReady" class="person-feature"><div class="person-photo"><img v-if="chosenPerson.img" :src="chosenPerson.img" :alt="chosenPerson.name"/><PersonPortrait v-else :key="chosenPerson.id" :person="chosenPerson" size="large"/></div><div class="person-description"><h3>{{chosenPerson.name}}</h3><small>{{chosenPerson.years}} · {{chosenPerson.role}}</small><p>{{chosenPerson.bio}}</p><NuxtLink prefetch-on="interaction" :to="`/people/${chosenPerson.id}`">Կարդալ ավելին <ArrowRight :size="15"/></NuxtLink></div></div><div v-else class="person-feature person-placeholder" aria-hidden="true"><div class="person-photo"></div><div class="person-description"><span class="placeholder-line placeholder-name"></span><span class="placeholder-line"></span><span class="placeholder-line"></span><span class="placeholder-line"></span></div></div><div class="person-controls" :style="{ visibility: peopleReady ? undefined : 'hidden' }"><button aria-label="Նախորդ մարդը" @click="nextPerson(-1)"><ChevronLeft :size="18"/></button><span class="muted text-xs" aria-live="polite">{{ personIndex + 1 }} / {{ featuredPeople.length }}</span><button aria-label="Հաջորդ մարդը" @click="nextPerson(1)"><ChevronRight :size="18"/></button></div></article></div></section>
 <div class="stats-bar"><div><BookOpen/><strong>10,000+</strong><small>նախատեսվող հոդվածներ</small></div><div><CircleHelp/><strong>500,000+</strong><small>հարցերի երկարաժամկետ նպատակ</small></div><div><Brain/><strong>3</strong><small>ինտելեկտուալ խաղ</small></div><div><Users/><strong>100%</strong><small>անվճար հասանելիություն</small></div><div><Globe2/><strong>3 լեզու</strong><small>նախատեսված՝ Հայերեն / English / Русский</small></div></div><p class="demo-disclaimer">Ցուցադրական տարբերակ․ հոդվածների և հարցերի նշված քանակները զարգացման նպատակներ են, ոչ հրապարակված բովանդակության փաստացի հաշվարկ։</p>
 </div></main></template>
 
@@ -198,4 +200,7 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
   .factum-home .discovery-grid .person-description small { font-size: 12px; }
   .factum-home .discovery-grid .person-description p { font-size: 13px; }
 }
+.person-placeholder .person-photo { background: var(--border, #ffffff12); }
+.placeholder-line { display: block; height: 14px; margin: 0 0 16px; border-radius: 6px; background: var(--border, #ffffff12); }
+.placeholder-name { width: 70%; height: 24px; }
 </style>
