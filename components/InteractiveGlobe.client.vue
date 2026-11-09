@@ -6,7 +6,7 @@ import {capitalName} from '~/data/geography/labels'
 import {geographicPlaces} from '~/data/geography/places'
 import { countryPopulation } from '~/data/countryPopulation'
 import { Globe2, RotateCcw, Minus, Plus, Search, MapPin, MousePointer2 } from 'lucide-vue-next'
-import { orientCountry, rotateGlobe, type CountryFeature, type CountryDetails, type GlobeApi, type GlobeProjection } from '~/utils/globe'
+import { orientCountry, simplifyGlobeFeature, rotateGlobe, type CountryFeature, type CountryDetails, type GlobeApi, type GlobeProjection } from '~/utils/globe'
 
 const props = defineProps<{ focusCountry?: { code: string; requestId: number }; focusLocation?:MapLocation; mapQuiz?:boolean; selectionLocked?:boolean }>()
 const emit=defineEmits<{countrySelected:[code:string]}>()
@@ -126,14 +126,34 @@ const landmarkPoints=computed(()=>{
   return point?[{place,x:point[0],y:point[1]}]:[]
  })
 })
-function centerAt(coordinates:[number,number]){
- cancelAnimationFrame(frame);frame=0;queuedRotation=undefined
- const target:[number,number,number]=[-coordinates[0],-coordinates[1],0]
- if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){rotation.value=target;return}
- const start:[number,number,number]=[...rotation.value],delta=((target[0]-start[0]+540)%360)-180
- let began=0,previous=0
- const animate=(time:number)=>{frame=0;if(disposed)return;if(!began)began=time;const t=Math.min(1,(time-began)/650);if(time-previous>30||t===1){const ease=1-(1-t)**3;rotation.value=[start[0]+delta*ease,start[1]+(target[1]-start[1])*ease,0];previous=time}if(t<1)frame=requestAnimationFrame(animate)}
- frame=requestAnimationFrame(animate)
+function cancelRotation() {
+ cancelAnimationFrame(frame)
+ frame = 0
+ queuedRotation = undefined
+ centering.value = false
+}
+function centerAt(coordinates: [number, number]) {
+ cancelRotation()
+ const target: [number, number, number] = [-coordinates[0], -coordinates[1], 0]
+ if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  rotation.value = target
+  return
+ }
+ const start: [number, number, number] = [...rotation.value]
+ const longitudeDelta = ((target[0] - start[0] + 540) % 360) - 180
+ let startedAt: number | undefined
+ centering.value = true
+ const animate = (time: number) => {
+  frame = 0
+  if (disposed) return
+  startedAt ??= time
+  const progress = Math.min(1, (time - startedAt) / 650)
+  const ease = 1 - (1 - progress) ** 3
+  rotation.value = [start[0] + longitudeDelta * ease, start[1] + (target[1] - start[1]) * ease, 0]
+  if (progress < 1) frame = requestAnimationFrame(animate)
+  else centering.value = false
+ }
+ frame = requestAnimationFrame(animate)
 }
 function locate(target:MapLocation){if(!validCoordinates(target.coordinates))return;location.value=target;zoom.value=1;search.value='';centerAt(target.coordinates)}
 watch(()=>props.focusLocation,value=>{if(value&&api)locate(value)})
@@ -151,6 +171,7 @@ function countryFill(feature:CountryFeature){
 const { estimates: populationEstimates, status: populationStatus } = usePopulationEstimates()
 const stage = ref<HTMLElement | null>(null)
 const countries = shallowRef<CountryFeature[]>([])
+const motionCountries = shallowRef<CountryFeature[]>([])
 const details = shallowRef<Record<string, CountryDetails>>({})
 const selected = shallowRef<CountryFeature | null>(null)
 const hovered = shallowRef<CountryFeature | null>(null)
@@ -159,6 +180,8 @@ const error = ref(false)
 const zoom = ref(1)
 const rotation = ref<[number, number, number]>([-45, -25, 0])
 const dragging = ref(false)
+const centering = ref(false)
+const moving = computed(() => dragging.value || centering.value)
 const pointerFocused = ref(false)
 const tip = ref({ x: 0, y: 0 })
 const viewSize = 680
@@ -200,9 +223,7 @@ function toggleContinent(continent: string) {
   selectedCode.value=''
   const center = continentCenters[continent]
   if (center) {
-    cancelAnimationFrame(frame)
-    frame = 0
-    queuedRotation = undefined
+    cancelRotation()
     rotation.value = [-center[0], -center[1], 0]
     zoom.value = 1
   }
@@ -233,9 +254,12 @@ const placeResults=computed(()=>{
 })
 const paths = computed(() => {
   if (!api || !projection || !countries.value.length) return []
-  projection.rotate(rotation.value).scale(270 * zoom.value)
-  const path = api.geoPath(projection)
-  return countries.value.map(country => ({ country, path: path(country) || '' }))
+  projection.rotate(rotation.value).scale(270 * zoom.value).precision(moving.value ? 0.8 : 0.4)
+  const path = api.geoPath(projection).digits(1)
+  return countries.value.map((country, index) => ({
+    country,
+    path: path(moving.value ? motionCountries.value[index]! : country) || '',
+  }))
 })
 const graticule = computed(() => {
   // Read the same dependencies as the country paths before projecting the grid.
@@ -248,9 +272,7 @@ watch([() => props.focusCountry, countries], async ([request]) => {
   if (!request) return
   const country = countries.value.find(item => item.properties.ADM0_A3 === request.code)
   if (!country) return
-  cancelAnimationFrame(frame)
-  frame = 0
-  queuedRotation = undefined
+  cancelRotation()
   zoom.value = 1
   choose(country, true)
   await nextTick()
@@ -299,6 +321,7 @@ async function load() {
     projection = api.geoOrthographic().translate([viewSize / 2, viewSize / 2]).clipAngle(90).precision(.4)
     details.value = Object.fromEntries(countryInfo.map(country => [country.cca3, country]))
     countries.value = world.features.map(feature => orientCountry(feature, loadedApi.geoArea))
+    motionCountries.value = countries.value.map(feature => orientCountry(simplifyGlobeFeature(feature), loadedApi.geoArea))
     selected.value = countries.value.find(country => country.properties.ADM0_A3 === 'ARM') ?? null
     if(props.focusLocation)locate(props.focusLocation)
     if(props.focusCountry)chooseCode(props.focusCountry.code)
@@ -332,7 +355,7 @@ function moveTip(event: PointerEvent) {
 }
 function pointerDown(event: PointerEvent) {
   if (event.button !== 0 || !projection) return
-  cancelAnimationFrame(frame);frame=0;queuedRotation=undefined
+  cancelRotation()
   const countryCode = (event.target as Element).getAttribute('data-country')
   drag = { id: event.pointerId, x: event.clientX, y: event.clientY, rotation: [...rotation.value], moved: false, country: countries.value.find(country => country.properties.ADM0_A3 === countryCode) }
   suppressClick = false
@@ -351,12 +374,18 @@ function pointerMove(event: PointerEvent) {
   queuedRotation = rotateGlobe(drag.rotation, dx, dy, scale)
   if (!frame) frame = requestAnimationFrame(() => {
     if (queuedRotation) rotation.value = queuedRotation
+    queuedRotation = undefined
     frame = 0
   })
 }
 function pointerUp(event: PointerEvent) {
   if (drag?.id !== event.pointerId) return
   suppressClick = drag.moved
+  if (drag.moved) {
+    const finalRotation = queuedRotation
+    cancelRotation()
+    if (finalRotation) rotation.value = finalRotation
+  }
   if (!drag.moved && event.type === 'pointerup') {
     if(needsQuizConfirmation()&&!props.selectionLocked){nearbyAt(event,drag.country);suppressClick=true}
     else if(drag.country){choose(drag.country);suppressClick=true}
@@ -368,7 +397,7 @@ function pointerUp(event: PointerEvent) {
 }
 function changeZoom(amount: number) { zoom.value = Math.max(.75, Math.min(2.2, zoom.value + amount)) }
 function keyRotate(event: KeyboardEvent) {
-  cancelAnimationFrame(frame);frame=0
+  cancelRotation()
   if(event.key==='+'||event.key==='='){event.preventDefault();changeZoom(.15);return}
   if(event.key==='-'){event.preventDefault();changeZoom(-.15);return}
   if(event.key==='Home'){event.preventDefault();reset();return}
@@ -379,9 +408,9 @@ function keyRotate(event: KeyboardEvent) {
   rotation.value = rotateGlobe(rotation.value, delta[0], delta[1], 100)
   hovered.value = null
 }
-function reset() { cancelAnimationFrame(frame);frame=0;location.value=null; selectedContinent.value = null; rotation.value = [-45, -25, 0]; zoom.value = 1; hovered.value = null }
+function reset() { cancelRotation();location.value=null; selectedContinent.value = null; rotation.value = [-45, -25, 0]; zoom.value = 1; hovered.value = null }
 onMounted(()=>{void load();void $fetch<WorldRecord[]>('/data/geography/records-v1.json',{timeout:10000}).then(value=>{if(!disposed)records.value=value}).catch(()=>{})})
-onBeforeUnmount(() => { disposed = true; controller?.abort(); worldSearchController?.abort(); cancelWorldSearchTimer(); cancelAnimationFrame(frame) })
+onBeforeUnmount(() => { disposed = true; controller?.abort(); worldSearchController?.abort(); cancelWorldSearchTimer(); cancelRotation() })
 defineExpose({ getSurfaceFeatures: () => countries.value })
 </script>
 
@@ -423,7 +452,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
         <div v-if="loading" class="globe-message" role="status"><Globe2 :size="40" /><p>Բեռնում ենք երկրագունդը…</p></div>
         <div v-else-if="error" class="globe-message" role="alert"><Globe2 :size="40" /><p>Չհաջողվեց բեռնել քարտեզը։ Ստուգիր ինտերնետ կապը։</p><button class="btn-secondary" @click="load">Փորձել կրկին</button></div>
         <LazyGlobeRasterLayer v-if="!loading&&!error&&projection&&night&&!lightsFailed" :projection="projection" :rotation="rotation" :zoom="zoom" mode="night" @error="rasterError"/>
-        <svg v-if="!loading&&!error" :viewBox="`0 0 ${viewSize} ${viewSize}`" :class="{ 'has-pointer-focus': pointerFocused }" tabindex="0" role="group" aria-label="Պտտվող երկրագունդ․ պտտիր մկնիկով, հպումով կամ ստեղնաշարի սլաքներով։ Երկրները կարող ես ընտրել նաև որոնմամբ։" @keydown="pointerFocused = false; keyRotate($event)" @pointerdown="pointerFocused = true; pointerDown($event)" @blur="pointerFocused = false" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @pointerleave="hovered = null">
+        <svg v-if="!loading&&!error" :viewBox="`0 0 ${viewSize} ${viewSize}`" :class="{ 'has-pointer-focus': pointerFocused, 'is-moving': moving }" tabindex="0" role="group" aria-label="Պտտվող երկրագունդ․ պտտիր մկնիկով, հպումով կամ ստեղնաշարի սլաքներով։ Երկրները կարող ես ընտրել նաև որոնմամբ։" @keydown="pointerFocused = false; keyRotate($event)" @pointerdown="pointerFocused = true; pointerDown($event)" @blur="pointerFocused = false" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @pointerleave="hovered = null">
           <defs>
             <radialGradient id="factum-ocean" cx="32%" cy="28%" r="80%"><stop stop-color="#22678a" /><stop offset=".6" stop-color="#103e62" /><stop offset="1" stop-color="#04142a" /></radialGradient>
             <radialGradient id="factum-globe-shade" cx="32%" cy="28%" r="75%"><stop offset=".3" stop-color="#fff" stop-opacity=".06" /><stop offset=".75" stop-color="#020918" stop-opacity=".08" /><stop offset="1" stop-color="#010612" stop-opacity=".8" /></radialGradient>
@@ -509,6 +538,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
 .globe-stage svg, .globe-ocean, .globe-country { cursor: url('/images/globe-pointer.svg') 5 5, crosshair; }
 .globe-stage.is-dragging :is(svg, .globe-ocean, .globe-country) { cursor: grabbing; }
 .globe-stage svg:focus { outline: none; }
+.globe-stage svg.is-moving .globe-country { transition: none; }
 .globe-stage svg:not(.has-pointer-focus):focus-visible, .globe-controls button:focus-visible, .globe-results button:focus-visible { outline: 2px solid #f4c46c; outline-offset: -3px; }
 .globe-country { fill: var(--continent-color, #427c79); stroke: #b2d6ca; stroke-width: .9; stroke-linejoin: round; }
 .globe-country.is-continent-muted { opacity: .25; }

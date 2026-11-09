@@ -243,3 +243,51 @@ test('typing automatically searches after a pause without Enter and excludes int
  t.app.search.value='Մաչու Պիկչու';await tick();assert.equal(t.app.placeResults.value.length,0)
  t.dispose()
 })
+
+
+test('centering renders each animation frame and returns to detailed outlines when finished',async()=>{
+ const t=setupGlobe({reduced:false});await tick()
+ t.app.chooseCode('JPN');assert.equal(t.app.moving.value,true)
+ const advance=time=>{const [id,callback]=t.frames.entries().next().value;t.frames.delete(id);callback(time)}
+ advance(0);advance(16);const first=[...t.app.rotation.value]
+ advance(32);assert.notDeepEqual([...t.app.rotation.value],first)
+ advance(700);assert.equal(t.frames.size,0);assert.equal(t.app.moving.value,false)
+ assert.equal(t.app.rotation.value[0],-138)
+ t.dispose()
+})
+
+test('mouse and touch drags share frame batching and commit the final movement on release',async()=>{
+ for(const pointerType of ['mouse','touch']){
+  const t=setupGlobe();await tick()
+  t.app.stage.value={clientWidth:680,clientHeight:680,getBoundingClientRect:()=>({left:0,top:0,width:680,height:680})}
+  const svg={setPointerCapture(){},hasPointerCapture:()=>false,releasePointerCapture(){}}
+  const event={button:0,pointerId:1,pointerType,clientX:100,clientY:100,target:{getAttribute:()=>null},currentTarget:svg}
+  t.app.pointerDown(event)
+  t.app.pointerMove({...event,clientX:120});t.app.pointerMove({...event,clientX:150})
+  assert.equal(t.frames.size,1);assert.equal(t.app.moving.value,true)
+  const before=[...t.app.rotation.value]
+  t.app.pointerUp({...event,type:'pointerup',clientX:150})
+  assert.notDeepEqual([...t.app.rotation.value],before);assert.equal(t.frames.size,0);assert.equal(t.app.moving.value,false)
+  assert.equal(t.emitted.length,0);t.dispose()
+ }
+})
+
+test('motion outlines retain every country, island and hole without globe-covering polygons',()=>{
+ const scope={};runInNewContext(read('public/vendor/d3-7.9.0.min.js'),scope)
+ let fullCount=0,motionCount=0
+ for(const feature of world.features){
+  const light=modules.globe.orientCountry(modules.globe.simplifyGlobeFeature(feature),scope.d3.geoArea)
+  const polygons=f=>f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates
+  const full=polygons(feature),motion=polygons(light)
+  assert.equal(motion.length,full.length,feature.properties.ADM0_A3)
+  for(let i=0;i<full.length;i++){
+   assert.equal(motion[i].length,full[i].length)
+   assert.ok(scope.d3.geoArea({type:'Polygon',coordinates:motion[i]})<=2*Math.PI)
+   for(let j=0;j<full[i].length;j++){
+    fullCount+=full[i][j].length;motionCount+=motion[i][j].length
+    assert.ok(motion[i][j].length>=4);assert.deepEqual(motion[i][j][0],motion[i][j].at(-1))
+   }
+  }
+ }
+ assert.ok(motionCount<fullCount*.65,`${motionCount} / ${fullCount}`)
+})
