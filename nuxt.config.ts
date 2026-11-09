@@ -42,8 +42,12 @@ export default defineNuxtConfig({
     '/videos/previews/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
   },
   app: { head: { link: [
+    { rel: 'icon', type: 'image/x-icon', sizes: '16x16 32x32 48x48', href: '/favicon.ico' },
+    { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+    { rel: 'icon', type: 'image/svg+xml', sizes: 'any', href: '/favicon.svg' },
+    { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
     { rel: 'preload', href: '/fonts/noto-sans-armenian-armenian-v47.woff2', as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
     { rel: 'preload', href: '/fonts/noto-sans-armenian-latin-v47.woff2', as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
-  ], title: 'FACTUM — Գիտելիքի աշխարհ', meta: [{ name: 'description', content: 'Հայկական կրթական հարթակ՝ հանրագիտարան, խաղեր և պատմություն' }] } },
-  runtimeConfig: { geographySearchUrl: 'https://photon.komoot.io', azureSpeechKey: '', azureSpeechRegion: '', directusToken: process.env.DIRECTUS_SERVER_TOKEN || '', openaiApiKey: '', public: { directusUrl: process.env.NUXT_PUBLIC_DIRECTUS_URL || '' } }
+  ], title: 'FACTUM — Գիտելիքի աշխարհ', meta: [{ name: 'theme-color', content: '#081326' }, { name: 'application-name', content: 'FACTUM' }, { name: 'description', content: 'Հայկական կրթական հարթակ՝ հանրագիտարան, խաղեր և պատմություն' }] } },
+  runtimeConfig: { geographySearchUrl: 'https://photon.komoot.io', azureSpeechKey: '', azureSpeechRegion: '', directusToken: process.env.DIRECTUS_SERVER_TOKEN || '', openaiApiKey: '', public: { siteUrl: process.env.NUXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : ''), directusUrl: process.env.NUXT_PUBLIC_DIRECTUS_URL || '' } }
 })
