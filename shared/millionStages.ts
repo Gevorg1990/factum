@@ -3,6 +3,16 @@ export function millionSlotOf(question:{slot?:unknown;stage?:unknown}):number {
   if(typeof question.slot==='number'&&Number.isInteger(question.slot)&&question.slot>=0&&question.slot<15)return question.slot
   return question.stage==='final'?10:question.stage==='middle'?5:0
 }
+// The second draw has n-1 outcomes, mapped around the first selected question.
+// Every ordered pair has probability 1 / (n * (n-1)).
+export function distinctQuestionIndices(count:number,pick:(limit:number)=>number=limit=>Math.floor(Math.random()*limit)):number[] {
+  if(!Number.isSafeInteger(count)||count<0)throw new Error('Invalid question count')
+  if(!count)return []
+  const first=pick(count)
+  if(count===1)return [first]
+  const second=pick(count-1)
+  return [first,second>=first?second+1:second]
+}
 export function millionSlotPairs<T extends {slot?:unknown}>(items:T[]) {
   return millionSlots.map(({value:slot})=>{
     const pool=items.filter(item=>item.slot===slot)

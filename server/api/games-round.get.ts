@@ -1,7 +1,8 @@
+import { randomInt } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 import { db, databaseEnabled } from '../utils/db'
 import { getLegacyContent } from '../utils/legacyContent'
-import { millionSlots } from '../../shared/millionStages'
+import { millionSlots, distinctQuestionIndices } from '../../shared/millionStages'
 export default defineEventHandler(async event=>{
   const mode=String(getQuery(event).mode||'million'),difficulty=String(getQuery(event).difficulty||'easy')
   if(!['million','logic','genius'].includes(mode)||!['easy','medium','hard'].includes(difficulty))throw createError({statusCode:400})
@@ -23,24 +24,27 @@ export default defineEventHandler(async event=>{
       )`)
     }
     if(mode==='million'){
-      const pivot=Math.random()
-      // One indexed query returns just two candidates for each of the 15 banks.
-      rows=await db.$queryRaw<any[]>`SELECT picked.data FROM generate_series(0,14) AS bank(slot)
-        CROSS JOIN LATERAL (
-          WITH first_pick AS (
-            SELECT "publishedData" AS data,"sampleKey" FROM "Content"
-            WHERE kind='GAME' AND "publishedData" IS NOT NULL
-              AND "publishedData"->>'mode'='million' AND "publishedData"->>'difficulty'=${difficulty}
-              AND "publishedData"->>'slot'=bank.slot::text AND "sampleKey">=${pivot}
-            ORDER BY "sampleKey" LIMIT 2
-          ) SELECT data FROM first_pick UNION ALL (
-            SELECT "publishedData" AS data FROM "Content"
-            WHERE kind='GAME' AND "publishedData" IS NOT NULL
-              AND "publishedData"->>'mode'='million' AND "publishedData"->>'difficulty'=${difficulty}
-              AND "publishedData"->>'slot'=bank.slot::text AND "sampleKey"<${pivot}
-            ORDER BY "sampleKey" LIMIT (2-(SELECT count(*) FROM first_pick))
-          )
-        ) AS picked ORDER BY bank.slot`
+      rows=await db.$transaction(async tx=>{
+        // Count indexed bank entries, then fetch only two uniformly selected
+        // positions per bank. The snapshot keeps counts and offsets consistent
+        // if an editor publishes or deletes a question during this request.
+        const counts=await tx.$queryRaw<{slot:string;count:bigint}[]>`SELECT "publishedData"->>'slot' AS slot,count(*) AS count
+          FROM "Content" WHERE kind='GAME' AND "publishedData" IS NOT NULL
+            AND "publishedData"->>'mode'='million' AND "publishedData"->>'difficulty'=${difficulty}
+          GROUP BY "publishedData"->>'slot'`
+        const selections=counts.flatMap(bank=>{
+          const slot=Number(bank.slot)
+          if(!Number.isInteger(slot)||slot<0||slot>14)return []
+          return distinctQuestionIndices(Number(bank.count),randomInt).map((offset,choice)=>Prisma.sql`(
+            SELECT "publishedData" AS data,${slot} AS slot,${choice} AS choice FROM "Content"
+            WHERE kind='GAME' AND "publishedData" IS NOT NULL AND "publishedData"->>'mode'='million'
+              AND "publishedData"->>'difficulty'=${difficulty} AND "publishedData"->>'slot'=${String(slot)}
+            ORDER BY "sampleKey",id OFFSET ${offset} LIMIT 1
+          )`)
+        })
+        if(!selections.length)return []
+        return tx.$queryRaw<any[]>(Prisma.sql`${Prisma.join(selections,' UNION ALL ')} ORDER BY slot,choice`)
+      },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead})
     }else rows=await sample(30)
   }else {
     const pool=getLegacyContent().filter(x=>x.kind==='GAME'&&x.data.mode===mode&&x.data.difficulty===difficulty)
