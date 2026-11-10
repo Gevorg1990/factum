@@ -16,6 +16,15 @@
 
 ## Vercel
 
+### Միացված production միջավայր (2026-11-10)
+
+- Նախագիծ՝ `factum2/factum`, կայք՝ https://factum-amber.vercel.app, CMS՝ https://factum-amber.vercel.app/admin։ Node.js՝ 24.x։
+- Neon Free PostgreSQL՝ `factum-production`, տարածաշրջան՝ `iad1`։ Երեք migration-ները կիրառված են, սկզբնական 2320 գրառումները ներմուծված են։
+- Vercel Blob public պահոց՝ `factum-media`, միացված է Production-ին։
+- Production ադմինի տվյալները պահվում են միայն տեղային, Git-ից բացառված `.data/production-admin.txt` ֆայլում։ Գաղտնաբառը Vercel-ի փոփոխականների մեջ չի պահվում։
+- Preview բազա դեռ միացված չէ։ Նոր Preview deployment-ի համար ստեղծել առանձին բազա և սահմանել դրա `DATABASE_URL` / `DIRECT_URL` արժեքները. production բազան Preview-ին չկցել։
+- Հաջորդ թողարկումներն անել CMS ճյուղից կամ այն վերանայելուց և միավորելուց հետո։ Հին `master`-ի deployment-ը կարող է վերադարձնել հին՝ առանց CMS-ի տարբերակը։
+
 - Միացնել PostgreSQL ծառայություն (օրինակ՝ Neon, Supabase կամ Prisma Postgres)։ Runtime-ի `DATABASE_URL`-ը դնել pooled կապով, `DIRECT_URL`-ը՝ direct կապով։ Առանձին բազաներ օգտագործել Preview և Production միջավայրերի համար։
 - Սահմանել `NUXT_PUBLIC_SITE_URL=https://your-domain`։ Այն օգտագործվում է նաև հարցումների աղբյուրի ստուգման համար։
 - Կիրառել `npm run db:migrate`, ապա առաջին անգամ `npm run db:seed` և անվտանգ միջավայրում `npm run db:admin`։ Migration-ը դիտավորյալ ավտոմատ չի գործարկվում ամեն Preview build-ի ընթացքում՝ production բազան պատահաբար չփոխելու համար։
