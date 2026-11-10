@@ -59,8 +59,8 @@ const { data } = await useFetch<{ url: string | null; source: string | null }>(
 .portrait img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center;
+  object-fit: cover;
+  object-position: center 28%;
 }
 .portrait-placeholder {
   width: 100%;
