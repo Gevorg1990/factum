@@ -180,7 +180,7 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
 .factum-home .discovery-grid .person-feature { min-height: 0; grid-template-rows: minmax(0, 1fr); }
 .factum-home .discovery-grid .person-feature .person-photo { position: relative; height: 100%; min-height: 0; }
 .factum-home .discovery-grid .person-photo > :deep(img),
-.factum-home .discovery-grid .person-photo > :deep(.portrait) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.factum-home .discovery-grid .person-photo > :deep(.portrait) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .factum-home .discovery-grid .person-description { display: flex; flex-direction: column; align-self: stretch; min-height: 0; overflow: hidden; }
 .factum-home .discovery-grid .person-description h3,
 .factum-home .discovery-grid .person-description small { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; flex-shrink: 0; }

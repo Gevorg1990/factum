@@ -50,9 +50,9 @@
 .people-card{padding:13px;min-height:264px}
 .person-feature{display:grid;grid-template-columns:minmax(116px,43%) minmax(0,1fr);gap:12px;align-items:start}
 .person-feature .person-photo{width:100%;height:191px;min-width:0;overflow:hidden;border:1px solid #35577b;border-radius:11px;background:#0c1d35}
-.person-feature .person-photo>img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.person-feature .person-photo>img{width:100%;height:100%;object-fit:contain;object-position:center}
 .person-feature .person-photo .portrait{width:100%;height:100%;border:0;border-radius:0}
-.person-feature .person-photo .portrait img{width:100%;height:100%;object-fit:cover}
+.person-feature .person-photo .portrait img{width:100%;height:100%;object-fit:contain}
 .person-feature .person-description{min-width:0}
 .person-feature .person-description h3{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
 .person-feature .person-description small{display:block;line-height:1.5;margin-top:5px}
@@ -104,7 +104,7 @@
 .game-play{min-width:128px}
 .people-card{min-height:264px}
 .person-feature .person-photo{height:194px}
-.person-feature .person-photo>img{object-position:center 15%}
+.person-feature .person-photo>img{object-position: center}
 @media(max-width:800px){.hero-earth{left:20%;opacity:.55}.subject-tile{height:135px}.game-card .game-copy{margin-left:43%}}
 @media(max-width:480px){.game-card>img{width:46%}.game-card .game-copy{margin-left:43%;padding-right:8px}.game-card h3{font-size:17px}.game-card p{font-size:11px}}
 
@@ -277,8 +277,8 @@
 }
 
 .person-feature .person-photo > img {
-  object-fit: cover;
-  object-position: center 20%;
+  object-fit: contain;
+  object-position: center;
 }
 
 @media (max-width: 1180px) {
@@ -547,7 +547,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center 20%;
 }
 .discovery-grid .person-description {
