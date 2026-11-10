@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { armenianPeople } from '~/data/content'
+import { armenianPeople as legacyPeople } from '~/data/content'
 import { Search } from 'lucide-vue-next'
+const armenianPeople = await usePublishedContent('PERSON', legacyPeople,{armenian:true})
 const search = ref('')
 const category = ref('all')
 const pageSize = 20
@@ -52,6 +53,7 @@ useHead({ title: 'Հայ հայտնիներ — FACTUM', meta: [{ name: 'descrip
       <p class="muted mb-4">Այս որոնմամբ գործիչ չի գտնվել։ Փորձիր այլ անուն կամ բնագավառ։</p>
       <button type="button" class="btn-secondary" @click="resetFilters">Մաքրել որոնումն ու զտիչները</button>
     </div>
+  <CatalogMore :items="armenianPeople" kind="PERSON" armenian />
   </main>
 </template>
 

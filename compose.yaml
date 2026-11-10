@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: factum
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: factum
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - factum-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factum"]
+      interval: 5s
+      retries: 10
+volumes:
+  factum-postgres:

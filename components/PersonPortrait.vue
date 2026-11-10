@@ -3,6 +3,7 @@ import { localPortraits } from '~/data/personPortraits'
 interface PersonReference {
   id: string
   name: string
+  portrait?: string
 }
 
 const props = defineProps<{
@@ -12,7 +13,7 @@ const props = defineProps<{
 
 
 
-const localImage = computed(() => localPortraits[props.person.id] || null)
+const localImage = computed(() => props.person.portrait || localPortraits[props.person.id] || null)
 const failed = ref(false)
 
 // Request a fallback portrait only when no local image exists.

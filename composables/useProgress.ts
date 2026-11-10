@@ -6,6 +6,8 @@ const read = ref<string[]>([])
 const saved = ref<string[]>([])
 const library = ref<string[]>([])
 
+export const progressState = { saved, read, restoring: false }
+
 let initialized = false
 let listenersInstalled = false
 
@@ -18,14 +20,16 @@ function loadList(key: string): string[] {
   }
 }
 
-function initializeProgress() {
+export function initializeProgress() {
   if (initialized || !import.meta.client) return
 
   // Load saved values BEFORE installing persistence watchers, so an empty
   // initial state cannot overwrite bookmarks during a page refresh.
+  progressState.restoring = true
   saved.value = loadList('factum-saved')
   library.value = loadList('factum-library')
   read.value = loadList('factum-read')
+  progressState.restoring = false
   initialized = true
 
   if (!listenersInstalled) {

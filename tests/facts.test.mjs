@@ -53,10 +53,12 @@ test('search, combined filters, pagination and saved destinations work together'
     .replaceAll("from '~/data/facts'", `from '${factsUrl}'`)
     .replaceAll("from 'lucide-vue-next'", `from '${new URL('file://' + require.resolve('lucide-vue-next')).href}'`)
   source = `import {ref,computed,watch} from '${vueUrl}';const onMounted=callback=>globalThis.__factsTest.mounted(callback);const navigateTo=(...args)=>globalThis.__factsTest.navigate(...args);const useRoute=()=>globalThis.__factsTest.route;const useNuxtApp=()=>globalThis.__factsTest.nuxtApp;const useProgress=()=>globalThis.__factsTest.progress;const useHead=()=>{};const useSavedScroll=(...args)=>globalThis.__factsTest.capture(...args);\n` + source
+  source=source.replace('withAsyncContext as _withAsyncContext, ', '')
+  source=`const _withAsyncContext=fn=>[fn(),()=>{}];const usePublishedContent=async(_kind,fallback)=>fallback;`+source
   const component = (await import(moduleUrl(source))).default
   const scope = effectScope()
   try {
-    const page = scope.run(() => component.setup({}, { expose() {} }))
+    const page = await scope.run(() => component.setup({}, { expose() {} }))
     assert.equal(page.visibleFacts.value.length, 24)
     assert.equal(new Set(page.visibleFacts.value.slice(0, 20).map(f => f.category)).size, 20)
     page.limit.value = facts.length
@@ -96,7 +98,7 @@ test('search, combined filters, pagination and saved destinations work together'
     // Reloading with a destination query must stay at the default list, even
     // after hydration finishes and page:finish requests another scroll.
     route.query.fact = facts.at(-1).id
-    const reloadedPage = scope.run(() => component.setup({}, { expose() {} }))
+    const reloadedPage = await scope.run(() => component.setup({}, { expose() {} }))
     assert.equal(savedNavigation[0](), undefined)
     globalThis.__factsTest.nuxtApp.isHydrating = false
     assert.equal(savedNavigation[0](), undefined)

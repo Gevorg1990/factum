@@ -2,7 +2,8 @@
 import { MapPin, CalendarDays, ArrowUpRight, Landmark } from 'lucide-vue-next'
 import { personMonuments, monumentMapUrl } from '~/data/personMonuments'
 const props = defineProps<{ personId: string; name: string }>()
-const monuments = computed(() => personMonuments.filter(monument => monument.personId === props.personId))
+const published = await usePublishedContent('MONUMENT', personMonuments.filter(monument => monument.personId === props.personId), {subject:props.personId})
+const monuments = computed(() => published)
 const failedImages = ref<string[]>([])
 watch(() => props.personId, () => { failedImages.value = [] })
 </script>

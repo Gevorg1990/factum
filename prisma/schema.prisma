@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+enum Role {
+  ADMIN
+  EDITOR
+  USER
+}
+enum ContentKind {
+  ARTICLE
+  CATEGORY
+  AUTHOR
+  PERSON
+  FACT
+  EVENT
+  GAME
+  MONUMENT
+  WORK
+  PAGE
+  VIDEO
+  SETTING
+}
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  name String
+  passwordHash String
+  role Role @default(USER)
+  disabled Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+  bookmarks Bookmark[]
+  progress Progress[]
+  edits Content[] @relation("Editor")
+  audit AuditLog[]
+}
+model Session {
+  tokenHash String @id
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId])
+  @@index([expiresAt])
+}
+model Content {
+  id String @id @default(cuid())
+  kind ContentKind
+  key String
+  title String
+  summary String @default("")
+  body String @default("")
+  data Json
+  // A published snapshot prevents draft edits leaking onto the live site.
+  publishedData Json?
+  status PublicationStatus @default(DRAFT)
+  categoryId String?
+  category Content? @relation("Category", fields: [categoryId], references: [id], onDelete: SetNull)
+  children Content[] @relation("Category")
+  authorId String?
+  author Content? @relation("Author", fields: [authorId], references: [id], onDelete: SetNull)
+  authored Content[] @relation("Author")
+  editorId String?
+  editor User? @relation("Editor", fields: [editorId], references: [id], onDelete: SetNull)
+  version Int @default(1)
+  sampleKey Float @default(dbgenerated("random()"))
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([kind, key])
+  @@index([kind, status, key])
+  @@index([categoryId])
+  @@index([authorId])
+}
+model Bookmark {
+  userId String
+  key String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([userId, key])
+}
+model Progress {
+  userId String
+  key String
+  value Json
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+  @@id([userId, key])
+}
+model Media {
+  id String @id @default(cuid())
+  url String
+  alt String
+  credit String @default("")
+  license String @default("")
+  sourceUrl String @default("")
+  createdAt DateTime @default(now())
+}
+model AuditLog {
+  id String @id @default(cuid())
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action String
+  target String
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+}
+model RateLimit {
+  key String @id
+  count Int @default(1)
+  expiresAt DateTime
+  @@index([expiresAt])
+}

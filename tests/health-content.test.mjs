@@ -24,11 +24,11 @@ test('all 84 supplied health questions and 10 expansions are connected to the ac
  assert.match(content.allEncyclopediaQuestions.find(q=>q.id==='health-sleep-4-a').answer,/8–10/)
  assert.match(content.allEncyclopediaQuestions.find(q=>q.id==='health-immunity-3-a').title,/պատվաստման/)
 })
-test('the health page shows ten richly expanded articles and retains search and saved/read filters',()=>{
+test('the health page shows ten richly expanded articles and retains search and saved/read filters',async()=>{
  const d=sfc.parse(readFileSync(new URL('pages/subjects/[slug].vue',root),'utf8')).descriptor
  const code=ts.transpileModule(sfc.compileScript(d,{id:'health-test'}).content,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
- const read=vue.ref([]),saved=vue.ref([]),scope={...vue,exports:{},useRoute:()=>({params:{slug:'health'}}),useProgress:()=>({read,saved,markRead:id=>{read.value=[...read.value,id]},toggleSaved(){}}),require:name=>name==='vue'?vue:content}
- runInNewContext(code,scope);const page=scope.exports.default.setup({}, {expose(){}})
+ const read=vue.ref([]),saved=vue.ref([]),scope={...vue,usePublishedContent:async(_kind,fallback,options)=>options?.key?fallback.filter(x=>x.slug===options.key):fallback,exports:{},useRoute:()=>({params:{slug:'health'}}),useProgress:()=>({read,saved,markRead:id=>{read.value=[...read.value,id]},toggleSaved(){}}),require:name=>name==='vue'?{...vue,withAsyncContext:fn=>[fn(),()=>{}]}:content}
+ runInNewContext(code,scope);const page=await scope.exports.default.setup({}, {expose(){}})
  assert.equal(page.items.length,10);assert.equal(page.displayed.value.length,10)
  page.limit.value=40;assert.equal(page.displayed.value.length,10)
  page.limit.value=100;assert.equal(page.displayed.value.length,10)
@@ -44,7 +44,7 @@ test('44 legacy health URLs retain their articles without joining the shared act
  source=source.replace("import('~/data/encyclopedia/literatureLegacy')",'loadLiteratureLegacy()').replace("import('~/data/encyclopedia/healthLegacy')",'loadHealthLegacy()')
  for(const id of ['health-heart-advanced-1-a',...legacyHealthQuestions.map(q=>q.id)]){
   let requests=0
-  const scope={...vue,...content,useRoute:()=>({params:{id},hash:'#saved-article'}),useProgress:()=>({saved:vue.ref([]),markRead(){},toggleSaved(){}}),onMounted(){},useHead(){},useSavedScroll(){},loadLiteratureLegacy:async()=>({legacyLiteratureQuestions}),loadHealthLegacy:async()=>{requests++;return{legacyHealthQuestions}}}
+  const scope={...vue,...content,usePublishedContent:async(_kind,fallback)=>fallback,useRoute:()=>({params:{id},hash:'#saved-article'}),useProgress:()=>({saved:vue.ref([]),markRead(){},toggleSaved(){}}),onMounted(){},useHead(){},useSavedScroll(){},loadLiteratureLegacy:async()=>({legacyLiteratureQuestions}),loadHealthLegacy:async()=>{requests++;return{legacyHealthQuestions}}}
   const js=ts.transpileModule(`globalThis.result=(async()=>{${source};return question})()`,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText
   runInNewContext(js,scope);assert.equal((await scope.result).id,id)
   assert.equal(requests,id.includes('advanced')?0:1)

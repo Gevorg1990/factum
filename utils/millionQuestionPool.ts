@@ -1,4 +1,4 @@
-import { millionaireQuestionPairs, type MillionaireQuestion } from '../data/factum_millionaire_45'
+import { millionaireQuestionPairs, type MillionaireQuestion, type MillionaireQuestionPair } from '../data/factum_millionaire_45'
 
 export type MillionQuestion = MillionaireQuestion
 export type MillionTier = 'easy' | 'medium' | 'hard'
@@ -15,14 +15,14 @@ function randomizeAnswers(item: MillionQuestion, random: () => number): MillionQ
 }
 
 /** Each numbered slot draws one variant and reserves its counterpart for the swap. */
-export function createMillionRound(level: MillionTier, random: () => number = Math.random): {
+export function createMillionRound(level: MillionTier, random: () => number = Math.random, pairs?: MillionaireQuestionPair[]): {
   questions: MillionQuestion[]
   replacements: MillionQuestion[]
 } {
   const levelIndex = millionTiers.indexOf(level)
   const questions: MillionQuestion[] = []
   const replacements: MillionQuestion[] = []
-  for (const { primary, replacement: alternative } of millionaireQuestionPairs[levelIndex]!) {
+  for (const { primary, replacement: alternative } of (pairs || millionaireQuestionPairs[levelIndex]!)) {
     const [chosen, reserved] = random() < .5 ? [primary, alternative] : [alternative, primary]
     questions.push(randomizeAnswers(chosen!, random))
     replacements.push(randomizeAnswers(reserved!, random))

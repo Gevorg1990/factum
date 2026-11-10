@@ -5,6 +5,7 @@ import { geniusRecordKey, parseGeniusRecord } from '~/utils/geniusRecord'
 import GameDifficultyPicker from '~/components/GameDifficultyPicker.vue'
 import { difficultyIndex, difficultyTitle, requiredCorrectAnswers, saveDifficultyProgress, unlockedDifficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
 
+const roundLoading=ref(false),roundError=ref('')
 const route = useRoute()
 const router = useRouter()
 
@@ -63,11 +64,15 @@ function returnToLevels() {
   stopSound()
 }
 
-function newRound() {
+async function newRound() {
   if (!level.value) return
   cancelNext()
   stopSound()
-  const pool = geniusStatements.filter(item => item.difficulty === level.value)
+  roundLoading.value=true;roundError.value=''
+  let pool: GeniusStatement[]
+  try { pool = (await $fetch<{items:GeniusStatement[]}>('/api/games-round',{query:{mode:'genius',difficulty:level.value}})).items } catch {roundError.value='Հարցերը չհաջողվեց բեռնել․ փորձեք կրկին';roundLoading.value=false;return}
+  roundLoading.value=false
+  if(pool.length < roundSize){roundError.value='Այս մակարդակում բավարար հրապարակված հարցեր չկան';return}
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[pool[i], pool[j]] = [pool[j]!, pool[i]!]
@@ -124,6 +129,7 @@ onMounted(() => {
   <GameDifficultyPicker v-if="!level" game="genius" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" @select="startLevel" />
 
   <main v-else class="shell genius-game">
+    <p v-if="roundLoading" class="panel" role="status">Հարցերը բեռնվում են…</p><div v-else-if="roundError" class="panel" role="alert">{{roundError}} <button class="gold" @click="newRound">Կրկնել</button><button @click="returnToLevels">Վերադառնալ</button></div><template v-else>
     <p class="gold text-sm font-semibold">ՃԻՇՏ ԿԱՄ ՍԽԱԼ</p>
     <h1 class="heading mt-3">FACTUM Genius</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
@@ -169,6 +175,7 @@ onMounted(() => {
       </div>
       <div class="flex justify-end mt-5"><SaveGameQuestion :disabled="selected === null" game="genius" :question="current.statement" /></div>
     </section>
+    </template>
   </main>
 </template>
 

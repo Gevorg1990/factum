@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { optimizedImage } from '~/data/optimizedImages'
-import { subjects, questions } from '~/data/content'
+import { subjects as legacySubjects, questions } from '~/data/content'
 import { cardTheme } from '~/data/cardThemes'
 
+const subjects = await usePublishedContent('CATEGORY',legacySubjects)
 const encyclopediaCollections = [
   { id: 'bible', to: '/subjects/bible', name: 'Աստվածաշունչ', image: '/images/optimized/bible-b846c66c03.webp' },
   { id: 'people', to: '/subjects/people', name: 'Նշանավոր մարդիկ', image: '/images/optimized/historical_figures-c386436d70.webp' },
@@ -41,8 +42,9 @@ const subjectImages: Record<string, string> = {
   finance: '/images/optimized/finance-coins-2a9c80b1.webp',
 }
 
+function customImage(slug:string){return (subjects.find(x=>x.slug===slug) as {image?:string}|undefined)?.image}
 function imageForSubject(slug: string): string {
-  return subjectImages[slug] || '/images/optimized/space-art-2f2239150d.webp'
+  return customImage(slug) || subjectImages[slug] || '/images/optimized/space-art-2f2239150d.webp'
 }
 </script>
 
@@ -71,7 +73,7 @@ function imageForSubject(slug: string): string {
         class="encyclopedia-tile"
         :style="{ '--card-accent': cardTheme(subject.slug).color }"
       >
-        <CardVideo v-if="subject.slug === 'music'" src="/videos/previews/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/optimized/video-first-frame-c6e2a98273d1.webp" />
+        <img v-if="customImage(subject.slug)" :src="customImage(subject.slug)" :alt="subject.name" loading="lazy"><CardVideo v-else-if="subject.slug === 'music'" src="/videos/previews/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/optimized/video-first-frame-c6e2a98273d1.webp" />
         <CardVideo v-else-if="subject.slug === 'geography'" src="/videos/previews/Illuminated_globe_rotating_on_map_4e2efb7e.mp4" poster="/images/optimized/video-first-frame-4e9546a8ab01.webp" />
         <CardVideo v-else-if="subject.slug === 'physics'" src="/videos/previews/Glowing_atom_floating_in_space_12f9fd11.mp4" poster="/images/optimized/video-first-frame-e4e4972220ff.webp" />
         <CardVideo v-else-if="subject.slug === 'biology'" src="/videos/previews/Glowing_butterfly_on_DNA_strand_929f84ef_t0-6.mp4" poster="/images/optimized/video-first-frame-f09d43ca356a.webp" />

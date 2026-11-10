@@ -29,11 +29,11 @@ test('five expansions match their actual questions, including the corrected mont
  assert.equal(financeEnrichments['finance-credit-5-b'],undefined)
  assert.equal(read('data/encyclopedia/financeEnrichments.ts'),read('data-test/financeEnrichments.ts').replace("'finance-credit-5-b':","'finance-credit-6-b':"))
 })
-test('the finance list selects ten detailed articles and searches examples with saved/read filters',()=>{
+test('the finance list selects ten detailed articles and searches examples with saved/read filters',async()=>{
  const d=sfc.parse(read('pages/subjects/[slug].vue')).descriptor
  const js=ts.transpileModule(sfc.compileScript(d,{id:'finance-test'}).content,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
- const saved=vue.ref([]),readIds=vue.ref([]),scope={...vue,exports:{},useRoute:()=>({params:{slug:'finance'}}),useProgress:()=>({read:readIds,saved,markRead:id=>{readIds.value=[...readIds.value,id]},toggleSaved(){}}),require:name=>name==='vue'?vue:content}
- runInNewContext(js,scope);const page=scope.exports.default.setup({}, {expose(){}})
+ const saved=vue.ref([]),readIds=vue.ref([]),scope={...vue,usePublishedContent:async(_kind,fallback,options)=>options?.key?fallback.filter(x=>x.slug===options.key):fallback,exports:{},useRoute:()=>({params:{slug:'finance'}}),useProgress:()=>({read:readIds,saved,markRead:id=>{readIds.value=[...readIds.value,id]},toggleSaved(){}}),require:name=>name==='vue'?{...vue,withAsyncContext:fn=>[fn(),()=>{}]}:content}
+ runInNewContext(js,scope);const page=await scope.exports.default.setup({}, {expose(){}})
  assert.equal(page.items.length,10);assert.equal(page.displayed.value.length,10)
  page.limit.value=40;assert.equal(page.displayed.value.length,10)
  page.limit.value=140;assert.equal(page.displayed.value.length,10)
@@ -46,7 +46,7 @@ test('the finance list selects ten detailed articles and searches examples with 
 test('the real search endpoint indexes the new finance expansions and preserves existing finance articles',async()=>{
  const modules={'~/data/content':content}
  for(const [key,file] of [['~/utils/searchTerms','utils/searchTerms.ts'],['~/utils/searchSubjects','utils/searchSubjects.ts'],['~/utils/searchRecords','utils/searchRecords.ts'],['~/data/atomArticle','data/atomArticle.ts']])modules[key]=await load(file)
- const scope={exports:{},defineEventHandler:fn=>fn,getQuery:event=>event,useRuntimeConfig:()=>({public:{directusUrl:''}}),require:name=>modules[name]||(()=>{throw Error(name)})()}
+ const scope={exports:{},defineEventHandler:fn=>fn,getQuery:event=>event,useRuntimeConfig:()=>({public:{directusUrl:''}}),require:name=>name==='../utils/db'?{databaseEnabled:()=>false}:modules[name]||(()=>{throw Error(name)})()}
  const js=ts.transpileModule(read('server/api/search.get.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
  runInNewContext(js,scope)
  const {items}=await scope.exports.default({q:'20 000 դրամ'})

@@ -9,6 +9,8 @@ import { bibleBooks } from '~/data/bible'
 import { disintegrate, type Disintegration } from '~/utils/disintegrate'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
 import { findGameBookmark } from '~/utils/gameBookmarks'
+// Separate aliases keep setup metadata available when Nuxt tree-shakes ClientOnly template icons.
+import { Gamepad2 as GameSectionIcon, Bookmark as SavedSectionIcon } from 'lucide-vue-next'
 import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Gamepad2, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
 
 const { saved, removeSaved } = useProgress()
@@ -96,12 +98,12 @@ onBeforeUnmount(() => {
 })
 const sectionDefinitions = [
   { id: 'encyclopedia', title: 'Հանրագիտարան', icon: BookOpen, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
-  { id: 'games', title: 'Խաղեր', icon: Gamepad2, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
+  { id: 'games', title: 'Խաղեր', icon: GameSectionIcon, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
   { id: 'bible', title: 'Աստվածաշունչ', icon: ScrollText, description: 'Պահպանված գրքեր և գլուխներ', to: '/bible' },
   { id: 'facts', title: 'Հետաքրքիր փաստեր', icon: Sparkles, description: 'Քեզ հետաքրքրած փաստերն ու բացահայտումները', to: '/facts' },
   { id: 'people', title: 'Նշանավոր մարդիկ', icon: Users, description: 'Կենսագրություններ և ստեղծագործություններ', to: '/people' },
   { id: 'history', title: 'Հայոց պատմություն', icon: Landmark, description: 'Պատմական իրադարձություններ', to: '/history' },
-  { id: 'other', title: 'Այլ նյութեր', icon: Bookmark, description: 'Մյուս պահպանված նյութերը', to: '/subjects' },
+  { id: 'other', title: 'Այլ նյութեր', icon: SavedSectionIcon, description: 'Մյուս պահպանված նյութերը', to: '/subjects' },
 ] as const
 
 function describeEntry(id: string): SavedEntry {
@@ -164,7 +166,9 @@ function describeEntry(id: string): SavedEntry {
   return { id, title: id, to: '/subjects', kind: 'Այլ նյութ', category: 'other' }
 }
 
-const savedEntries = computed(() => [...new Set(saved.value)].map(describeEntry))
+const managedSaved=ref<SavedEntry[]>([])
+watch(saved,async ids=>{try{const output:SavedEntry[]=[];for(let i=0;i<ids.length;i+=100){const response=await $fetch<{items:SavedEntry[]}>('/api/content/saved',{method:'POST',body:{keys:ids.slice(i,i+100)}});output.push(...response.items)}managedSaved.value=output}catch{}},{immediate:true})
+const savedEntries = computed(() => [...new Set(saved.value)].map(id=>managedSaved.value.find(item=>item.id===id)||describeEntry(id)))
 const savedCount = computed(() => savedEntries.value.length + gameRecords.value.length)
 const sections = computed(() => sectionDefinitions.map(section => {
   const items = savedEntries.value.filter(item => item.category === section.id)
@@ -177,6 +181,8 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
 
 <template>
   <main class="shell py-10 profile-page">
+    <ClientOnly>
+    <AccountPanel />
     <header class="profile-heading"><span class="gold profile-eyebrow">ՔՈ ԱՆՁՆԱԿԱՆ ԳԻՏԵԼԻՔՆԵՐԻ ՀԱՎԱՔԱԾՈՒՆ</span><h1 class="heading">Իմ FACTUM-ը</h1><p class="muted">{{savedCount}} պահպանված նյութ։ Ընտրիր բաժինը և շարունակիր բացահայտել։</p></header>
     <nav class="profile-categories" aria-label="Պահպանված նյութերի բաժիններ"><button :aria-pressed="activeCategory === 'all'" :class="{'is-active':activeCategory === 'all'}" @click="activeCategory='all'"><Bookmark :size="17" /> Բոլորը <span>{{savedCount}}</span></button><button v-for="section in categoryTabs" :key="section.id" :aria-pressed="activeCategory === section.id" :class="{'is-active':activeCategory === section.id}" @click="activeCategory=section.id"><component :is="section.icon" :size="17" />{{section.title}}<span>{{section.count}}</span></button></nav>
     <section v-for="section in shownSections" :key="section.id" class="profile-section" :aria-labelledby="`saved-section-${section.id}`">
@@ -211,7 +217,9 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
       <p>{{ removalMessage }}</p>
       <button v-if="removedGameRecord !== null" type="button" class="btn-secondary" @click="undoGameRemoval">Վերականգնել արդյունքը</button>
     </div>
-    <p class="profile-storage-note muted">Հյուրի ռեժիմ․ տվյալները պահվում են այս բրաուզերում։ Սարքերի համաժամեցում դեռ միացված չէ։</p>
+    <p class="profile-storage-note muted">Մուտք գործիր նույն հաշվով այլ սարքից՝ քո պահպանված նյութերն ու առաջընթացը շարունակելու համար։</p>
+    <template #fallback><section class="panel p-6" aria-busy="true"><p class="muted">Քո պահպանված նյութերը բեռնվում են…</p></section></template>
+    </ClientOnly>
   </main>
 </template>
 
