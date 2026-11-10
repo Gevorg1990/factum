@@ -31,9 +31,21 @@ const { data } = await useFetch<{ url: string | null; source: string | null }>(
   <div class="portrait" :class="`portrait-${size || 'large'}`">
     <img
       v-if="(localImage || data?.url) && !failed"
+      class="portrait-backdrop"
+      :src="localImage || data?.url || ''"
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      style="position: absolute; inset: 0; object-fit: cover;"
+    />
+    <img
+      class="portrait-image"
+      v-if="(localImage || data?.url) && !failed"
       :src="localImage || data?.url || ''"
       :alt="person.name + ' — դիմանկար'"
       loading="lazy"
+      decoding="async"
       @error="failed = true"
     />
     <div v-else class="portrait-placeholder">
@@ -59,9 +71,16 @@ const { data } = await useFetch<{ url: string | null; source: string | null }>(
 .portrait img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center 28%;
+  object-fit: contain;
+  object-position: center;
 }
+.portrait .portrait-backdrop {
+  filter: blur(18px) brightness(.65);
+  transform: scale(1.15);
+  pointer-events: none;
+}
+.portrait .portrait-image { position: relative; z-index: 1; display: block; }
+.portrait-biography > .portrait-image { position: absolute; }
 .portrait-placeholder {
   width: 100%;
   height: 100%;
