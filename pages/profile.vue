@@ -10,7 +10,7 @@ import { disintegrate, type Disintegration } from '~/utils/disintegrate'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
 import { findGameBookmark } from '~/utils/gameBookmarks'
 // Separate aliases keep setup metadata available when Nuxt tree-shakes ClientOnly template icons.
-import { Gamepad2 as GameSectionIcon, Bookmark as SavedSectionIcon } from 'lucide-vue-next'
+import { BookOpen as EncyclopediaSectionIcon, Gamepad2 as GameSectionIcon, Bookmark as SavedSectionIcon } from 'lucide-vue-next'
 import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Gamepad2, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
 
 const { saved, removeSaved } = useProgress()
@@ -97,7 +97,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('focus', refreshGameRecords)
 })
 const sectionDefinitions = [
-  { id: 'encyclopedia', title: 'Հանրագիտարան', icon: BookOpen, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
+  { id: 'encyclopedia', title: 'Հանրագիտարան', icon: EncyclopediaSectionIcon, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
   { id: 'games', title: 'Խաղեր', icon: GameSectionIcon, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
   { id: 'bible', title: 'Աստվածաշունչ', icon: ScrollText, description: 'Պահպանված գրքեր և գլուխներ', to: '/bible' },
   { id: 'facts', title: 'Հետաքրքիր փաստեր', icon: Sparkles, description: 'Քեզ հետաքրքրած փաստերն ու բացահայտումները', to: '/facts' },
