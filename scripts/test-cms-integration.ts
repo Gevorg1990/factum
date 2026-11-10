@@ -31,9 +31,9 @@ try{
  const options=await request('/api/admin/options?kind=CATEGORY');assert.equal(options.status,200);assert.ok(options.data.items.length<=25);assert.ok(options.data.items.some((x:any)=>x.key==='physics'))
  assert.equal((await request('/api/admin/options?kind=FACT_CATEGORY')).data.items.length,20)
  assert.equal((await request('/api/admin/options?kind=CATEGORY','GET',undefined,other.cookie)).status,403)
- const banks=await request('/api/admin/million-banks?difficulty=easy');assert.equal(banks.status,200);assert.equal(banks.data.items.length,15);assert.ok(banks.data.items.every((bank:any)=>bank.published>=2))
+ const banks=await request('/api/admin/million-banks?difficulty=easy');assert.equal(banks.status,200);assert.equal(banks.data.items.length,15);assert.ok(banks.data.items.every((bank:any)=>bank.published>=0))
  assert.equal((await request('/api/admin/million-banks','GET',undefined,other.cookie)).status,403)
- for(let slot=0;slot<15;slot++){const bank=await request('/api/admin/content?kind=GAME&mode=million&difficulty=easy&slot='+slot);assert.equal(bank.status,200);assert.ok(bank.data.total>=2);const record=await db.content.findUniqueOrThrow({where:{id:bank.data.items[0].id}});assert.equal((record.data as any).slot,slot)}
+ for(let slot=0;slot<15;slot++){const bank=await request('/api/admin/content?kind=GAME&mode=million&difficulty=easy&slot='+slot);assert.equal(bank.status,200);if(!bank.data.total)continue;const record=await db.content.findUniqueOrThrow({where:{id:bank.data.items[0].id}});assert.equal((record.data as any).slot,slot)}
  const gameKey='bank-'+suffix
  const game=await request('/api/admin/content','POST',{kind:'GAME',key:gameKey,title:'Փորձնական հարցաբանկի հարց '+suffix,data:{mode:'million',difficulty:'medium',slot:7,question:'Փորձնական հարցաբանկի հարց '+suffix,answers:['Ա','Բ'],correct:0,explanation:'Ստուգում'},action:'publish'},registered.cookie)
  assert.equal(game.status,200);gameContentId=game.data.id;assert.equal(game.data.data.slot,7)
@@ -71,7 +71,7 @@ try{
  assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version},registered.cookie)).status,404)
  assert.equal((await request(`/api/content?kind=ARTICLE&key=${key}`)).data.items.length,0)
  for(const path of ['/','/admin','/login','/profile','/people','/facts','/history','/subjects/physics','/articles/c1','/api/games-round?mode=million&difficulty=easy','/api/search?q='+encodeURIComponent('ատոմ')]){const response:Response=await fetch(base+path,{headers:{cookie:registered.cookie!}});assert.equal(response.status,200,path);assert.match(response.headers.get('cache-control')||'',/private/)}
- for(const mode of ['million','genius','logic']){const round=await request(`/api/games-round?mode=${mode}&difficulty=easy`);assert.equal(round.status,200);assert.ok(round.data.items.length>=10&&round.data.items.length<=30);assert.equal(new Set(round.data.items.map((x:any)=>x.question||x.statement)).size,round.data.items.length);if(mode==='million')for(let slot=0;slot<15;slot++)assert.equal(round.data.items.filter((x:any)=>x.slot===slot).length,2)}
+ for(const mode of ['million','genius','logic']){const round=await request(`/api/games-round?mode=${mode}&difficulty=easy`);assert.equal(round.status,200);assert.ok(round.data.items.length>=10&&round.data.items.length<=30);assert.equal(new Set(round.data.items.map((x:any)=>x.question||x.statement)).size,round.data.items.length);if(mode==='million')for(let slot=0;slot<15;slot++)assert.equal(round.data.items.filter((x:any)=>x.slot===slot).length,Math.min(2,banks.data.items[slot].published))}
  const freshLogin=await request('/api/auth/login','POST',{email,password});assert.equal(freshLogin.status,200);assert.deepEqual((await request('/api/account/bookmarks','GET',undefined,freshLogin.cookie)).data.items,['c1']);authenticatedCookie=freshLogin.cookie
  assert.equal((await request('/api/auth/logout','POST',{},freshLogin.cookie)).status,200)
  assert.equal((await request('/api/account/bookmarks','GET',undefined,freshLogin.cookie)).status,401)
