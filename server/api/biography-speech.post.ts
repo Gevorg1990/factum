@@ -5,7 +5,7 @@ import { synthesizeArmenianSpeech } from '../utils/armenianSpeech'
 
 export default defineEventHandler(async event => {
   const body = await readBody<{ personId?: string; voice?: string; part?: number }>(event)
-  const person = biographyPerson(body?.personId)
+  const person = await biographyPerson(body?.personId)
   const parts = person ? biographyChunks(person) : []
   if (!person || !['female', 'male'].includes(body.voice || '') ||
       !Number.isInteger(body.part) || body.part! < 0 || body.part! >= parts.length) {
