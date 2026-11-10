@@ -1,3 +1,4 @@
+import { millionStageOf } from './millionStages'
 export type CmsKind = 'ARTICLE'|'CATEGORY'|'AUTHOR'|'PERSON'|'FACT'|'EVENT'|'GAME'|'MONUMENT'|'WORK'|'PAGE'|'VIDEO'|'SETTING'
 export const contentSections: {kind:CmsKind;label:string;singular:string;description:string;icon:string;group:string}[] = [
   {kind:'ARTICLE',label:'Հոդվածներ',singular:'հոդված',description:'Հանրագիտարանի հարցեր, պատասխաններ և բացատրություններ։',icon:'BookOpen',group:'Հիմնական բովանդակություն'},
@@ -19,7 +20,7 @@ export const editorTemplates:Record<CmsKind,Record<string,any>> = {
   PERSON:{id:'',name:'',years:'',role:'',category:'Գրականություն',bio:'',portrait:'',isArmenian:true,works:[],biographySections:[],timeline:[]},
   FACT:{id:'',title:'',text:'',category:'space',image:''},
   EVENT:{year:'',title:'',era:'',details:{intro:'',sections:[],facts:[]}},
-  GAME:{mode:'million',difficulty:'easy',question:'',answers:['','','',''],correct:0,explanation:'',hint:''},
+  GAME:{mode:'million',difficulty:'easy',stage:'first',question:'',answers:['','','',''],correct:0,explanation:'',hint:''},
   MONUMENT:{id:'',personId:'',name:'',city:'',location:'',source:{name:'',url:''},image:{src:'',alt:'',credit:'',license:'',licenseUrl:'',sourceUrl:''}},
   WORK:{personId:'',index:0,title:'',description:'',significance:''},
   PAGE:{title:'',text:''},VIDEO:{title:'',url:'',preview:''},SETTING:{title:'',text:''},
@@ -33,7 +34,7 @@ export const fieldHints:Record<string,string> = {
 export function newContent(kind:CmsKind) {
   return {kind,key:kind==='SETTING'?'footer':`${kind.toLowerCase()}-${crypto.randomUUID().slice(0,8)}`,title:'',summary:'',body:'',categoryId:null,authorId:null,data:structuredClone(editorTemplates[kind])}
 }
-export function editorRecord(record:any){const value=JSON.parse(JSON.stringify(record));if(value.kind==='GAME')value.title=value.data.mode==='genius'?value.data.statement:value.data.question;return value}
+export function editorRecord(record:any){const value=JSON.parse(JSON.stringify(record));if(value.kind==='GAME'){value.title=value.data.mode==='genius'?value.data.statement:value.data.question;if(value.data.mode==='million')value.data.stage=millionStageOf(value.data);}return value}
 // Keep the UI's single title consistent with legacy payload shapes without losing extra fields.
 export function prepareContent(record:any) {
   const value=JSON.parse(JSON.stringify(record))

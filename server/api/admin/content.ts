@@ -21,6 +21,20 @@ export default defineEventHandler(async event => {
     if (user.role !== 'ADMIN') throw createError({ statusCode:403, statusMessage:'Ջնջումը թույլատրված է միայն ադմինիստրատորին' })
     // Tombstones keep deleted imported records from reappearing via legacy fallback or reseeding.
     const id = z.string().min(1).parse(query.id)
+    if (query.permanent === 'true') {
+      const confirmation = z.object({ title:z.string().min(1).max(500), version:z.number().int().positive() }).parse(await readBody(event))
+      await db.$transaction(async tx => {
+        const current = await tx.content.findUnique({where:{id}})
+        if (!current) throw createError({statusCode:404,statusMessage:'Նյութն այլևս գոյություն չունի'})
+        if (confirmation.title !== current.title) throw createError({statusCode:400,statusMessage:'Հաստատման համար մուտքագրիր նյութի ամբողջական անվանումը'})
+        if (confirmation.version !== current.version) throw createError({statusCode:409,statusMessage:'Նյութը փոփոխվել է։ Վերաբացիր այն ցանկից և կրկին ստուգիր։'})
+        const deleted = await tx.content.deleteMany({where:{id,version:confirmation.version}})
+        if (!deleted.count) throw createError({statusCode:409,statusMessage:'Նյութը փոփոխվել է։ Վերաբացիր այն ցանկից։'})
+        await tx.deletedContentKey.upsert({where:{kind_key:{kind:current.kind,key:current.key}},create:{kind:current.kind,key:current.key},update:{deletedAt:new Date()}})
+        await tx.auditLog.create({data:{userId:user.id,action:'permanent-delete',target:id}})
+      })
+      return {ok:true,permanent:true}
+    }
     await db.$transaction([db.content.update({ where:{id}, data:{status:'ARCHIVED',publishedData:Prisma.DbNull,version:{increment:1}} }), db.auditLog.create({data:{userId:user.id,action:'delete',target:id}})])
     return {ok:true}
   }

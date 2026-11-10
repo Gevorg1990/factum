@@ -83,6 +83,13 @@ model Content {
   @@index([categoryId])
   @@index([authorId])
 }
+// Retain only an address so later legacy imports cannot resurrect deleted text.
+model DeletedContentKey {
+  kind ContentKind
+  key String
+  deletedAt DateTime @default(now())
+  @@id([kind, key])
+}
 model Bookmark {
   userId String
   key String

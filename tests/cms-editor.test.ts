@@ -45,3 +45,17 @@ test('login returns to a requested internal page without allowing external redir
  assert.equal(safeReturnPath('/articles/c1?from=profile#saved-article'),'/articles/c1?from=profile#saved-article')
  for(const invalid of ['https://evil.test','//evil.test','/\\evil.test','/login?next=/','/api/auth/me','/foo\nbar',null])assert.equal(safeReturnPath(invalid),null)
 })
+
+test('Millionaire editor preserves legacy phases and independently selects difficulty and phase',()=>{
+ for(const [slot,stage] of [[0,'first'],[4,'first'],[5,'middle'],[9,'middle'],[10,'final'],[14,'final']] as const){
+  const record={kind:'GAME',key:'million-'+slot,title:'Հարց',data:{mode:'million',difficulty:'hard',slot,question:'Հարց',answers:['ա','բ'],correct:0,explanation:'Բացատրություն'}}
+  const editor=editorRecord(record)
+  assert.equal(editor.data.stage,stage)
+  editor.data.stage='middle'
+  const parsed=parseContent(prepareContent(editor))
+  assert.equal(parsed.data.stage,'middle');assert.equal(parsed.data.difficulty,'hard')
+ }
+ const created=newContent('GAME');created.title='Հարց';Object.assign(created.data,{stage:'final',answers:['ա','բ'],explanation:'Պատասխան'})
+ assert.equal(parseContent(prepareContent(created)).data.stage,'final')
+ assert.throws(()=>parseContent({...prepareContent(created),data:{...created.data,stage:'invalid'}}))
+})

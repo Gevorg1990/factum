@@ -48,15 +48,30 @@ try{
  assert.equal((await request(`/api/content?kind=ARTICLE&key=${key}`)).data.items[0].title,input.title)
  await request(`/api/admin/content?id=${contentId}`,'DELETE',undefined,registered.cookie)
  assert.equal((await request(`/api/content?kind=ARTICLE&key=${key}`)).data.items.length,0)
+ const archived=await db.content.findUniqueOrThrow({where:{id:contentId}})
+ const permanentPath=`/api/admin/content?id=${contentId}&permanent=true`
+ assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version},other.cookie)).status,403)
+ await db.user.update({where:{id:other.data.user.id},data:{role:'EDITOR'}})
+ assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version},other.cookie)).status,403)
+ await db.user.update({where:{id:other.data.user.id},data:{role:'USER'}})
+ assert.equal((await request(permanentPath,'DELETE',{title:'wrong title',version:archived.version},registered.cookie)).status,400)
+ assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version-1},registered.cookie)).status,409)
+ assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version},registered.cookie,'https://evil.example')).status,403)
+ assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version},registered.cookie)).status,200)
+ assert.equal(await db.content.findUnique({where:{id:contentId}}),null)
+ assert.ok(await db.deletedContentKey.findUnique({where:{kind_key:{kind:'ARTICLE',key}}}))
+ assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version},registered.cookie)).status,404)
+ assert.equal((await request(`/api/content?kind=ARTICLE&key=${key}`)).data.items.length,0)
  for(const path of ['/','/admin','/login','/profile','/people','/facts','/history','/subjects/physics','/articles/c1','/api/games-round?mode=million&difficulty=easy','/api/search?q='+encodeURIComponent('ատոմ')]){const response:Response=await fetch(base+path,{headers:{cookie:registered.cookie!}});assert.equal(response.status,200,path);assert.match(response.headers.get('cache-control')||'',/private/)}
- for(const mode of ['million','genius','logic']){const round=await request(`/api/games-round?mode=${mode}&difficulty=easy`);assert.equal(round.status,200);assert.ok(round.data.items.length>=10&&round.data.items.length<=30);assert.equal(new Set(round.data.items.map((x:any)=>x.question||x.statement)).size,round.data.items.length)}
+ for(const mode of ['million','genius','logic']){const round=await request(`/api/games-round?mode=${mode}&difficulty=easy`);assert.equal(round.status,200);assert.ok(round.data.items.length>=10&&round.data.items.length<=30);assert.equal(new Set(round.data.items.map((x:any)=>x.question||x.statement)).size,round.data.items.length);if(mode==='million')for(const stage of ['first','middle','final'])assert.equal(round.data.items.filter((x:any)=>x.stage===stage).length,10)}
  const freshLogin=await request('/api/auth/login','POST',{email,password});assert.equal(freshLogin.status,200);assert.deepEqual((await request('/api/account/bookmarks','GET',undefined,freshLogin.cookie)).data.items,['c1']);authenticatedCookie=freshLogin.cookie
  assert.equal((await request('/api/auth/logout','POST',{},freshLogin.cookie)).status,200)
  assert.equal((await request('/api/account/bookmarks','GET',undefined,freshLogin.cookie)).status,401)
- console.log('PASS: mandatory login, private responses, roles, CSRF, database bookmarks across sessions, guided editor payloads, filters, options, media, publication and games')
+ console.log('PASS: mandatory login, private responses, roles, CSRF, database bookmarks across sessions, guided editor payloads, filters, options, media, publication, permanent deletion and games')
 }finally{
  if(mediaId)await db.media.deleteMany({where:{id:mediaId}})
  if(contentId)await db.content.deleteMany({where:{id:contentId}})
+ await db.deletedContentKey.deleteMany({where:{kind:'ARTICLE',key}})
  await db.auditLog.deleteMany({where:{userId:{in:users}}})
  await db.user.deleteMany({where:{id:{in:users}}})
  await db.$disconnect()

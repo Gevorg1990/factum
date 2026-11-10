@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { saveGameResult } from '~/utils/gameRecords'
+import { millionStagePairs } from '~/shared/millionStages'
 import { millionQuestions, type MillionQuestion, millionTiers, createMillionRound, type MillionTier } from '~/utils/millionQuestionPool'
 import { difficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
 
@@ -56,10 +57,9 @@ async function newRound() {
   if (!selectedMillionMode.value) return
   roundLoading.value=true;roundError.value=''
   try {
-    const result = await $fetch<{items:(MillionQuestion & {slot?:number;variant?:string})[]}>('/api/games-round',{query:{mode:'million',difficulty:selectedMillionMode.value}})
-    if(result.items.length < 30){roundError.value='Այս մակարդակի համար անհրաժեշտ է առնվազն 30 հրապարակված հարց';return}
-    const ordered=result.items.sort((a,b)=>(a.slot??99)-(b.slot??99))
-    const pairs=Array.from({length:15},(_,i)=>({primary:ordered[i*2]!,replacement:ordered[i*2+1]!}))
+    const result = await $fetch<{items:(MillionQuestion & {slot?:number;variant?:string;stage?:string})[]}>('/api/games-round',{query:{mode:'million',difficulty:selectedMillionMode.value}})
+    let pairs
+    try{pairs=millionStagePairs(result.items)}catch(error){roundError.value=error instanceof Error?error.message:'Փուլերի հարցերը բավարար չեն';return}
     const round=createMillionRound(selectedMillionMode.value,Math.random,pairs)
     gameQuestions.value = round.questions
     replacementQuestions.value = round.replacements

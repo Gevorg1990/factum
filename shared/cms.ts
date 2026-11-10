@@ -1,3 +1,4 @@
+import { millionStageOf } from './millionStages'
 import { z } from 'zod'
 export const kinds = ['ARTICLE','CATEGORY','AUTHOR','PERSON','FACT','EVENT','GAME','MONUMENT','WORK','PAGE','VIDEO','SETTING'] as const
 export const kindSchema = z.enum(kinds)
@@ -12,7 +13,7 @@ const shapes = {
   PERSON: z.object({ id: text, name: text.min(1), years: text, role: text, bio: text, works: z.array(text), biographySections: z.array(section).optional() }).passthrough(),
   FACT: z.object({ id: text, title: text.min(1), text, category: text }).passthrough(),
   EVENT: z.object({ year: text.min(1), title: text.min(1), era: text }).passthrough(),
-  GAME: z.object({ mode: z.enum(['million','genius','logic']), difficulty: z.enum(['easy','medium','hard']), question: text.optional(), statement: text.optional(), answers: z.array(text).min(2).max(8).optional(), correct: z.union([z.number().int().nonnegative(), z.boolean()]), explanation: text }).passthrough().superRefine((v, ctx) => {
+  GAME: z.object({ mode: z.enum(['million','genius','logic']), difficulty: z.enum(['easy','medium','hard']), stage: z.enum(['first','middle','final']).optional(), slot:z.number().int().min(0).max(14).optional(), question: text.optional(), statement: text.optional(), answers: z.array(text).min(2).max(8).optional(), correct: z.union([z.number().int().nonnegative(), z.boolean()]), explanation: text }).passthrough().superRefine((v, ctx) => {
     if (v.mode === 'genius' ? !v.statement || typeof v.correct !== 'boolean' : !v.question || !v.answers || typeof v.correct !== 'number' || v.correct >= v.answers.length) ctx.addIssue({ code: 'custom', message: 'Ստուգեք հարցն ու ճիշտ պատասխանը' })
   }),
   MONUMENT: z.object({ id: text, personId: text, name: text.min(1), city: text, location: text, source }).passthrough(),
@@ -25,6 +26,7 @@ export const contentInput = z.object({ kind: kindSchema, key: z.string().min(1).
 export function parseContent(value: unknown) {
   const result = contentInput.parse(value)
   result.data = shapes[result.kind].parse(result.data)
+  if(result.kind==='GAME'&&result.data.mode==='million')result.data.stage=millionStageOf(result.data)
   // The public title and key always agree with the editorial record.
   if ('title' in result.data) result.data.title = result.title
   if (['ARTICLE','PERSON','FACT','MONUMENT'].includes(result.kind)) result.data.id = result.key
