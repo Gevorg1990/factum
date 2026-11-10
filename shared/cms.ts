@@ -8,7 +8,7 @@ const source = z.object({ name: text, url: z.string().url() })
 // Preserve rich legacy fields while validating the fields used by public renderers.
 const shapes = {
   ARTICLE: z.object({ id: text, subject: text, title: text.min(1), answer: text, detail: text, sections: z.array(section).optional(), source: source.optional() }).passthrough(),
-  CATEGORY: z.object({ slug: text.min(1), name: text.min(1) }).passthrough(),
+  CATEGORY: z.object({ slug: text.min(1), name: text.min(1),image:z.string().max(2000).optional(),cardVideo:z.string().max(2000).refine(value=>!value||/^\/videos\/previews\/[^\\]+\.(mp4|webm)$/.test(value)||/^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/factum\/previews\/[^/]+\.mp4$/i.test(value),'Վերբեռնիր վիդեոն՝ ավտոմատ օպտիմիզացման համար').optional() }).passthrough(),
   AUTHOR: z.object({ name: text.min(1), bio: text.optional() }).passthrough(),
   PERSON: z.object({ id: text, name: text.min(1), years: text, role: text, bio: text, works: z.array(text), biographySections: z.array(section).optional() }).passthrough(),
   FACT: z.object({ id: text, title: text.min(1), text, category: text }).passthrough(),

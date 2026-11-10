@@ -28,6 +28,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node --env-file-if-exists=.env --import tsx scripts/seed.ts",
     "db:admin": "node --env-file-if-exists=.env --import tsx scripts/create-admin.ts",
+    "test:video": "node --import tsx --test tests/video-preview.test.ts",
     "test:cms": "node --import tsx --test tests/cms.test.ts tests/cms-editor.test.ts tests/million-stages.test.ts",
     "db:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup.ts",
     "test:cms:integration": "node --env-file-if-exists=.env --import tsx scripts/test-cms-integration.ts"
@@ -37,6 +38,7 @@
     "@pinia/nuxt": "^0.11.0",
     "@prisma/client": "^6.19.3",
     "@vercel/blob": "^2.9.0",
+    "ffmpeg-static": "^5.3.0",
     "lucide-vue-next": "^0.468.0",
     "nuxt": "^3.17.0",
     "pinia": "^3.0.0",

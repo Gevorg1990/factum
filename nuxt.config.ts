@@ -10,6 +10,7 @@ export default defineNuxtConfig({
       // Render current source during prerender, rather than serving HTML left by another build preset.
       'prerender:config': (config) => { config.serveStatic = false },
     },
+    externals: { traceInclude: ['node_modules/ffmpeg-static/ffmpeg'] },
     vercel: { functions: { maxDuration: 60 } },
     prerender: { crawlLinks: false, routes: [] },
   },

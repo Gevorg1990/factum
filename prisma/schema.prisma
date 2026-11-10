@@ -114,6 +114,13 @@ model Media {
   sourceUrl String @default("")
   createdAt DateTime @default(now())
 }
+model VideoPreview {
+  id String @id @default(cuid())
+  url String @unique
+  bytes Int
+  sourceBytes Int
+  createdAt DateTime @default(now())
+}
 model AuditLog {
   id String @id @default(cuid())
   userId String?

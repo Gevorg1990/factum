@@ -4,7 +4,7 @@ import { hashPassword } from '../shared/password'
 const db=new PrismaClient(),base=process.env.CMS_TEST_URL||'http://localhost:3011'
 const suffix=Date.now().toString(),key='integration-'+suffix
 const users:string[]=[]
-let contentId='',gameContentId='',mediaId='',authenticatedCookie:string|undefined
+let contentId='',gameContentId='',categoryContentId='',mediaId='',authenticatedCookie:string|undefined
 async function request(path:string,method='GET',body?:unknown,cookie?:string|null,origin=base){const effectiveCookie=cookie===null?undefined:cookie||authenticatedCookie;const res=await fetch(base+path,{method,headers:{...(body?{'content-type':'application/json'}:{}),...(effectiveCookie?{cookie:effectiveCookie}:{}),...(method!=='GET'?{origin}:{})},body:body?JSON.stringify(body):undefined});return {status:res.status,data:await res.json(),cookie:res.headers.get('set-cookie')?.split(';')[0]}}
 try{
  for(const path of ['/','/facts','/people','/profile','/admin']){const res=await fetch(base+path,{redirect:'manual'});assert.equal(res.status,302,path);assert.ok(res.headers.get('location')?.startsWith('/login'),path);assert.match(res.headers.get('cache-control')||'',/private/)}
@@ -39,6 +39,15 @@ try{
  assert.equal(game.status,200);gameContentId=game.data.id;assert.equal(game.data.data.slot,7)
  const ownBank=await request('/api/admin/content?kind=GAME&mode=million&difficulty=medium&slot=7&q='+gameKey);assert.equal(ownBank.data.total,1)
  const wrongBank=await request('/api/admin/content?kind=GAME&mode=million&difficulty=medium&slot=8&q='+gameKey);assert.equal(wrongBank.data.total,0)
+ assert.equal((await request('/api/admin/video-token','POST',{},other.cookie)).status,403)
+ assert.equal((await request('/api/admin/video-optimize','POST',{url:'https://example.com/source.mp4'},other.cookie)).status,403)
+ assert.equal((await request('/api/admin/video-optimize','POST',{url:'https://example.com/source.mp4'},registered.cookie)).status,400)
+ const categoryKey='category-'+suffix,categoryVideo='/videos/previews/Glowing_atom_floating_in_space_12f9fd11.mp4'
+ const category=await request('/api/admin/content','POST',{kind:'CATEGORY',key:categoryKey,title:'Փորձնական բաժին',data:{slug:categoryKey,name:'Փորձնական բաժին',image:'/images/optimized/video-first-frame-e4e4972220ff.webp',cardVideo:categoryVideo},action:'publish'},registered.cookie)
+ assert.equal(category.status,200);categoryContentId=category.data.id
+ const categoryPublic=await request('/api/content?kind=CATEGORY&key='+categoryKey);assert.equal(categoryPublic.data.items[0].cardVideo,categoryVideo)
+ assert.equal((await fetch(base+'/subjects/'+categoryKey,{headers:{cookie:registered.cookie!}})).status,200)
+ assert.equal((await request('/api/category-counts')).status,200)
  const media=await request('/api/admin/media','POST',{url:'/images/test.webp',alt:'Փորձնական նկար',credit:'test'},registered.cookie);assert.equal(media.status,200);mediaId=media.data.id
  assert.equal((await request('/api/admin/media?id='+mediaId,'PUT',{url:'/images/test.webp',alt:'Նոր նկարագրություն'},registered.cookie)).data.alt,'Նոր նկարագրություն')
  assert.equal((await request('/api/admin/media?id='+mediaId,'DELETE',undefined,other.cookie)).status,403)
@@ -77,6 +86,7 @@ try{
  assert.equal((await request('/api/account/bookmarks','GET',undefined,freshLogin.cookie)).status,401)
  console.log('PASS: mandatory login, private responses, roles, CSRF, database bookmarks across sessions, guided editor payloads, filters, options, media, publication, permanent deletion and games')
 }finally{
+ if(categoryContentId)await db.content.deleteMany({where:{id:categoryContentId}})
  if(gameContentId)await db.content.deleteMany({where:{id:gameContentId}})
  if(mediaId)await db.media.deleteMany({where:{id:mediaId}})
  if(contentId)await db.content.deleteMany({where:{id:contentId}})

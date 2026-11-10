@@ -50,7 +50,7 @@ test('repeat hover resumes interrupted clips and loops previews while hovered',a
  assert.equal(video.src,'/videos/test.mp4')
  assert.equal(video.paused,true)
  reader.pointerEnter({pointerType:'mouse'});await nextTick()
- assert.equal(video.currentTime,0)
+ assert.equal(video.currentTime,4) // A looping clip resumes its paused position.
  assert.equal(reader.completed.value,false)
  assert.equal(video.src,'/videos/test.mp4')
  assert.equal(plays.length,3)
