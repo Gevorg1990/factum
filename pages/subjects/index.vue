@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { optimizedImage } from '~/data/optimizedImages'
-import { subjects, questions } from '~/data/content'
+import { categoryMedia,type EncyclopediaCategory } from '~/utils/categoryMedia'
+import { subjects as legacySubjects, collectionSubjects } from '~/data/content'
 import { cardTheme } from '~/data/cardThemes'
 
-const encyclopediaCollections = [
-  { id: 'bible', to: '/subjects/bible', name: 'Աստվածաշունչ', image: '/images/optimized/bible-b846c66c03.webp' },
-  { id: 'people', to: '/subjects/people', name: 'Նշանավոր մարդիկ', image: '/images/optimized/historical_figures-c386436d70.webp' },
-]
-
+const subjects = await usePublishedContent<EncyclopediaCategory>('CATEGORY',[...legacySubjects,...collectionSubjects.map(item=>({...item,img:item.slug}))])
+const {data:articleCounts}=await useFetch<Record<string,number>>('/api/category-counts',{key:'category-counts'})
+const articleTotal=computed(()=>Object.values(articleCounts.value||{}).reduce((sum,count)=>sum+count,0))
 const route = useRoute()
 const searchQuery = ref(String(route.query.q || ''))
 
@@ -17,13 +15,10 @@ const filteredSubjects = computed(() => {
   return term ? subjects.filter(subject => subject.name.toLocaleLowerCase('hy').includes(term)) : subjects
 })
 
-const filteredCollections = computed(() => {
-  const term = searchQuery.value.trim().toLocaleLowerCase('hy')
-  return term ? encyclopediaCollections.filter(collection => collection.name.toLocaleLowerCase('hy').includes(term)) : encyclopediaCollections
-})
-
 // Each encyclopedia subject uses the original, text-free image supplied by the user.
 const subjectImages: Record<string, string> = {
+  bible:'/images/optimized/bible-b846c66c03.webp',
+  people:'/images/optimized/historical_figures-c386436d70.webp',
   chemistry: '/images/optimized/chemistry-art-68cb23965b.webp',
   physics: '/images/optimized/glowing_atomic-b2b2506372.webp',
   space: '/images/optimized/solar_system-2a149a2be2.webp',
@@ -41,8 +36,10 @@ const subjectImages: Record<string, string> = {
   finance: '/images/optimized/finance-coins-2a9c80b1.webp',
 }
 
+const subjectBySlug=computed(()=>new Map(subjects.map(subject=>[subject.slug,subject])))
+function customImage(slug:string){return subjectBySlug.value.get(slug)?.image}
 function imageForSubject(slug: string): string {
-  return subjectImages[slug] || '/images/optimized/space-art-2f2239150d.webp'
+  return customImage(slug) || subjectImages[slug] || '/images/optimized/space-art-2f2239150d.webp'
 }
 </script>
 
@@ -51,7 +48,7 @@ function imageForSubject(slug: string): string {
     <header class="encyclopedia-heading">
       <p class="encyclopedia-eyebrow">FACTUM · ԳԻՏԵԼԻՔԻ ԱՇԽԱՐՀ</p>
       <h1 class="heading">Հանրագիտարան</h1>
-      <p class="muted">{{ subjects.length + encyclopediaCollections.length }} բաժին · {{ questions.length }} նյութ։ Ընտրիր քեզ հետաքրքրող բնագավառը և բացահայտիր նոր գիտելիքներ։</p>
+      <p class="muted">{{ subjects.length }} բաժին · {{ articleTotal }} նյութ։ Ընտրիր քեզ հետաքրքրող բնագավառը և բացահայտիր նոր գիտելիքներ։</p>
     </header>
 
     <label class="sr-only" for="encyclopedia-search">Որոնիր բաժինները</label>
@@ -71,49 +68,16 @@ function imageForSubject(slug: string): string {
         class="encyclopedia-tile"
         :style="{ '--card-accent': cardTheme(subject.slug).color }"
       >
-        <CardVideo v-if="subject.slug === 'music'" src="/videos/previews/Instruments_floating_on_opera_stage_3e75357e.mp4" poster="/images/optimized/video-first-frame-c6e2a98273d1.webp" />
-        <CardVideo v-else-if="subject.slug === 'geography'" src="/videos/previews/Illuminated_globe_rotating_on_map_4e2efb7e.mp4" poster="/images/optimized/video-first-frame-4e9546a8ab01.webp" />
-        <CardVideo v-else-if="subject.slug === 'physics'" src="/videos/previews/Glowing_atom_floating_in_space_12f9fd11.mp4" poster="/images/optimized/video-first-frame-e4e4972220ff.webp" />
-        <CardVideo v-else-if="subject.slug === 'biology'" src="/videos/previews/Glowing_butterfly_on_DNA_strand_929f84ef_t0-6.mp4" poster="/images/optimized/video-first-frame-f09d43ca356a.webp" />
-        <CardVideo v-else-if="subject.slug === 'mathematics'" src="/videos/previews/Owl_blinking_on_stone_pedestal_ee98753c.mp4" poster="/images/optimized/video-first-frame-5db14267bb82.webp" />
-        <CardVideo v-else-if="subject.slug === 'chemistry'" src="/videos/previews/Molecular_structure_rotating_in_…_654c41f3.mp4" poster="/images/optimized/video-first-frame-93a6e86a6353.webp" />
-        <CardVideo v-else-if="subject.slug === 'cinema'" src="/videos/previews/Vintage_film_projector_turning_r…_eb957e93.mp4" poster="/images/optimized/video-first-frame-650fb4c0e44b.webp" />
-        <CardVideo v-else-if="subject.slug === 'nature'" src="/videos/previews/Deer_and_fox_in_landscape_d0932100.mp4" poster="/images/optimized/video-first-frame-697a147e83d9.webp" />
-        <CardVideo v-else-if="subject.slug === 'history'" src="/videos/previews/Ancient_monuments_under_drifting…_8c16c027.mp4" poster="/images/optimized/video-first-frame-109d93bdc887.webp" />
-        <CardVideo v-else-if="subject.slug === 'linguistics'" src="/videos/previews/Magical_tree_sprouting_from_book_4ffec4a6.mp4" poster="/images/optimized/video-first-frame-b36b975b4af1.webp" />
-        <CardVideo v-else-if="subject.slug === 'technology'" src="/videos/previews/Cyberpunk_city_lights_at_night_6d880cd4.mp4" poster="/images/optimized/video-first-frame-c52d37ab7a2d.webp" />
-        <CardVideo v-else-if="subject.slug === 'space'" src="/videos/previews/Solar_system_planets_orbiting_sun_d14eb8ab.mp4" poster="/images/optimized/space-video-first-frame.webp" />
-        <CardVideo v-else-if="subject.slug === 'finance'" src="/videos/previews/Brass_scales_book_coins_abacus_db917ecf.mp4" poster="/images/optimized/finance-video-first-frame.webp" />
-        <CardVideo v-else-if="subject.slug === 'health'" src="/videos/previews/Holographic_human_body_and_DNA_270d202e.mp4" poster="/images/optimized/health-video-first-frame.webp" />
-        <CardVideo v-else-if="subject.slug === 'literature'" src="/videos/previews/Magical_figures_emerge_from_book_f81aa87e.mp4" poster="/images/optimized/literature-video-first-frame.webp" />
-        <img
-          v-else
-          :src="imageForSubject(subject.slug)"
-          :alt="subject.name"
-          loading="lazy"
-        >
+        <CardVideo v-if="categoryMedia(subject,imageForSubject(subject.slug)).video" :src="categoryMedia(subject,imageForSubject(subject.slug)).video" :poster="categoryMedia(subject,imageForSubject(subject.slug)).poster" />
+        <img v-else :src="imageForSubject(subject.slug)" :alt="subject.name" loading="lazy" decoding="async" width="640" height="360">
         <span class="encyclopedia-tile-shade" aria-hidden="true" />
         <span class="encyclopedia-emblem" aria-hidden="true"><component :is="cardTheme(subject.slug).icon" :size="19" /></span>
-        <span class="encyclopedia-tile-name"><span>{{ subject.shortName || subject.name }} · {{ questions.filter(item => item.subject === subject.slug).length }} նյութ</span><span aria-hidden="true">→</span></span>
+        <span class="encyclopedia-tile-name"><span>{{ subject.shortName || subject.name }} · {{ articleCounts?.[subject.slug]||0 }} նյութ</span><span aria-hidden="true">→</span></span>
       </NuxtLink>
-      <!-- Հանրագիտարանի լրացուցիչ հավաքածուներ -->
-      <NuxtLink
-        v-for="collection in filteredCollections"
-        :key="collection.to"
-        :to="collection.to"
-        class="encyclopedia-tile"
-        :style="{ '--card-accent': cardTheme(collection.id).color }"
-      >
-        <CardVideo v-if="collection.id === 'people'" src="/videos/previews/Historical_thinkers_against_cosm…_7be85a42.mp4" poster="/images/optimized/video-first-frame-91d65d13a4d6.webp" />
-        <CardVideo v-else-if="collection.id === 'bible'" src="/videos/previews/Manuscript_page_turns_over_a45f134d.mp4" poster="/images/optimized/video-first-frame-5bbf5db1a9ad.webp" />
-        <img v-else :src="optimizedImage(collection.image)" :alt="collection.name" loading="lazy">
-        <span class="encyclopedia-tile-shade" aria-hidden="true" />
-        <span class="encyclopedia-emblem" aria-hidden="true"><component :is="cardTheme(collection.id).icon" :size="19" /></span>
-        <span class="encyclopedia-tile-name">{{ collection.name }} · {{ questions.filter(item => item.subject === collection.id).length }} նյութ <span aria-hidden="true">→</span></span>
-      </NuxtLink>
+
     </div>
 
-    <p v-if="searchQuery.trim() && !filteredSubjects.length && !filteredCollections.length" class="muted mt-8">
+    <p v-if="searchQuery.trim() && !filteredSubjects.length" class="muted mt-8">
       Այդ անունով բաժին չի գտնվել։ Փորձիր, օրինակ՝ «Քիմիա» կամ «Ֆիզիկա»։
     </p>
   </main>

@@ -42,10 +42,14 @@ test('people search covers the full catalog, combines with categories, and reset
     .replaceAll("from 'lucide-vue-next'", `from '${new URL('file://' + require.resolve('lucide-vue-next')).href}'`)
     .replace("from '~/data/content'", `from '${contentUrl}'`)
   code = `import {ref,computed,watch} from '${vueUrl}';const useHead=()=>{};` + code
+  // setup is invoked directly in this unit harness, outside a mounted instance.
+  code = code.replace('withAsyncContext as _withAsyncContext, ', '')
+  code = `const _withAsyncContext=fn=>[fn(),()=>{}];` + code
+  code = `const usePublishedContent=async(_kind,fallback)=>fallback;` + code
   const component = (await import(encodeModule(code))).default
   const scope = effectScope()
   try {
-    const page = scope.run(() => component.setup({}, { expose() {} }))
+    const page = await scope.run(() => component.setup({}, { expose() {} }))
     assert.equal(page.filtered.value.length, armenianPeople.length)
     assert.equal(page.visible.value.length, Math.min(20, armenianPeople.length))
     page.limit.value += page.pageSize

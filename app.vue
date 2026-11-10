@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const siteSettings=await usePublishedContent<{title:string;text:string}>('SETTING',[],{key:'footer'})
 const route = useRoute()
 const config = useRuntimeConfig()
 const requestUrl = useRequestURL()
@@ -24,4 +25,4 @@ useHead(() => ({
 }))
 </script>
 
-<template><div class="min-h-screen factum-app"><ShootingStars/><SiteHeader/><NuxtPage/><footer class="border-t border-slate-800/70 mt-16 py-9 text-center muted text-sm">FACTUM · Գիտելիքը բոլորի համար · Զարգացման տարբերակ</footer></div></template>
+<template><div class="min-h-screen factum-app"><ShootingStars/><SiteHeader/><NuxtPage/><footer class="border-t border-slate-800/70 mt-16 py-9 text-center muted text-sm">{{siteSettings[0]?.text || 'FACTUM · Գիտելիքը բոլորի համար · Զարգացման տարբերակ'}}</footer></div></template>

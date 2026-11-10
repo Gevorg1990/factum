@@ -1,21 +1,3 @@
-import { collectionSubjects, people, subjects } from './data/content'
-
-const prerenderedContentRoutes = [
-  '/globe',
-  '/subjects',
-  ...subjects.map(({ slug }) => `/subjects/${slug}`),
-  ...collectionSubjects.map(({ slug }) => `/subjects/${slug}`),
-  '/people',
-  ...people.map(({ id }) => `/people/${id}`),
-  '/facts',
-  '/history',
-  '/about',
-  '/library',
-  '/more',
-  '/support',
-  '/videos',
-]
-
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   // Production builds must not replace a running dev server's generated aliases.
@@ -28,12 +10,18 @@ export default defineNuxtConfig({
       // Render current source during prerender, rather than serving HTML left by another build preset.
       'prerender:config': (config) => { config.serveStatic = false },
     },
+    externals: { traceInclude: ['node_modules/ffmpeg-static/ffmpeg'] },
     vercel: { functions: { maxDuration: 60 } },
-    prerender: { crawlLinks: false, routes: prerenderedContentRoutes },
+    prerender: { crawlLinks: false, routes: [] },
   },
   routeRules: {
-    '/games/results/**': { headers: { 'cache-control': 'public, max-age=3600, s-maxage=86400' } },
-    '/': { prerender: true },
+    '/**': { prerender: false, headers: { 'cache-control': 'private, no-store' } },
+    '/admin': { prerender: false, headers: { 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex' } },
+    '/profile': { prerender: false, headers: { 'cache-control': 'private, no-store' } },
+    '/login': { prerender: false },
+    '/api/admin/**': { headers: { 'cache-control': 'private, no-store' } },
+    '/api/account/**': { headers: { 'cache-control': 'private, no-store' } },
+    '/api/auth/**': { headers: { 'cache-control': 'private, no-store' } },
     '/data/geography/**': { headers: { 'cache-control': 'public, max-age=86400, s-maxage=604800' } },
     '/vendor/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/images/geography/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },

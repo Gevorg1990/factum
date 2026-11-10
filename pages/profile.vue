@@ -9,6 +9,8 @@ import { bibleBooks } from '~/data/bible'
 import { disintegrate, type Disintegration } from '~/utils/disintegrate'
 import { findMillionBookmark } from '~/utils/millionBookmarks'
 import { findGameBookmark } from '~/utils/gameBookmarks'
+// Separate aliases keep setup metadata available when Nuxt tree-shakes ClientOnly template icons.
+import { BookOpen as EncyclopediaSectionIcon, Gamepad2 as GameSectionIcon, Bookmark as SavedSectionIcon } from 'lucide-vue-next'
 import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Gamepad2, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
 
 const { saved, removeSaved } = useProgress()
@@ -95,13 +97,13 @@ onBeforeUnmount(() => {
   window.removeEventListener('focus', refreshGameRecords)
 })
 const sectionDefinitions = [
-  { id: 'encyclopedia', title: 'Հանրագիտարան', icon: BookOpen, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
-  { id: 'games', title: 'Խաղեր', icon: Gamepad2, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
+  { id: 'encyclopedia', title: 'Հանրագիտարան', icon: EncyclopediaSectionIcon, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
+  { id: 'games', title: 'Խաղեր', icon: GameSectionIcon, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
   { id: 'bible', title: 'Աստվածաշունչ', icon: ScrollText, description: 'Պահպանված գրքեր և գլուխներ', to: '/bible' },
   { id: 'facts', title: 'Հետաքրքիր փաստեր', icon: Sparkles, description: 'Քեզ հետաքրքրած փաստերն ու բացահայտումները', to: '/facts' },
   { id: 'people', title: 'Նշանավոր մարդիկ', icon: Users, description: 'Կենսագրություններ և ստեղծագործություններ', to: '/people' },
   { id: 'history', title: 'Հայոց պատմություն', icon: Landmark, description: 'Պատմական իրադարձություններ', to: '/history' },
-  { id: 'other', title: 'Այլ նյութեր', icon: Bookmark, description: 'Մյուս պահպանված նյութերը', to: '/subjects' },
+  { id: 'other', title: 'Այլ նյութեր', icon: SavedSectionIcon, description: 'Մյուս պահպանված նյութերը', to: '/subjects' },
 ] as const
 
 function describeEntry(id: string): SavedEntry {
@@ -164,7 +166,9 @@ function describeEntry(id: string): SavedEntry {
   return { id, title: id, to: '/subjects', kind: 'Այլ նյութ', category: 'other' }
 }
 
-const savedEntries = computed(() => [...new Set(saved.value)].map(describeEntry))
+const managedSaved=ref<SavedEntry[]>([])
+watch(saved,async ids=>{try{const output:SavedEntry[]=[];for(let i=0;i<ids.length;i+=100){const response=await $fetch<{items:SavedEntry[]}>('/api/content/saved',{method:'POST',body:{keys:ids.slice(i,i+100)}});output.push(...response.items)}managedSaved.value=output}catch{}},{immediate:true})
+const savedEntries = computed(() => [...new Set(saved.value)].map(id=>managedSaved.value.find(item=>item.id===id)||describeEntry(id)))
 const savedCount = computed(() => savedEntries.value.length + gameRecords.value.length)
 const sections = computed(() => sectionDefinitions.map(section => {
   const items = savedEntries.value.filter(item => item.category === section.id)
@@ -177,7 +181,14 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
 
 <template>
   <main class="shell py-10 profile-page">
-    <header class="profile-heading"><span class="gold profile-eyebrow">ՔՈ ԱՆՁՆԱԿԱՆ ԳԻՏԵԼԻՔՆԵՐԻ ՀԱՎԱՔԱԾՈՒՆ</span><h1 class="heading">Իմ FACTUM-ը</h1><p class="muted">{{savedCount}} պահպանված նյութ։ Ընտրիր բաժինը և շարունակիր բացահայտել։</p></header>
+    <ClientOnly>
+    <AccountPanel />
+    <header class="profile-heading"><span class="gold profile-eyebrow">ՔՈ ԱՆՁՆԱԿԱՆ ԳԻՏԵԼԻՔՆԵՐԻ ՀԱՎԱՔԱԾՈՒՆ</span><h2 class="heading">Իմ հավաքածուն</h2><p class="muted">{{savedCount}} պահպանված նյութ։ Ընտրիր բաժինը և շարունակիր բացահայտել։</p></header>
+    <div class="profile-summary" aria-label="Քո հավաքածուի ամփոփումը">
+      <div><span class="profile-summary-icon"><Bookmark :size="19" /></span><p><strong>{{savedEntries.length}}</strong><span>պահպանված նյութ</span></p></div>
+      <div><span class="profile-summary-icon"><Trophy :size="19" /></span><p><strong>{{gameRecords.length}}</strong><span>խաղային ռեկորդ</span></p></div>
+      <div><span class="profile-summary-icon"><BookOpen :size="19" /></span><p><strong>{{sections.filter(section=>section.count>0).length}}</strong><span>բացահայտված բաժին</span></p></div>
+    </div>
     <nav class="profile-categories" aria-label="Պահպանված նյութերի բաժիններ"><button :aria-pressed="activeCategory === 'all'" :class="{'is-active':activeCategory === 'all'}" @click="activeCategory='all'"><Bookmark :size="17" /> Բոլորը <span>{{savedCount}}</span></button><button v-for="section in categoryTabs" :key="section.id" :aria-pressed="activeCategory === section.id" :class="{'is-active':activeCategory === section.id}" @click="activeCategory=section.id"><component :is="section.icon" :size="17" />{{section.title}}<span>{{section.count}}</span></button></nav>
     <section v-for="section in shownSections" :key="section.id" class="profile-section" :aria-labelledby="`saved-section-${section.id}`">
       <header class="profile-section-heading"><div class="profile-section-icon"><component :is="section.icon" :size="23" /></div><div><h2 :id="`saved-section-${section.id}`">{{section.title}} <span>{{section.count}}</span></h2><p class="muted">{{section.description}}</p></div></header>
@@ -211,7 +222,9 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
       <p>{{ removalMessage }}</p>
       <button v-if="removedGameRecord !== null" type="button" class="btn-secondary" @click="undoGameRemoval">Վերականգնել արդյունքը</button>
     </div>
-    <p class="profile-storage-note muted">Հյուրի ռեժիմ․ տվյալները պահվում են այս բրաուզերում։ Սարքերի համաժամեցում դեռ միացված չէ։</p>
+    <p class="profile-storage-note muted">Մուտք գործիր նույն հաշվով այլ սարքից՝ քո պահպանված նյութերն ու առաջընթացը շարունակելու համար։</p>
+    <template #fallback><section class="panel p-6" aria-busy="true"><p class="muted">Քո պահպանված նյութերը բեռնվում են…</p></section></template>
+    </ClientOnly>
   </main>
 </template>
 
@@ -259,4 +272,28 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
 @media(max-width:700px) { .profile-entry-grid { grid-template-columns: 1fr; }.profile-categories { gap: 8px; }.profile-categories button { padding: 10px 12px; font-size: 11px; }.profile-entry { padding: 19px; } }
 :global(html.factum-light .profile-categories button.is-active) { color: #8b6027; border-color: #8b6027; }
 :global(html.factum-light .profile-answer > span) { color: #24713e; }
+
+.profile-page { padding-top: 36px; padding-bottom: 70px; }
+.profile-heading { margin-bottom: 24px; }
+.profile-heading .heading { font-size: clamp(25px, 3vw, 34px); letter-spacing: -.7px; }
+.profile-heading .profile-eyebrow { font-size: 9px; letter-spacing: 1.4px; }
+.profile-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-bottom: 28px; }
+.profile-summary > div { display: flex; align-items: center; gap: 15px; padding: 20px 22px; border: 1px solid #9aaec222; border-radius: 15px; background: #ffffff02; }
+.profile-summary-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; color: #d8bc85; background: #d8bc850a; flex-shrink: 0; }
+.profile-summary p { display: flex; flex-direction: column; gap: 5px; }
+.profile-summary strong { font-size: 25px; line-height: 1.2; font-weight: 650; font-variant-numeric: tabular-nums; }
+.profile-summary p > span { font-size: 10px; color: #95a3b7; line-height: 1.6; }
+.profile-categories { padding-bottom: 22px; border-bottom: 1px solid #9aaec21c; gap: 8px; margin-bottom: 28px; }
+.profile-categories button { border-radius: 10px; border-color: transparent; color: #a5b0c2; transition: background .15s, color .15s; }
+.profile-categories button:hover { background: #ffffff05; color: #e1c593; }
+.profile-categories button.is-active { background: #dfc38f0b; border-color: #dfc38f3d; }
+.profile-entry { border: 1px solid #9aaec228; border-radius: 16px; background: linear-gradient(140deg,#ffffff03,#ffffff01); transition: border-color .15s; }
+.profile-entry:hover { border-color: #d8bc8544; }
+.profile-entry-title { min-height: 57px; font-size: 14px; }
+.profile-section-heading h2 { font-size: 19px; }
+.profile-section-heading p { line-height: 1.8; }
+.profile-empty { border: 1px dashed #d8bc8538; border-radius: 20px; padding: 50px 25px; background: radial-gradient(ellipse at top,#d8bc8507,transparent 70%); }
+.profile-empty > svg { box-sizing: content-box; padding: 17px; border: 1px solid #d8bc8528; border-radius: 19px; background: #d8bc8506; }
+.profile-storage-note { text-align: center; border-top: 1px solid #9aaec21c; padding-top: 25px; }
+@media(max-width:700px) { .profile-page { padding-top: 22px; }.profile-summary { gap: 8px; }.profile-summary > div { flex-direction: column; align-items: flex-start; gap: 12px; padding: 15px 12px; }.profile-summary-icon { width: 32px; height: 32px; border-radius: 9px; }.profile-summary strong { font-size: 23px; }.profile-summary p > span { font-size: 9px; }.profile-categories { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 15px; scrollbar-width: thin; }.profile-categories button { flex-shrink: 0; }.profile-section-heading h2 { font-size: 17px; } }
 </style>

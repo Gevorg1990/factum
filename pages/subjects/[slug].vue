@@ -3,9 +3,11 @@ import { subjects, questions, collectionSubjects } from '~/data/content'
 
 const route = useRoute()
 const slug = String(route.params.slug)
-const subject = [...subjects, ...collectionSubjects].find((item) => item.slug === slug)
+const categories = await usePublishedContent('CATEGORY', [...subjects,...collectionSubjects], {key:slug})
+const subject = categories[0]
+const customSubjectImage = (subject as typeof subject & {image?:string})?.image
 if (!subject) throw createError({ statusCode: 404, statusMessage: 'Բաժինը չի գտնվել' })
-const items = questions.filter((question) => question.subject === slug)
+const items = await usePublishedContent('ARTICLE', questions.filter((question) => question.subject === slug), {subject:slug})
 const { read, saved, markRead, toggleSaved } = useProgress()
 
 const subjectImages: Record<string, string> = {
@@ -82,7 +84,7 @@ function toggleQuestion(id: string) {
     <NuxtLink to="/subjects" class="gold">← Բոլոր առարկաները</NuxtLink>
 
     <div class="encyclopedia-subject-hero mt-5">
-      <img :src="subjectImages[slug] || '/images/space-art.jpg'" :alt="subject?.name || 'Առարկա'">
+      <img :src="customSubjectImage || subjectImages[slug] || '/images/space-art.jpg'" :alt="subject?.name || 'Առարկա'">
       <div class="encyclopedia-subject-hero-content">
         <p class="encyclopedia-eyebrow">FACTUM · ՀԱՆՐԱԳԻՏԱՐԱՆ</p>
         <h1 class="heading">{{ subject?.name || 'Առարկա' }}</h1>
@@ -150,6 +152,7 @@ function toggleQuestion(id: string) {
     <p v-if="!visible.length" class="muted">
       Այս որոնմամբ կամ զտիչով նյութեր չեն գտնվել։ Փորձիր փոխել որոնումը կամ ընտրել «Բոլորը»։
     </p>
+  <CatalogMore :items="items" kind="ARTICLE" :subject="slug" />
   </main>
 </template>
 

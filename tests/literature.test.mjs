@@ -44,9 +44,9 @@ test('the literature page shows ten selected articles and searches their expande
  const require=createRequire(import.meta.url),vue=require('vue'),ts=require('typescript'),{parse,compileScript}=require('@vue/compiler-sfc')
  const descriptor=parse(readFileSync(new URL('pages/subjects/[slug].vue',root),'utf8')).descriptor
  const js=ts.transpileModule(compileScript(descriptor,{id:'literature-test'}).content,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
- const saved=vue.ref([]),read=vue.ref([]),scope={...vue,exports:{},useRoute:()=>({params:{slug:'literature'}}),useProgress:()=>({read,saved,markRead:id=>{read.value=[...read.value,id]},toggleSaved(){}}),require:name=>name==='vue'?vue:content}
+ const saved=vue.ref([]),read=vue.ref([]),scope={...vue,usePublishedContent:async(_kind,fallback,options)=>options?.key?fallback.filter(x=>x.slug===options.key):fallback,exports:{},useRoute:()=>({params:{slug:'literature'}}),useProgress:()=>({read,saved,markRead:id=>{read.value=[...read.value,id]},toggleSaved(){}}),require:name=>name==='vue'?{...vue,withAsyncContext:fn=>[fn(),()=>{}]}:content}
  runInNewContext(js,scope)
- const page=scope.exports.default.setup({}, {expose(){}})
+ const page=await scope.exports.default.setup({}, {expose(){}})
  assert.equal(page.displayed.value.length,10)
  page.limit.value+=20;assert.equal(page.displayed.value.length,10)
  page.limit.value+=20;assert.equal(page.displayed.value.length,10)
@@ -63,7 +63,7 @@ test('article routes load the archive only for old bookmarks and keep new explan
  source=source.replace("import('~/data/encyclopedia/literatureLegacy')",'loadLegacy()').replace("import('~/data/encyclopedia/healthLegacy')",'loadHealthLegacy()')
  for(const id of ['literature-foundation-a-1-a','literature-intro-a-11-b']){
   let requests=0
-  const scope={...vue,...content,useRoute:()=>({params:{id},hash:'#saved-article'}),useProgress:()=>({saved:vue.ref([]),markRead(){},toggleSaved(){}}),useHead(){},useSavedScroll(){},onMounted(){},loadLegacy:async()=>{requests++;return{legacyLiteratureQuestions}}}
+  const scope={...vue,...content,usePublishedContent:async(_kind,fallback)=>fallback,useRoute:()=>({params:{id},hash:'#saved-article'}),useProgress:()=>({saved:vue.ref([]),markRead(){},toggleSaved(){}}),useHead(){},useSavedScroll(){},onMounted(){},loadLegacy:async()=>{requests++;return{legacyLiteratureQuestions}}}
   const js=ts.transpileModule(`globalThis.result=(async()=>{${source};return question})()`,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText
   runInNewContext(js,scope);const question=await scope.result
   assert.equal(question.id,id)

@@ -20,14 +20,12 @@ export default defineEventHandler(async event=>{
  const terms=getSearchTerms(query)
 
  const local=searchRecords(records,terms)
- const config=useRuntimeConfig(event)
- let cms:typeof records=[]
- if(config.public.directusUrl){
-  try{
-   const base=String(config.public.directusUrl).replace(/\/$/,'')
-   const res=await $fetch<{data:{id:string|number;title:string;summary?:string}[]}>(base+'/items/articles',{query:{fields:'id,title,summary',filter:{status:{_eq:'published'}},limit:100},headers:config.directusToken?{Authorization:'Bearer '+config.directusToken}:{} ,timeout:3500})
-   cms=res.data.map(x=>({title:x.title,description:x.summary||'',url:'/search?q='+encodeURIComponent(x.title),kind:'CMS նյութ'}))
-  }catch{ /* Local results remain available when CMS is offline. */ }
+ const {databaseEnabled,db}=await import('../utils/db')
+ if(databaseEnabled()) {
+  const rows=await db.$queryRaw<any[]>`SELECT kind, key, "publishedData" AS data FROM "Content" WHERE "publishedData" IS NOT NULL AND kind IN ('ARTICLE','PERSON','FACT','EVENT','CATEGORY','PAGE','VIDEO') AND to_tsvector('simple', "publishedData"::text) @@ plainto_tsquery('simple', ${query}) LIMIT 25`
+  const urls:Record<string,string>={ARTICLE:'/articles/',PERSON:'/people/',FACT:'/facts?fact=',EVENT:'/history?event=',CATEGORY:'/subjects/',PAGE:'/content/',VIDEO:'/videos?video='}
+  return {query,items:rows.map(row=>({title:row.data.title||row.data.name,description:row.data.answer||row.data.bio||row.data.text||'',url:urls[row.kind]+encodeURIComponent(row.key),kind:'FACTUM'}))}
  }
+ let cms:typeof records=[]
  return {query,items:[...local,...searchRecords(cms,terms,25)].slice(0,25)}
 })

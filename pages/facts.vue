@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { facts, factCategories } from '~/data/facts'
+import { facts as legacyFacts, factCategories } from '~/data/facts'
 import type { FactCategoryId } from '~/data/facts'
 import { Search, Sparkles } from 'lucide-vue-next'
 
+const facts = await usePublishedContent('FACT', legacyFacts)
 const { saved, toggleSaved } = useProgress()
 const route = useRoute()
 const nuxtApp = useNuxtApp()
@@ -22,19 +23,19 @@ const category = ref<FactCategoryId | 'all'>('all')
 const pageSize = 24
 const limit = ref(pageSize)
 const categoryById = Object.fromEntries(factCategories.map(item => [item.id, item]))
-const categoryCounts = Object.fromEntries(factCategories.map(item => [item.id, facts.filter(fact => fact.category === item.id).length]))
+const categoryCounts = computed(() => Object.fromEntries(factCategories.map(item => [item.id, facts.filter(fact => fact.category === item.id).length])))
 // Interleave topics so each group contributes one fact per round.
 // A stable order keeps SSR, pagination and saved destinations consistent.
-const factGroups = factCategories.map(item => facts.filter(fact => fact.category === item.id))
-const mixedFacts = Array.from({ length: Math.max(0, ...factGroups.map(group => group.length)) }, (_, index) =>
-  factGroups.flatMap(group => group[index] ? [group[index]!] : []),
-).flat()
+const factGroups = computed(() => factCategories.map(item => facts.filter(fact => fact.category === item.id)))
+const mixedFacts = computed(() => Array.from({ length: Math.max(0, ...factGroups.value.map(group => group.length)) }, (_, index) =>
+  factGroups.value.flatMap(group => group[index] ? [group[index]!] : []),
+).flat())
 const normalize = (value: string) => value.normalize('NFC').toLocaleLowerCase('hy-AM').trim()
 const filteredFacts = computed(() => {
   const term = normalize(search.value)
-  return mixedFacts.filter(fact =>
+  return mixedFacts.value.filter(fact =>
     (category.value === 'all' || fact.category === category.value) &&
-    (!term || normalize(`${fact.title} ${fact.text} ${categoryById[fact.category].name}`).includes(term)),
+    (!term || normalize(`${fact.title} ${fact.text} ${categoryById[fact.category]?.name || fact.category}`).includes(term)),
   )
 })
 const matchingCategories = computed(() => normalize(search.value)
@@ -71,7 +72,7 @@ useSavedScroll(
       lastLinkedFactId = id
     }
     resetFilters()
-    const position = mixedFacts.findIndex(item => item.id === route.query.fact)
+    const position = mixedFacts.value.findIndex(item => item.id === route.query.fact)
     limit.value = Math.max(pageSize, Math.ceil((position + 1) / pageSize) * pageSize)
   },
 )
@@ -99,7 +100,7 @@ useSavedScroll(
     <div id="facts-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       <article v-for="fact in visibleFacts" :id="`fact-${fact.id}`" :key="fact.id" class="panel overflow-hidden saved-destination flex flex-col" :class="{ 'fact-selected': selectedFactId === fact.id }" tabindex="-1">
         <div class="p-6 flex flex-col flex-1">
-          <p class="gold text-sm facts-category-label"><span class="facts-topic-icon facts-topic-icon-card" aria-hidden="true"><span class="facts-topic-glyph">{{ categoryById[fact.category].symbol }}</span></span> {{ categoryById[fact.category].name }}</p>
+          <p class="gold text-sm facts-category-label"><span class="facts-topic-icon facts-topic-icon-card" aria-hidden="true"><span class="facts-topic-glyph">{{ categoryById[fact.category].symbol }}</span></span> {{ categoryById[fact.category]?.name || fact.category }}</p>
           <h2 class="text-xl font-bold mt-3"><template v-for="(part, index) in highlightedParts(fact.title)" :key="index"><mark v-if="part.match">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></h2>
           <p class="muted mt-4 mb-6 facts-text"><template v-for="(part, index) in highlightedParts(fact.text)" :key="index"><mark v-if="part.match">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></p>
           <div class="mt-auto">
@@ -116,6 +117,7 @@ useSavedScroll(
     <div v-if="visibleFacts.length < filteredFacts.length" class="facts-load-more">
       <button type="button" class="btn-secondary" aria-controls="facts-list" @click="limit += pageSize">Բեռնել ավելին · {{ Math.min(pageSize, filteredFacts.length - visibleFacts.length) }} փաստ</button>
     </div>
+  <CatalogMore :items="facts" kind="FACT" />
   </main>
 </template>
 

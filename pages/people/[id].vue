@@ -3,10 +3,13 @@ import { people } from '~/data/content'
 import { workDetails } from '~/data/peopleWorks'
 
 const route = useRoute()
-const person = computed(() => people.find(item => item.id === route.params.id))
+const publishedPeople = await usePublishedContent('PERSON', people.filter(item => item.id === route.params.id), {key:String(route.params.id)})
+const person = computed(() => publishedPeople[0])
+if (!person.value) throw createError({statusCode:404,statusMessage:'Անձը չի գտնվել'})
 const { toggleSaved, saved } = useProgress()
 const selectedWork = ref<string | null>(null)
-const details = computed(() => person.value ? workDetails[person.value.id] || {} : {})
+const publishedWorks = await usePublishedContent<any>('WORK', [], {subject:String(route.params.id)})
+const details = computed(() => publishedWorks.length ? Object.fromEntries(publishedWorks.map(work => [work.title,work])) : person.value ? workDetails[person.value.id] || {} : {})
 const workGroups = computed(() => {
   const groups: { title: string; items: { work: string; index: number }[] }[] = []
   for (const [index, work] of (person.value?.works || []).entries()) {

@@ -10,6 +10,7 @@ export interface Person {
   isArmenian?: boolean
   category?: PersonCategory
   source?: { name: string; url: string }
+  portrait?: string
   portraitTitle?: string
   portraitLanguage?: 'hy' | 'en'
   biographySections?: { title: string; text: string }[]

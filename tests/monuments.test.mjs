@@ -19,7 +19,7 @@ let code = compileScript(descriptor, { id: 'monuments-test', inlineTemplate: tru
   .replaceAll('from "vue"', `from '${vueUrl}'`)
   .replaceAll("from 'lucide-vue-next'", `from '${new URL('file://' + require.resolve('lucide-vue-next')).href}'`)
   .replace("from '~/data/personMonuments'", `from '${monumentsUrl}'`)
-code = `import {ref,computed,watch} from '${vueUrl}';` + code
+code = `const usePublishedContent=async(_kind,fallback)=>fallback;import {ref,computed,watch} from '${vueUrl}';` + code
 const component = (await import('data:text/javascript;base64,' + Buffer.from(ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText).toString('base64'))).default
 
 test('each monument identifies a real profile, site, opening year and credited photograph', () => {

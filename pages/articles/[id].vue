@@ -12,6 +12,9 @@ if (!question && typeof route.params.id === 'string' && /^health-(?:heart|lungs|
   const { legacyHealthQuestions } = await import('~/data/encyclopedia/healthLegacy')
   question = legacyHealthQuestions.find(item => item.id === route.params.id)
 }
+const published = await usePublishedContent('ARTICLE', question ? [question] : [], { key: String(route.params.id) })
+question = published[0]
+if (!question) throw createError({ statusCode: 404, statusMessage: 'Նյութը չի գտնվել' })
 const subject = [...subjects, ...collectionSubjects].find(item => item.slug === question?.subject)
 const isAtomArticle = computed(() => question?.id === 'c1')
 const { saved, markRead, toggleSaved } = useProgress()
@@ -42,10 +45,11 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
           </p>
         </div>
         <img
-          v-if="isAtomArticle"
+          v-if="question.image || isAtomArticle"
           class="atom-article-hero"
-          src="/images/physics-art.jpg"
-          alt="Ատոմի լուսարձակող գիտական գեղարվեստական պատկեր"
+          :src="question.image || '/images/physics-art.jpg'"
+          :alt="question.image ? question.title : 'Ատոմի լուսարձակող գիտական գեղարվեստական պատկեր'"
+          loading="lazy"
         >
       </div>
 

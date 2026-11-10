@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { timeline } from '~/data/content'
-import { historyDetails } from '~/data/historyDetails'
+import { timeline as legacyTimeline } from '~/data/content'
+import { historyDetails as legacyHistoryDetails } from '~/data/historyDetails'
 
+const timeline = await usePublishedContent('EVENT', legacyTimeline)
+const historyDetails = computed(() => Object.fromEntries(timeline.map(event => [event.year, (event as typeof event & {details?:unknown}).details || legacyHistoryDetails[event.year]])) as typeof legacyHistoryDetails)
 const route = useRoute()
 const nuxtApp = useNuxtApp()
 const era = ref('Բոլորը')
@@ -10,8 +12,8 @@ function yearOrder(value: string) {
   const number = Number(value.match(/\d+/)?.[0] || 0)
   return value.startsWith('մ.թ.ա.') ? -number : number
 }
-const sortedTimeline = [...timeline].sort((a, b) => yearOrder(a.year) - yearOrder(b.year))
-const shown = computed(() => sortedTimeline.filter(item => era.value === 'Բոլորը' || item.era === era.value))
+const sortedTimeline = computed(() => [...timeline].sort((a, b) => yearOrder(a.year) - yearOrder(b.year)))
+const shown = computed(() => sortedTimeline.value.filter(item => era.value === 'Բոլորը' || item.era === era.value))
 const expanded = ref<string[]>([])
 
 function eventId(year: string) {
@@ -87,6 +89,7 @@ onBeforeUnmount(() => {
       </article>
     </div>
     <p class="muted text-xs mt-6">Պատմական թվագրությունները որոշ դեպքերում ավանդական կամ մոտավոր են։</p>
+  <CatalogMore :items="timeline" kind="EVENT" />
   </main>
 </template>
 

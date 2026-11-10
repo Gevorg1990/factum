@@ -8,10 +8,10 @@
   "scripts": {
     "voice:prepare": "node scripts/prepare-biography-audio.mjs",
     "test:atoms": "node --test tests/atom-model.test.mjs tests/atom-explorer.test.mjs tests/atom-scene.test.mjs tests/atom-orbitals.test.mjs tests/atom-sampler.test.mjs tests/periodic-table-lab.test.mjs tests/atom-lessons.test.mjs tests/atom-select.test.mjs tests/element-appearance.test.mjs",
-    "test:speech": "node --test tests/biography-speech.test.mjs tests/game-speech.test.mjs tests/game-speech-player.test.mjs tests/voice-answers.test.mjs tests/game-feedback-audio.test.mjs tests/biography-player.test.mjs",
+    "test:speech": "node --test tests/biography-database.test.mjs tests/biography-speech.test.mjs tests/game-speech.test.mjs tests/game-speech-player.test.mjs tests/voice-answers.test.mjs tests/game-feedback-audio.test.mjs tests/biography-player.test.mjs",
     "dev": "nuxt dev",
     "build": "nuxt build",
-    "build:vercel": "NITRO_PRESET=vercel nuxt build",
+    "build:vercel": "node scripts/check-deployment-env.mjs && prisma generate && NITRO_PRESET=vercel nuxt build",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
     "test:bible-reader": "node --test tests/bible-reader.test.mjs",
@@ -22,22 +22,42 @@
     "test:monuments": "node --test tests/monuments.test.mjs",
     "test:earth": "node --test tests/earth-interior.test.mjs tests/earth-interface.test.mjs tests/earth-scene.test.mjs tests/earth-materials.test.mjs tests/earth-surface.test.mjs",
     "test:geography": "node --test tests/geography.test.mjs tests/geography-interface.test.mjs tests/geography-search.test.mjs",
-    "test:content": "node --test tests/literature.test.mjs tests/health-content.test.mjs tests/finance-content.test.mjs tests/profile-game-records.test.mjs"
+    "test:content": "node --test tests/literature.test.mjs tests/health-content.test.mjs tests/finance-content.test.mjs tests/profile-game-records.test.mjs",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "node --env-file-if-exists=.env --import tsx scripts/seed.ts",
+    "db:admin": "node --env-file-if-exists=.env --import tsx scripts/create-admin.ts",
+    "test:video": "node --import tsx --test tests/video-preview.test.ts",
+    "test:cms": "node --import tsx --test tests/cms.test.ts tests/cms-editor.test.ts tests/million-stages.test.ts",
+    "db:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup.ts",
+    "test:cms:integration": "node --env-file-if-exists=.env --import tsx scripts/test-cms-integration.ts"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@pinia/nuxt": "^0.11.0",
+    "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^2.9.0",
+    "ffmpeg-static": "^5.3.0",
     "lucide-vue-next": "^0.468.0",
     "nuxt": "^3.17.0",
     "pinia": "^3.0.0",
+    "sharp": "^0.35.5",
     "three": "^0.187.0",
     "vue": "^3.5.0",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
     "@types/three": "^0.187.0",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.8.0",
     "vue-tsc": "^2.2.0"
+  },
+  "overrides": {
+    "zod": "$zod",
+    "deepmerge-ts": "^8.0.0"
   }
 }

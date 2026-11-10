@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { saveGameResult } from '~/utils/gameRecords'
+import { millionSlotPairs } from '~/shared/millionStages'
 import { millionQuestions, type MillionQuestion, millionTiers, createMillionRound, type MillionTier } from '~/utils/millionQuestionPool'
 import { difficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
 
+const roundLoading=ref(false),roundError=ref('')
 const route = useRoute()
 const router = useRouter()
 const mode = computed(() => String(route.params.mode))
@@ -51,11 +53,17 @@ function saveMillionProgress(level: GameDifficulty): number {
   try { localStorage.setItem(millionProgressKey, String(unlocked)) } catch { /* Session can continue without storage. */ }
   return unlocked
 }
-function newRound() {
+async function newRound() {
   if (!selectedMillionMode.value) return
-  const round = createMillionRound(selectedMillionMode.value)
-  gameQuestions.value = round.questions
-  replacementQuestions.value = round.replacements
+  roundLoading.value=true;roundError.value=''
+  try {
+    const result = await $fetch<{items:(MillionQuestion & {slot?:number;variant?:string;stage?:string})[]}>('/api/games-round',{query:{mode:'million',difficulty:selectedMillionMode.value}})
+    let pairs
+    try{pairs=millionSlotPairs(result.items)}catch(error){roundError.value=error instanceof Error?error.message:'Փուլերի հարցերը բավարար չեն';return}
+    const round=createMillionRound(selectedMillionMode.value,Math.random,pairs)
+    gameQuestions.value = round.questions
+    replacementQuestions.value = round.replacements
+  } catch {roundError.value='Հարցերը չհաջողվեց բեռնել․ փորձեք կրկին'} finally {roundLoading.value=false}
 }
 function resetRound() {
   cancelNext(); index.value = 0; selected.value = null; score.value = 0; hintVisible.value = false
@@ -136,6 +144,7 @@ useHead({ title: `${title.value} — FACTUM` })
     </button>
     <p v-if="isMillion" class="muted mt-2 mb-5">Ընտրիր ռեժիմը․ յուրաքանչյուրն ունի 15 հարց՝ բարդացող երեք հնգյակով։ Սխալ պատասխանը ավարտում է ընթացիկ խաղը։</p>
     <GameDifficultyPicker v-if="isMillion && !selectedMillionMode" game="million" :unlocked-index="unlockedMillionIndex" embedded @select="startMillionMode" />
+<p v-else-if="roundLoading" class="panel" role="status">Հարցերը բեռնվում են…</p><div v-else-if="roundError" class="panel" role="alert">{{roundError}} <button class="gold" @click="newRound">Կրկնել</button></div>
     <template v-else>
     <GameDifficultyProgress v-if="isMillion" :current="currentDifficulty" :unlocked-index="unlockedMillionIndex" />
 

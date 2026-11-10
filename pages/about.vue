@@ -5,6 +5,6 @@ useHead({ title: 'Մեր մասին · FACTUM' })
 <template>
   <main class="shell py-10">
     <h1 class="heading">Մեր մասին</h1>
-    <!-- Բովանդակությունը կավելացվի, երբ FACTUM-ի մասին տեքստը պատրաստ լինի։ -->
+    <ManagedPage page-key="about" />
   </main>
 </template>

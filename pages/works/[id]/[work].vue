@@ -3,10 +3,12 @@ import { people } from '~/data/content'
 import { workDetails } from '~/data/peopleWorks'
 
 const route = useRoute()
-const person = computed(() => people.find(item => item.id === route.params.id))
+const publishedPeople=await usePublishedContent('PERSON',people.filter(item=>item.id===route.params.id),{key:String(route.params.id)})
+const person = computed(() => publishedPeople[0])
+const publishedWorks=await usePublishedContent<any>('WORK',[],{key:`${route.params.id}:${route.params.work}`})
 const workIndex = computed(() => Number(route.params.work))
 const work = computed(() => Number.isInteger(workIndex.value) && workIndex.value >= 0 ? person.value?.works[workIndex.value] : undefined)
-const info = computed(() => person.value && work.value ? workDetails[person.value.id]?.[work.value] : undefined)
+const info = computed(() => publishedWorks[0] || (person.value && work.value ? workDetails[person.value.id]?.[work.value] : undefined))
 const type = computed(() => {
   if (info.value?.type) return info.value.type
   const category = person.value?.category
