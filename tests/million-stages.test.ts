@@ -1,11 +1,11 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {millionStagePairs,millionStages} from '../shared/millionStages'
-test('a round reserves five questions and five distinct swaps from each selected phase',()=>{
- const questions=millionStages.flatMap(stage=>Array.from({length:10},(_,id)=>({stage:stage.value,id:stage.value+id})))
- const pairs=millionStagePairs([...questions].reverse())
+import {millionSlotPairs,millionSlots} from '../shared/millionStages'
+test('each numbered question and its swap come from their own bank even with forty candidates per bank',()=>{
+ const questions=millionSlots.flatMap(({value:slot})=>Array.from({length:40},(_,id)=>({slot,id:slot+'-'+id})))
+ const pairs=millionSlotPairs([...questions].reverse())
  assert.equal(pairs.length,15)
  assert.equal(new Set(pairs.flatMap(pair=>[pair.primary.id,pair.replacement.id])).size,30)
- for(let i=0;i<15;i++){assert.equal(pairs[i]!.primary.stage,millionStages[Math.floor(i/5)]!.value);assert.equal(pairs[i]!.replacement.stage,pairs[i]!.primary.stage)}
- assert.throws(()=>millionStagePairs(questions.filter(row=>row.id!=='middle0')),/6–10/)
+ for(let slot=0;slot<15;slot++){assert.equal(pairs[slot]!.primary.slot,slot);assert.equal(pairs[slot]!.replacement.slot,slot)}
+ assert.throws(()=>millionSlotPairs(questions.filter(row=>row.slot!==7||row.id==='7-0')),/8-րդ/)
 })

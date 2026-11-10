@@ -4,7 +4,7 @@ import { hashPassword } from '../shared/password'
 const db=new PrismaClient(),base=process.env.CMS_TEST_URL||'http://localhost:3011'
 const suffix=Date.now().toString(),key='integration-'+suffix
 const users:string[]=[]
-let contentId='',mediaId='',authenticatedCookie:string|undefined
+let contentId='',gameContentId='',mediaId='',authenticatedCookie:string|undefined
 async function request(path:string,method='GET',body?:unknown,cookie?:string|null,origin=base){const effectiveCookie=cookie===null?undefined:cookie||authenticatedCookie;const res=await fetch(base+path,{method,headers:{...(body?{'content-type':'application/json'}:{}),...(effectiveCookie?{cookie:effectiveCookie}:{}),...(method!=='GET'?{origin}:{})},body:body?JSON.stringify(body):undefined});return {status:res.status,data:await res.json(),cookie:res.headers.get('set-cookie')?.split(';')[0]}}
 try{
  for(const path of ['/','/facts','/people','/profile','/admin']){const res=await fetch(base+path,{redirect:'manual'});assert.equal(res.status,302,path);assert.ok(res.headers.get('location')?.startsWith('/login'),path);assert.match(res.headers.get('cache-control')||'',/private/)}
@@ -31,6 +31,14 @@ try{
  const options=await request('/api/admin/options?kind=CATEGORY');assert.equal(options.status,200);assert.ok(options.data.items.length<=25);assert.ok(options.data.items.some((x:any)=>x.key==='physics'))
  assert.equal((await request('/api/admin/options?kind=FACT_CATEGORY')).data.items.length,20)
  assert.equal((await request('/api/admin/options?kind=CATEGORY','GET',undefined,other.cookie)).status,403)
+ const banks=await request('/api/admin/million-banks?difficulty=easy');assert.equal(banks.status,200);assert.equal(banks.data.items.length,15);assert.ok(banks.data.items.every((bank:any)=>bank.published>=2))
+ assert.equal((await request('/api/admin/million-banks','GET',undefined,other.cookie)).status,403)
+ for(let slot=0;slot<15;slot++){const bank=await request('/api/admin/content?kind=GAME&mode=million&difficulty=easy&slot='+slot);assert.equal(bank.status,200);assert.ok(bank.data.total>=2);const record=await db.content.findUniqueOrThrow({where:{id:bank.data.items[0].id}});assert.equal((record.data as any).slot,slot)}
+ const gameKey='bank-'+suffix
+ const game=await request('/api/admin/content','POST',{kind:'GAME',key:gameKey,title:'Փորձնական հարցաբանկի հարց '+suffix,data:{mode:'million',difficulty:'medium',slot:7,question:'Փորձնական հարցաբանկի հարց '+suffix,answers:['Ա','Բ'],correct:0,explanation:'Ստուգում'},action:'publish'},registered.cookie)
+ assert.equal(game.status,200);gameContentId=game.data.id;assert.equal(game.data.data.slot,7)
+ const ownBank=await request('/api/admin/content?kind=GAME&mode=million&difficulty=medium&slot=7&q='+gameKey);assert.equal(ownBank.data.total,1)
+ const wrongBank=await request('/api/admin/content?kind=GAME&mode=million&difficulty=medium&slot=8&q='+gameKey);assert.equal(wrongBank.data.total,0)
  const media=await request('/api/admin/media','POST',{url:'/images/test.webp',alt:'Փորձնական նկար',credit:'test'},registered.cookie);assert.equal(media.status,200);mediaId=media.data.id
  assert.equal((await request('/api/admin/media?id='+mediaId,'PUT',{url:'/images/test.webp',alt:'Նոր նկարագրություն'},registered.cookie)).data.alt,'Նոր նկարագրություն')
  assert.equal((await request('/api/admin/media?id='+mediaId,'DELETE',undefined,other.cookie)).status,403)
@@ -63,12 +71,13 @@ try{
  assert.equal((await request(permanentPath,'DELETE',{title:archived.title,version:archived.version},registered.cookie)).status,404)
  assert.equal((await request(`/api/content?kind=ARTICLE&key=${key}`)).data.items.length,0)
  for(const path of ['/','/admin','/login','/profile','/people','/facts','/history','/subjects/physics','/articles/c1','/api/games-round?mode=million&difficulty=easy','/api/search?q='+encodeURIComponent('ատոմ')]){const response:Response=await fetch(base+path,{headers:{cookie:registered.cookie!}});assert.equal(response.status,200,path);assert.match(response.headers.get('cache-control')||'',/private/)}
- for(const mode of ['million','genius','logic']){const round=await request(`/api/games-round?mode=${mode}&difficulty=easy`);assert.equal(round.status,200);assert.ok(round.data.items.length>=10&&round.data.items.length<=30);assert.equal(new Set(round.data.items.map((x:any)=>x.question||x.statement)).size,round.data.items.length);if(mode==='million')for(const stage of ['first','middle','final'])assert.equal(round.data.items.filter((x:any)=>x.stage===stage).length,10)}
+ for(const mode of ['million','genius','logic']){const round=await request(`/api/games-round?mode=${mode}&difficulty=easy`);assert.equal(round.status,200);assert.ok(round.data.items.length>=10&&round.data.items.length<=30);assert.equal(new Set(round.data.items.map((x:any)=>x.question||x.statement)).size,round.data.items.length);if(mode==='million')for(let slot=0;slot<15;slot++)assert.equal(round.data.items.filter((x:any)=>x.slot===slot).length,2)}
  const freshLogin=await request('/api/auth/login','POST',{email,password});assert.equal(freshLogin.status,200);assert.deepEqual((await request('/api/account/bookmarks','GET',undefined,freshLogin.cookie)).data.items,['c1']);authenticatedCookie=freshLogin.cookie
  assert.equal((await request('/api/auth/logout','POST',{},freshLogin.cookie)).status,200)
  assert.equal((await request('/api/account/bookmarks','GET',undefined,freshLogin.cookie)).status,401)
  console.log('PASS: mandatory login, private responses, roles, CSRF, database bookmarks across sessions, guided editor payloads, filters, options, media, publication, permanent deletion and games')
 }finally{
+ if(gameContentId)await db.content.deleteMany({where:{id:gameContentId}})
  if(mediaId)await db.media.deleteMany({where:{id:mediaId}})
  if(contentId)await db.content.deleteMany({where:{id:contentId}})
  await db.deletedContentKey.deleteMany({where:{kind:'ARTICLE',key}})

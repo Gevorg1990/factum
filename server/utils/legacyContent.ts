@@ -24,7 +24,7 @@ export function legacyContent(): LegacyRecord[] {
     ...people.flatMap(person=>person.works.map((title,index)=>({kind:'WORK' as const,key:`${person.id}:${index}`,title,data:{personId:person.id,index,title,...workDetails[person.id]?.[title],description:workDetails[person.id]?.[title]?.description||''}}))),
     ...geniusStatements.map((x,i)=>({kind:'GAME' as const,key:`genius-${i}`,title:x.statement,data:{...x,mode:'genius'}})),
     ...logicPuzzles.map((x,i)=>({kind:'GAME' as const,key:`logic-${i}`,title:x.title,data:{...x,mode:'logic'}})),
-    ...millionaireQuestionPairs.flatMap((level,l)=>level.flatMap((pair,i)=>Object.entries(pair).map(([variant,x])=>({kind:'GAME' as const,key:`million-${l}-${i}-${variant}`,title:x.question,data:{...x,mode:'million',difficulty:['easy','medium','hard'][l],stage:i<5?'first':i<10?'middle':'final',slot:i,variant}})))),
+    ...millionaireQuestionPairs.flatMap((level,l)=>level.flatMap((pair,i)=>Object.entries(pair).map(([variant,x])=>({kind:'GAME' as const,key:`million-${l}-${i}-${variant}`,title:x.question,data:{...x,mode:'million',difficulty:['easy','medium','hard'][l],slot:i,variant}})))),
   ]
 }
 let cache:LegacyRecord[]|undefined

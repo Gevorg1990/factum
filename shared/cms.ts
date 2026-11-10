@@ -1,4 +1,4 @@
-import { millionStageOf } from './millionStages'
+import { millionSlotOf } from './millionStages'
 import { z } from 'zod'
 export const kinds = ['ARTICLE','CATEGORY','AUTHOR','PERSON','FACT','EVENT','GAME','MONUMENT','WORK','PAGE','VIDEO','SETTING'] as const
 export const kindSchema = z.enum(kinds)
@@ -26,7 +26,8 @@ export const contentInput = z.object({ kind: kindSchema, key: z.string().min(1).
 export function parseContent(value: unknown) {
   const result = contentInput.parse(value)
   result.data = shapes[result.kind].parse(result.data)
-  if(result.kind==='GAME'&&result.data.mode==='million')result.data.stage=millionStageOf(result.data)
+  if(result.kind==='GAME'&&result.data.mode==='million')result.data.slot=millionSlotOf(result.data);
+  if(result.kind==='GAME'&&result.data.mode==='million')delete result.data.stage
   // The public title and key always agree with the editorial record.
   if ('title' in result.data) result.data.title = result.title
   if (['ARTICLE','PERSON','FACT','MONUMENT'].includes(result.kind)) result.data.id = result.key

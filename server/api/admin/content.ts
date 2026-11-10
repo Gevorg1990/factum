@@ -13,7 +13,13 @@ export default defineEventHandler(async event => {
     const page = Math.max(1, Math.min(100000, Number(query.page) || 1))
     const q = String(query.q || '').slice(0,160)
     const status=z.enum(['DRAFT','PUBLISHED','ARCHIVED']).safeParse(query.status)
-    const where: Prisma.ContentWhereInput = { kind,...(status.success?{status:status.data}:{}), ...(q ? { OR: [{ title: { contains: q, mode: 'insensitive' } }, { key: { contains: q, mode: 'insensitive' } }] } : {}) }
+    const gameFilters: Prisma.ContentWhereInput[]=[]
+    if(kind==='GAME'){
+      if(query.mode!==undefined)gameFilters.push({data:{path:['mode'],equals:z.enum(['million','genius','logic']).parse(query.mode)}})
+      if(query.difficulty!==undefined)gameFilters.push({data:{path:['difficulty'],equals:z.enum(['easy','medium','hard']).parse(query.difficulty)}})
+      if(query.slot!==undefined)gameFilters.push({data:{path:['slot'],equals:z.coerce.number().int().min(0).max(14).parse(query.slot)}})
+    }
+    const where: Prisma.ContentWhereInput = { kind,...(gameFilters.length?{AND:gameFilters}:{}),...(status.success?{status:status.data}:{}), ...(q ? { OR: [{ title: { contains: q, mode: 'insensitive' } }, { key: { contains: q, mode: 'insensitive' } }] } : {}) }
     const [items,total] = await db.$transaction([db.content.findMany({ where, orderBy: { updatedAt: 'desc' }, take: 25, skip: (page-1)*25, select: { id:true,key:true,title:true,status:true,version:true,updatedAt:true } }), db.content.count({ where })])
     return { items,total,page }
   }
