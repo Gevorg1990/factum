@@ -11,5 +11,5 @@ export default defineEventHandler(event => {
     throw createError({ statusCode: 403, statusMessage: 'Հարցման աղբյուրը չի թույլատրվում' })
   }
   const length = Number(getHeader(event, 'content-length') || 0)
-  if (length > 1_000_000) throw createError({ statusCode: 413, statusMessage: 'Տվյալները չափազանց մեծ են' })
+  if (length > (path==='/api/admin/content'?8_000_000:1_000_000)) throw createError({ statusCode: 413, statusMessage: 'Տվյալները չափազանց մեծ են' })
 })

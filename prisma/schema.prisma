@@ -12,6 +12,7 @@ enum Role {
   USER
 }
 enum ContentKind {
+  BOOK
   ARTICLE
   CATEGORY
   AUTHOR
