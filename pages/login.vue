@@ -7,6 +7,7 @@ const route=useRoute()
 const register = ref(false)
 const email = ref('')
 const password = ref('')
+const passwordConfirmation = ref('')
 const name = ref('')
 const error = ref('')
 const busy = ref(false)
@@ -17,16 +18,18 @@ function setMode(value: boolean) {
   register.value = value
   error.value = ''
   showPassword.value = false
+  passwordConfirmation.value = ''
 }
 
 async function submit() {
   if (busy.value) return
-  busy.value = true
   error.value = ''
+  if (register.value && password.value !== passwordConfirmation.value) { error.value = 'Գաղտնաբառերը չեն համընկնում'; return }
+  busy.value = true
   try {
     await $fetch(`/api/auth/${register.value ? 'register' : 'login'}`, {
       method: 'POST',
-      body: { email: email.value, password: password.value, name: name.value },
+      body: { email: email.value.trim(), password: password.value, passwordConfirmation: passwordConfirmation.value, name: name.value },
     })
     await refresh()
     window.dispatchEvent(new Event('factum-auth-changed'))
@@ -99,6 +102,11 @@ useHead(() => ({ title: `${register.value ? 'Գրանցում' : 'Մուտք'} �
               <label for="auth-password">Գաղտնաբառ</label>
               <div class="auth-input-wrap"><LockKeyhole :size="18" /><input id="auth-password" v-model="password" :disabled="busy" :type="showPassword ? 'text' : 'password'" required :minlength="register ? 12 : 1" maxlength="128" :autocomplete="register ? 'new-password' : 'current-password'" placeholder="Մուտքագրիր գաղտնաբառը" :aria-describedby="register ? 'password-hint' : undefined"><button type="button" class="password-visibility" :aria-label="showPassword ? 'Թաքցնել գաղտնաբառը' : 'Ցույց տալ գաղտնաբառը'" :aria-pressed="showPassword" @click="showPassword = !showPassword"><component :is="showPassword ? EyeOff : Eye" :size="18" /></button></div>
               <p v-if="register" id="password-hint" class="field-hint"><ShieldCheck :size="13" /> Օգտագործիր առնվազն 12 նիշ։</p>
+            </div>
+
+            <div v-if="register" class="auth-field">
+              <label for="auth-password-confirmation">Կրկնիր գաղտնաբառը</label>
+              <div class="auth-input-wrap"><LockKeyhole :size="18" /><input id="auth-password-confirmation" v-model="passwordConfirmation" :disabled="busy" :type="showPassword ? 'text' : 'password'" required minlength="12" maxlength="128" autocomplete="new-password" placeholder="Կրկին մուտքագրիր գաղտնաբառը"></div>
             </div>
 
             <p v-if="error" class="auth-error" role="alert">{{ error }}</p>

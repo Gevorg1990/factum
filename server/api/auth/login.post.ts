@@ -4,7 +4,7 @@ import { db } from '../../utils/db'
 import { limitAuth, publicUser, startSession } from '../../utils/auth'
 let dummy: Promise<string> | undefined
 export default defineEventHandler(async event => {
-  const input = z.object({ email: z.string().email().max(254).transform(v => v.toLowerCase()), password: z.string().min(1).max(128) }).safeParse(await readBody(event))
+  const input = z.object({ email: z.string().trim().email().max(254).transform(v => v.toLowerCase()), password: z.string().min(1).max(128) }).safeParse(await readBody(event))
   if (!input.success) throw createError({ statusCode: 400, statusMessage: 'Ստուգեք մուտքագրված տվյալները' })
   await limitAuth(event, input.data.email)
   const user = await db.user.findUnique({ where: { email: input.data.email } })

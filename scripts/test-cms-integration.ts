@@ -11,7 +11,7 @@ try{
  for(const path of ['/api/content?kind=ARTICLE','/api/search?q=test','/api/games-round?mode=million'])assert.equal((await request(path)).status,401,path)
  assert.equal((await fetch(base+'/login')).status,200)
  const email=`cms-${suffix}@example.test`,password='integration-password-123'
- const registered=await request('/api/auth/register','POST',{name:'Փորձարկում',email,password,role:'ADMIN'})
+ const registered=await request('/api/auth/register','POST',{name:'Փորձարկում',email,password,passwordConfirmation:password,role:'ADMIN'})
  assert.equal(registered.status,200);assert.equal(registered.data.user.role,'USER');assert.ok(registered.cookie);users.push(registered.data.user.id)
  assert.equal((await request('/api/admin/content?kind=ARTICLE','GET',undefined,registered.cookie)).status,403)
  assert.equal((await request('/api/admin/content?kind=ARTICLE')).status,401)
@@ -24,7 +24,7 @@ try{
  assert.equal((await request('/api/account/progress','GET',undefined,registered.cookie)).data.items[0].value,'["c1"]')
  assert.equal((await request('/api/account/bookmarks','POST',{key:'c1'},registered.cookie)).status,200)
  assert.deepEqual((await request('/api/account/bookmarks','GET',undefined,registered.cookie)).data.items,['c1'])
- const other=await request('/api/auth/register','POST',{name:'Երկրորդ',email:`other-${suffix}@example.test`,password});users.push(other.data.user.id)
+ const other=await request('/api/auth/register','POST',{name:'Երկրորդ',email:`other-${suffix}@example.test`,password,passwordConfirmation:password});users.push(other.data.user.id)
  assert.deepEqual((await request('/api/account/bookmarks','GET',undefined,other.cookie)).data.items,[])
  await db.user.update({where:{id:registered.data.user.id},data:{role:'ADMIN'}})
  assert.equal((await request('/api/admin/overview')).status,200)
