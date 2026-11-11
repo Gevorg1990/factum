@@ -1,13 +1,15 @@
 import { articleVideoSource } from './articleVideo'
 import { millionSlotOf } from './millionStages'
+import {libraryTopics} from '../data/library/catalog'
 import { z } from 'zod'
-export const kinds = ['ARTICLE','CATEGORY','AUTHOR','PERSON','FACT','EVENT','GAME','MONUMENT','WORK','PAGE','VIDEO','SETTING'] as const
+export const kinds = ['BOOK','ARTICLE','CATEGORY','AUTHOR','PERSON','FACT','EVENT','GAME','MONUMENT','WORK','PAGE','VIDEO','SETTING'] as const
 export const kindSchema = z.enum(kinds)
 const text = z.string().max(200000)
 const section = z.object({ title: text, text })
 const source = z.object({ name: text, url: z.string().url() })
 // Preserve rich legacy fields while validating the fields used by public renderers.
 const shapes = {
+  BOOK:z.object({id:text,title:text,author:text.trim().min(1),topic:z.string().refine(value=>libraryTopics.some(topic=>topic.id===value)),description:text.trim().min(1),cover:z.string().min(1).max(2000).refine(value=>/^\/(?!\/)/.test(value)||/^https:\/\//.test(value)),text:z.string().trim().min(100).max(2000000).refine(value=>(value.match(/[Ա-Ֆա-ֆև]/g)||[]).length>50,'Գրքի տեքստը պետք է լինի հայերեն'),source:z.string().url(),textLicense:text.trim().min(1),coverCredit:text.trim().min(1),coverSource:z.string().url(),coverLicense:text.trim().min(1),edition:text.trim().min(1),rightsConfirmed:z.literal(true)}),
   ARTICLE: z.object({ id: text, subject: text, title: text.min(1), answer: text, detail: text, video: z.string().trim().max(2000).refine(value => !value || Boolean(articleVideoSource(value)), 'Մուտքագրիր YouTube, Vimeo կամ HTTPS MP4/WebM հղում').optional(), sections: z.array(section.extend({image:z.string().max(2000).refine(v=>!v||/^\/(?!\/)[^\\]*$/.test(v)||/^https:\/\//.test(v)).optional()})).optional(), source: source.optional() }).passthrough(),
   CATEGORY: z.object({ slug: text.min(1), name: text.min(1),image:z.string().max(2000).optional(),cardVideo:z.string().max(2000).refine(value=>!value||/^\/videos\/previews\/[^\\]+\.(mp4|webm)$/.test(value)||/^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/factum\/previews\/[^/]+\.mp4$/i.test(value),'Վերբեռնիր վիդեոն՝ ավտոմատ օպտիմիզացման համար').optional() }).passthrough(),
   AUTHOR: z.object({ name: text.min(1), bio: text.optional() }).passthrough(),
@@ -31,11 +33,11 @@ export function parseContent(value: unknown) {
   if(result.kind==='GAME'&&result.data.mode==='million')delete result.data.stage
   // The public title and key always agree with the editorial record.
   if ('title' in result.data) result.data.title = result.title
-  if (['ARTICLE','PERSON','FACT','MONUMENT'].includes(result.kind)) result.data.id = result.key
+  if (['BOOK','ARTICLE','PERSON','FACT','MONUMENT'].includes(result.kind)) result.data.id = result.key
   if (result.kind === 'ARTICLE' && result.data.listed === undefined) result.data.listed = true
   if (result.kind === 'EVENT') result.data.year = result.key
   if (result.kind === 'CATEGORY') result.data.slug = result.key
   if (result.kind === 'PERSON') result.data.name = result.title
   return result
 }
-export const kindLabels: Record<typeof kinds[number], string> = { ARTICLE:'Հոդվածներ',CATEGORY:'Կատեգորիաներ',AUTHOR:'Հեղինակներ',PERSON:'Հայտնի մարդիկ',FACT:'Հետաքրքիր փաստեր',EVENT:'Պատմական իրադարձություններ',GAME:'Խաղերի հարցեր',MONUMENT:'Հուշարձաններ',WORK:'Ստեղծագործություններ',PAGE:'Էջեր',VIDEO:'Տեսանյութեր',SETTING:'Կայքի տեղեկություններ' }
+export const kindLabels: Record<typeof kinds[number], string> = { BOOK:'Գրադարանի գրքեր',ARTICLE:'Հոդվածներ',CATEGORY:'Կատեգորիաներ',AUTHOR:'Հեղինակներ',PERSON:'Հայտնի մարդիկ',FACT:'Հետաքրքիր փաստեր',EVENT:'Պատմական իրադարձություններ',GAME:'Խաղերի հարցեր',MONUMENT:'Հուշարձաններ',WORK:'Ստեղծագործություններ',PAGE:'Էջեր',VIDEO:'Տեսանյութեր',SETTING:'Կայքի տեղեկություններ' }

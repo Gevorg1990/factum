@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {libraryTopics} from '~/data/library/catalog'
 import { ChevronDown, Plus, Trash2 } from 'lucide-vue-next'
 import { fieldLabels, fieldHints } from '~/shared/cmsEditor'
 defineOptions({name:'AdminFields'})
@@ -16,9 +17,10 @@ const label=computed(()=>fieldLabels[props.field||'']||'Լրացուցիչ տե�
 const hint=computed(()=>fieldHints[props.field||''])
 const longFields=new Set(['text','detail','answer','bio','explanation','description','significance','example','takeaway','intro','body','hint','statement','question'])
 const numberFields=new Set(['openedYear','installedYear','slot','index'])
-const imageFields=new Set(['portrait','image','src','preview'])
+const imageFields=new Set(['cover','portrait','image','src','preview'])
 const personCategories=['Գրականություն','Մշակույթ և պատմություն','Կերպարվեստ և ճարտարապետություն','Երաժշտություն','Կինո և թատրոն','Գիտություն և տեխնոլոգիա','Սպորտ','Պետական և ռազմական գործիչներ','Գործարարներ և բարերարներ']
 const options=computed(()=>{
+ if(props.field==='topic'&&props.kind==='BOOK')return libraryTopics.map(topic=>({value:topic.id,label:topic.title}))
  if(props.field==='difficulty')return [{value:'easy',label:'Հեշտ'},{value:'medium',label:'Միջին'},{value:'hard',label:'Բարդ'}]
  if(props.field==='category'&&props.kind==='PERSON')return personCategories.map(x=>({value:x,label:x}))
  if(props.field==='fit')return [{value:'contain',label:'Ցույց տալ ամբողջ նկարը'},{value:'cover',label:'Լրացնել նկարի տարածքը'}]
@@ -58,6 +60,7 @@ function add(){
     <AdminImageField v-else-if="imageFields.has(field||'')" :model-value="modelValue" :label="label" @update:model-value="emit('update:modelValue',$event)"/>
     <select v-else-if="options.length" :id="fieldId" :value="modelValue" @change="emit('update:modelValue',($event.target as HTMLSelectElement).value)"><option value="" disabled>Ընտրիր ցանկից</option><option v-if="modelValue&&!options.some(x=>x.value===modelValue)" :value="modelValue">{{modelValue}}</option><option v-for="option in options" :key="option.value" :value="option.value">{{option.label}}</option></select>
     <input v-else-if="typeof modelValue==='number'||numberFields.has(field||'')" :id="fieldId" type="number" :value="field==='index'&&modelValue!==undefined?modelValue+1:modelValue" :min="field==='index'?1:undefined" :disabled="disabledFields.includes(field||'')" :required="requiredFields.includes(field||'')" @input="emit('update:modelValue',($event.target as HTMLInputElement).value===''?undefined:Number(($event.target as HTMLInputElement).value)-(field==='index'?1:0))">
+    <LazyAdminBookTextField v-else-if="kind==='BOOK'&&field==='text'" :model-value="modelValue" @update:model-value="emit('update:modelValue',$event)"/>
     <textarea v-else-if="longFields.has(field||'')||(typeof modelValue==='string'&&modelValue.length>160)" :id="fieldId" :value="modelValue??''" :rows="['detail','text','bio','body'].includes(field||'')?6:3" :required="requiredFields.includes(field||'')" :disabled="disabledFields.includes(field||'')" @input="emit('update:modelValue',($event.target as HTMLTextAreaElement).value)"/>
     <input v-else :id="fieldId" :value="modelValue??''" :required="requiredFields.includes(field||'')" :disabled="disabledFields.includes(field||'')" :type="['url','sourceUrl','licenseUrl'].includes(field||'')?'url':'text'" :placeholder="['url','sourceUrl','licenseUrl'].includes(field||'')?'https://…':undefined" @input="emit('update:modelValue',($event.target as HTMLInputElement).value)">
     <p v-if="hint" class="field-hint">{{hint}}</p>

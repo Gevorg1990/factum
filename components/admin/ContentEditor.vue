@@ -17,8 +17,8 @@ watch(dirty,value=>emit('dirty',value),{immediate:true})
 const kind=computed<CmsKind>(()=>form.value.kind)
 const rootTitleLabel=computed(()=>kind.value==='PERSON'||kind.value==='AUTHOR'?'Անուն, ազգանուն':kind.value==='CATEGORY'?'Բաժնի անվանում':kind.value==='MONUMENT'?'Հուշարձանի անվանում':kind.value==='GAME'?(form.value.data.mode==='genius'?'Պնդումը':'Հարցը'):'Վերնագիր')
 const rootTitlePlaceholder=computed(()=>({ARTICLE:'Օրինակ՝ Ինչպե՞ս են առաջանում ամպերը',FACT:'Օրինակ՝ Հետաքրքիր փաստ ջրի մասին',PERSON:'Օրինակ՝ Անուն Ազգանուն',CATEGORY:'Օրինակ՝ Աշխարհագրություն',GAME:'Գրիր ամբողջական հարցը…'} as Record<string,string>)[kind.value]||'Գրիր հասկանալի և հակիրճ անվանում')
-const hiddenKeys=computed(()=>['id','slug',...(kind.value==='CATEGORY'?['img','cardVideoPoster']:[]),...(['PERSON','AUTHOR','CATEGORY','MONUMENT'].includes(kind.value)?['name']:[]),...(['ARTICLE','FACT','EVENT','WORK','PAGE','VIDEO','SETTING'].includes(kind.value)?['title']:[]),...(kind.value==='GAME'?['mode','question','statement','slot','variant','stage']:[]),...(kind.value==='PERSON'?['portraitTitle','portraitLanguage','workInformation']:[])])
-const requiredFields=computed(()=>({ARTICLE:['subject','answer','detail'],FACT:['category','text'],PERSON:['years','role','bio'],EVENT:['year','era'],GAME:['explanation'],MONUMENT:['personId','city','location','name','url'],WORK:['personId','description'],PAGE:['text'],VIDEO:['url'],SETTING:['text']} as Record<string,string[]>)[kind.value]||[])
+const hiddenKeys=computed(()=>['id','slug',...(kind.value==='CATEGORY'?['img','cardVideoPoster']:[]),...(['PERSON','AUTHOR','CATEGORY','MONUMENT'].includes(kind.value)?['name']:[]),...(['BOOK','ARTICLE','FACT','EVENT','WORK','PAGE','VIDEO','SETTING'].includes(kind.value)?['title']:[]),...(kind.value==='GAME'?['mode','question','statement','slot','variant','stage']:[]),...(kind.value==='PERSON'?['portraitTitle','portraitLanguage','workInformation']:[])])
+const requiredFields=computed(()=>({BOOK:['author','topic','description','text','source','textLicense','edition'],ARTICLE:['subject','answer','detail'],FACT:['category','text'],PERSON:['years','role','bio'],EVENT:['year','era'],GAME:['explanation'],MONUMENT:['personId','city','location','name','url'],WORK:['personId','description'],PAGE:['text'],VIDEO:['url'],SETTING:['text']} as Record<string,string[]>)[kind.value]||[])
 const optionalFields=computed(()=>{
  const definitions:Record<string,{key:string;label:string;value:any}[]>={
  ARTICLE:[{key:'video',label:'Մանրամասն բաժնի վիդեո',value:''},{key:'image',label:'Հոդվածի նկար',value:''},{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}}],
@@ -31,7 +31,7 @@ const optionalFields=computed(()=>{
 })
 const preview=computed(()=>prepareContent(form.value))
 const previewText=computed(()=>{const d=preview.value.data;return d.detail||d.text||d.bio||d.description||d.explanation||d.details?.intro||''})
-const previewImage=computed(()=>{const d=preview.value.data;return d.portrait||d.preview||(typeof d.image==='string'?d.image:d.image?.src)||''})
+const previewImage=computed(()=>{const d=preview.value.data;return d.cover||d.portrait||d.preview||(typeof d.image==='string'?d.image:d.image?.src)||''})
 const link=computed(()=>form.value.id?contentUrl(form.value):'')
 const statusLabels:Record<string,string>={DRAFT:'Սևագիր',PUBLISHED:'Հրապարակված',ARCHIVED:'Արխիվացված'}
 function setGameMode(event:Event){const mode=(event.target as HTMLSelectElement).value;if(form.value.data.mode===mode)return;if((form.value.data.answers?.some((x:string)=>x.trim())||form.value.data.explanation)&&!confirm('Խաղի տեսակը փոխելիս պատասխանների դաշտերը կփոխարինվեն։ Շարունակե՞լ։')){(event.target as HTMLSelectElement).value=form.value.data.mode;return}form.value.data=mode==='genius'?{mode,difficulty:form.value.data.difficulty||'easy',statement:'',correct:true,explanation:'',topic:''}:{...structuredClone(editorTemplates.GAME),mode,difficulty:form.value.data.difficulty||'easy'}}
