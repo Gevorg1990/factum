@@ -4,6 +4,7 @@ import { logicPuzzles, type LogicPuzzle } from '~/data/logicPuzzles'
 import GameDifficultyPicker from '~/components/GameDifficultyPicker.vue'
 import { difficultyIndex, difficultyTitle, requiredCorrectAnswers, saveDifficultyProgress, unlockedDifficultyIndex, type GameDifficulty } from '~/utils/gameDifficulty'
 
+const gameReady = ref(false)
 const roundLoading=ref(false),roundError=ref('')
 const route = useRoute()
 const router = useRouter()
@@ -107,14 +108,16 @@ onMounted(() => {
   if (difficultyIndex(requestedLevel) >= 0 && difficultyIndex(requestedLevel) <= unlockedIndex.value) {
     startLevel(requestedLevel as GameDifficulty)
   }
+  gameReady.value = true
 })
 </script>
 
 <template>
-  <GameDifficultyPicker v-if="!level" game="logic" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" @select="startLevel" />
+  <main v-if="!gameReady" class="shell logic-game"><GameLoading game="logic" /></main>
+  <GameDifficultyPicker v-else-if="!level" game="logic" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" @select="startLevel" />
 
   <main v-else class="shell logic-game">
-    <p v-if="roundLoading" class="panel" role="status">Հարցերը բեռնվում են…</p><div v-else-if="roundError" class="panel" role="alert">{{roundError}} <button class="gold" @click="newRound">Կրկնել</button><button @click="returnToLevels">Վերադառնալ</button></div><template v-else>
+    <GameLoading v-if="roundLoading" game="logic" /><div v-else-if="roundError" class="panel" role="alert">{{roundError}} <button class="gold" @click="newRound">Կրկնել</button><button @click="returnToLevels">Վերադառնալ</button></div><template v-else>
     <p class="gold text-sm font-semibold">ՏՐԱՄԱԲԱՆԱԿԱՆ ՄԱՐՏԱՀՐԱՎԵՐ</p>
     <h1 class="heading mt-3">FACTUM Logic</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
