@@ -27,7 +27,7 @@ const options=computed(()=>{
 })
 function update(key:string|number,value:any){const next=Array.isArray(props.modelValue)?[...props.modelValue]:{...props.modelValue};next[key]=value;if(key==='answers'&&typeof next.correct==='number'){if(value.length<props.modelValue.answers.length)next.correct=Math.max(0,value.indexOf(props.modelValue.answers[next.correct]));else if(next.correct>=value.length)next.correct=0;}emit('update:modelValue',next)}
 function add(){
- const defaults:Record<string,any>={sections:props.kind==='EVENT'?{heading:'',body:''}:{title:'',text:''},biographySections:{title:'',text:''},timeline:{date:'',text:''},sources:{name:'',url:''}}
+ const defaults:Record<string,any>={sections:props.kind==='EVENT'?{heading:'',body:''}:props.kind==='ARTICLE'?{title:'',text:'',image:''}:{title:'',text:''},biographySections:{title:'',text:''},timeline:{date:'',text:''},sources:{name:'',url:''}}
  const sample=props.modelValue[0]||defaults[props.field||'']
  const empty=(value:any):any=>Array.isArray(value)?[]:value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([key,entry])=>[key,empty(entry)])):typeof value==='number'?0:typeof value==='boolean'?false:''
  emit('update:modelValue',[...props.modelValue,sample&&typeof sample==='object'?empty(sample):''])

@@ -18,7 +18,7 @@ export type Question = {
   detail: string
   image?: string
   video?: string
-  sections?: { title: string; text: string }[]
+  sections?: { title: string; text: string; image?: string }[]
   example?: string
   takeaway?: string
   source?: { name: string; url: string }

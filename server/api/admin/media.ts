@@ -8,6 +8,6 @@ export default defineEventHandler(async event=>{
   const id=String(getQuery(event).id||'')
   if(event.method==='DELETE'){if(actor.role!=='ADMIN')throw createError({statusCode:403});await db.media.delete({where:{id}});return {ok:true}}
   if(!['POST','PUT'].includes(event.method)) throw createError({statusCode:405})
-  const data=await readValidatedBody(event,z.object({url,alt:z.string().min(1).max(500),credit:z.string().max(500).default(''),license:z.string().max(500).default(''),sourceUrl:z.string().max(2000).default('')}).parse)
+  const data=await readValidatedBody(event,z.object({url,alt:z.string().trim().max(500).default(''),credit:z.string().max(500).default(''),license:z.string().max(500).default(''),sourceUrl:z.string().max(2000).default('')}).parse)
   return event.method==='PUT'?db.media.update({where:{id},data}):db.media.create({data})
 })

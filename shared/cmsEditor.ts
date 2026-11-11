@@ -35,7 +35,7 @@ export const fieldHints:Record<string,string> = {
 export function newContent(kind:CmsKind) {
   return {kind,key:kind==='SETTING'?'footer':`${kind.toLowerCase()}-${crypto.randomUUID().slice(0,8)}`,title:'',summary:'',body:'',categoryId:null,authorId:null,data:structuredClone(editorTemplates[kind])}
 }
-export function editorRecord(record:any){const value=JSON.parse(JSON.stringify(record));if(value.kind==='ARTICLE')value.data.video ??='';if(value.kind==='CATEGORY'){const media=categoryMedia(value.data);value.data.image ??='';value.data.cardVideo ??=media.video;if(!value.data.cardVideoPoster)value.data.cardVideoPoster=media.poster;}if(value.kind==='GAME'){value.title=value.data.mode==='genius'?value.data.statement:value.data.question;if(value.data.mode==='million')value.data.slot=millionSlotOf(value.data);}return value}
+export function editorRecord(record:any){const value=JSON.parse(JSON.stringify(record));if(value.kind==='ARTICLE'){value.data.video ??='';value.data.sections=(value.data.sections||[]).map((section:any)=>({...section,image:section.image||''}));}if(value.kind==='CATEGORY'){const media=categoryMedia(value.data);value.data.image ??='';value.data.cardVideo ??=media.video;if(!value.data.cardVideoPoster)value.data.cardVideoPoster=media.poster;}if(value.kind==='GAME'){value.title=value.data.mode==='genius'?value.data.statement:value.data.question;if(value.data.mode==='million')value.data.slot=millionSlotOf(value.data);}return value}
 // Keep the UI's single title consistent with legacy payload shapes without losing extra fields.
 export function prepareContent(record:any) {
   const value=JSON.parse(JSON.stringify(record))

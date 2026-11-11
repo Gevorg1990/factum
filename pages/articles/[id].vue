@@ -44,18 +44,19 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
             քիմիական տարրերը և ինչու է ատոմային աշխարհը կարևոր մեր կյանքում։
           </p>
         </div>
+
+      </div>
+
+      <section class="atom-article-section">
+        <h2 v-if="!isAtomArticle || question.video">Մանրամասն</h2>
+        <p v-if="!isAtomArticle || question.video">{{ question.detail }}</p>
         <img
           v-if="question.image || isAtomArticle"
-          class="atom-article-hero"
+          class="article-content-image"
           :src="question.image || '/images/physics-art.jpg'"
           :alt="question.image ? question.title : 'Ատոմի լուսարձակող գիտական գեղարվեստական պատկեր'"
           loading="lazy"
         >
-      </div>
-
-      <section v-if="!isAtomArticle || question.video" class="atom-article-section">
-        <h2>Մանրամասն</h2>
-        <p>{{ question.detail }}</p>
         <ArticleVideo v-if="question.video" :src="question.video" :title="question.title" :poster="question.image" />
       </section>
 
@@ -107,6 +108,7 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
         <section v-for="section in question.sections" :key="section.title" class="atom-article-section">
           <h2>{{ section.title }}</h2>
           <p>{{ section.text }}</p>
+          <img v-if="section.image" :src="section.image" :alt="section.title || question.title" class="article-content-image" loading="lazy" decoding="async">
         </section>
         <section v-if="question.example" class="atom-article-section encyclopedia-example">
           <h2>Օրինակով հասկանանք</h2>
@@ -138,4 +140,8 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
 .encyclopedia-article-source a { color: #a8b8d4; text-decoration: underline; text-underline-offset: 4px; }
 .encyclopedia-article-source a:focus-visible { outline: 2px solid #dfc38f; outline-offset: 4px; }
 :global(html.factum-light) .encyclopedia-article-source a { color: #4e6481; }
+</style>
+
+<style scoped>
+.atom-article-intro{display:block}.article-content-image{display:block;width:100%;height:auto;max-height:640px;object-fit:contain;margin:24px auto 0;border-radius:16px}
 </style>

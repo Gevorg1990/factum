@@ -59,3 +59,15 @@ test('Millionaire editor preserves all fifteen positions and independently selec
  assert.throws(()=>parseContent({...prepareContent(created),data:{...created.data,slot:15}}))
  assert.throws(()=>parseContent({...prepareContent(created),data:{...created.data,slot:-1}}))
 })
+
+
+test('article section images survive editing, validation and publishing without captions',()=>{
+ const form=newContent('ARTICLE');form.title='Նկարներով նյութ';
+ form.data.sections=[{title:'Առաջին մաս',text:'',image:'/images/physics-art.jpg'},{title:'',text:'Երկրորդ մաս',image:'https://example.com/image.webp'}];
+ const saved=parseContent({...prepareContent(form),action:'publish'});
+ assert.deepEqual(saved.data.sections,form.data.sections);
+ const imported=editorRecord({...form,data:{...form.data,sections:[{title:'Հին մաս',text:'Տեքստ'}]}});
+ assert.equal(imported.data.sections[0].image,'');
+ imported.data.sections[0].image='javascript:alert(1)';
+ assert.throws(()=>parseContent(prepareContent(imported)));
+})
