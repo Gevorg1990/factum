@@ -14,7 +14,7 @@ watch(() => props.personId, () => { failedImages.value = [] })
     <p class="muted monuments-intro">{{ name }}ին նվիրված հուշարձաններ՝ տեղադրությամբ և տարեթվերով։</p>
     <div class="monuments-grid">
       <article v-for="monument in monuments" :key="monument.id" class="monument-card">
-        <figure v-if="monument.image">
+        <figure v-if="monument.image?.src">
           <a v-if="!failedImages.includes(monument.id)" :href="monument.image.src" target="_blank" rel="noopener noreferrer" class="monument-photo" :aria-label="`${monument.name}․ դիտել լուսանկարը մեծ չափով`" title="Դիտել լուսանկարը մեծ չափով">
             <img class="monument-photo-backdrop" :src="monument.image.src" alt="" aria-hidden="true" loading="lazy" decoding="async">
             <img class="monument-photo-image" :style="{ objectFit: monument.image.fit || 'contain', objectPosition: monument.image.position || 'center' }" :src="monument.image.src" :alt="monument.image.alt" loading="lazy" decoding="async" @error="failedImages.push(monument.id)">

@@ -1,3 +1,4 @@
+import { biography as kirkKerkorianBiography } from './Kirk_Kerkorian_Biography'
 import type { Person } from '../personTypes'
 import { biography as biography0 } from './Albert_Einstein_Biography'
 import { biography as biography1 } from './Mesrop_Mashtots_Biography'
@@ -205,4 +206,5 @@ export const biographies: Record<string, Partial<Person>> = {
   "komitas": komitasBiography,
   "hambardzumyan": hambardzumyanBiography,
   "vazgen-sargsyan": vazgenSargsyan,
+  'kirk-kerkorian': kirkKerkorianBiography,
 }

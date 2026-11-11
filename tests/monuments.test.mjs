@@ -11,7 +11,7 @@ const vueUrl = new URL('file://' + require.resolve('vue')).href
 const { createSSRApp } = await import(vueUrl)
 const { people } = await import(contentUrl)
 const monumentsUrl = moduleUrl(new URL('../data/personMonuments.ts', import.meta.url))
-const { personMonuments, monumentMapUrl } = await import(monumentsUrl)
+const { personMonuments, monumentMapUrl, kirkKerkorianMonuments } = await import(monumentsUrl)
 
 const { descriptor } = parse(readFileSync(new URL('../components/PersonMonuments.vue', import.meta.url), 'utf8'))
 let code = compileScript(descriptor, { id: 'monuments-test', inlineTemplate: true }).content
@@ -132,4 +132,19 @@ test('Alikhanov plaque renders its verified location without an invented date or
   assert.ok(!html.includes('Տեղադրում'))
   assert.ok(!html.includes('Բացում'))
   assert.ok(html.includes('Դիտել քարտեզի վրա'))
+})
+
+test('CMS Kerkorian monuments retain separate sites and verified opening dates', async () => {
+  const { biography } = await import(moduleUrl(new URL('../data/biographies/Kirk_Kerkorian_Biography.ts', import.meta.url)))
+  assert.equal(biography.id, 'kirk-kerkorian')
+  assert.equal(kirkKerkorianMonuments.length, 2)
+  assert.deepEqual(kirkKerkorianMonuments.map(item => item.city), ['Գյումրի', 'Սպիտակ'])
+  assert.deepEqual(kirkKerkorianMonuments.map(item => item.openedYear), [2018, 2019])
+  for (const item of kirkKerkorianMonuments) {
+    assert.equal(item.personId, biography.id)
+    assert.ok(item.openedDate && item.location && item.sculptor && item.source.url)
+    assert.equal(item.installedYear, undefined)
+  }
+  assert.match(kirkKerkorianMonuments[0].image.sourceUrl, /Monument_of_Kirk_Kerkorian_in_Gyumri/)
+  assert.equal(kirkKerkorianMonuments[1].image, undefined)
 })

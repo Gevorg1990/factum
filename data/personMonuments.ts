@@ -205,3 +205,25 @@ export const personMonuments = monumentRecords.filter(monument => Boolean(armeni
 export function monumentMapUrl(monument: PersonMonument): string {
   return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(`${monument.name}, ${monument.city}, ${monument.location}`)
 }
+
+// CMS-managed profile: source records are retained here without inserting a
+// second copy into the legacy client catalog. Publish these as MONUMENT records.
+export const kirkKerkorianMonuments: PersonMonument[] = [
+  {
+    id: 'kirk-kerkorian-gyumri', personId: 'kirk-kerkorian',
+    name: 'Քըրք Քըրքորյանի հուշարձան', city: 'Գյումրի',
+    location: 'Քըրք Քըրքորյան (նախկին Աբովյան) փողոց, «Հոկտեմբեր» կինոթատրոնի հարևանությամբ',
+    openedYear: 2018, openedDate: '2018 թ. հունիսի 24', sculptor: 'Արտուշ Պապոյան',
+    image: commonsImage('Monument of Kirk Kerkorian in Gyumri.jpg', 'Քըրք Քըրքորյանի քայլող արձանը Գյումրիում', 'Violmsyan'),
+    source: { name: 'Արմենպրես · Գյումրու հուշարձանի բացումը', url: 'https://armenpress.am/hy/article/938713' },
+  },
+  {
+    id: 'kirk-kerkorian-spitak', personId: 'kirk-kerkorian',
+    name: 'Քըրք Քըրքորյանի կիսանդրի', city: 'Սպիտակ',
+    location: 'Սուրբ Հարություն եկեղեցու հարևանությամբ',
+    openedYear: 2019, openedDate: '2019 թ. դեկտեմբերի 7', sculptor: 'Լևոն Թոքմաջյան',
+    // The credited Public Radio photographs currently fail to load; retain
+    // the verified site without publishing a broken image URL.
+    source: { name: 'Արմենպրես · Սպիտակի կիսանդրու բացումը', url: 'https://armenpress.am/hy/article/998064' },
+  },
+]
