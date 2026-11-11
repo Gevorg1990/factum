@@ -1,3 +1,4 @@
+import { kirkKerkorianWorks } from './biographies/Kirk_Kerkorian_Biography'
 import { additionalArmenianPeople } from './armenianPeople'
 import type { PersonWork } from './personTypes'
 import { tumanyanAdditionalWorks } from './biographies/Hovhannes_Tumanyan_Biography'
@@ -67,3 +68,5 @@ Object.assign(workDetails.tumanyan!, tumanyanAdditionalWorks)
 
 import { hambardzumyanWorks } from './biographies/Viktor_Hambardzumyan_Biography'
 workDetails.hambardzumyan = hambardzumyanWorks
+
+workDetails['kirk-kerkorian'] = kirkKerkorianWorks

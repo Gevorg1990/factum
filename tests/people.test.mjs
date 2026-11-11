@@ -348,3 +348,17 @@ test('Hambardzumyan has sixteen sourced works in three groups with stable first 
   assert.ok(workDetails.hambardzumyan['Աստղերի էվոլյուցիան և աստղաֆիզիկան'].date.includes('1948'))
   assert.equal(workDetails.hambardzumyan['Աստղասփյուռներ'].date, '1949')
 })
+
+test('CMS Kerkorian achievements have stable work indices and sourced detail pages', async () => {
+  const { biography, kirkKerkorianWorks } = await import(moduleUrl(new URL('../data/biographies/Kirk_Kerkorian_Biography.ts', import.meta.url)))
+  assert.equal(biography.works.length, 5)
+  assert.deepEqual(biography.works, Object.keys(kirkKerkorianWorks))
+  assert.deepEqual(Object.keys(workDetails[biography.id]), biography.works)
+  for (const title of biography.works) {
+    const detail = workDetails[biography.id][title]
+    assert.ok(detail.description.length > 100 && detail.significance.length > 60)
+    assert.ok(detail.type && detail.group && detail.sources.length)
+    for (const source of detail.sources) assert.equal(new URL(source.url).protocol, 'https:')
+  }
+  assert.equal(workDetails[biography.id][biography.works[1]].date, '1973, 1993')
+})
