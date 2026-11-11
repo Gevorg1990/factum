@@ -53,7 +53,11 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
         >
       </div>
 
-      <ArticleVideo v-if="question.video" :src="question.video" :title="question.title" :poster="question.image" />
+      <section v-if="!isAtomArticle || question.video" class="atom-article-section">
+        <h2>Մանրամասն</h2>
+        <p>{{ question.detail }}</p>
+        <ArticleVideo v-if="question.video" :src="question.video" :title="question.title" :poster="question.image" />
+      </section>
 
       <template v-if="isAtomArticle">
         <p class="atom-image-caption">
@@ -100,10 +104,6 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
       </template>
 
       <template v-else>
-        <section class="atom-article-section">
-          <h2>Մանրամասն</h2>
-          <p>{{ question.detail }}</p>
-        </section>
         <section v-for="section in question.sections" :key="section.title" class="atom-article-section">
           <h2>{{ section.title }}</h2>
           <p>{{ section.text }}</p>

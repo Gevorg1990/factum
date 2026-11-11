@@ -21,7 +21,7 @@ const hiddenKeys=computed(()=>['id','slug',...(kind.value==='CATEGORY'?['img','c
 const requiredFields=computed(()=>({ARTICLE:['subject','answer','detail'],FACT:['category','text'],PERSON:['years','role','bio'],EVENT:['year','era'],GAME:['explanation'],MONUMENT:['personId','city','location','name','url'],WORK:['personId','description'],PAGE:['text'],VIDEO:['url'],SETTING:['text']} as Record<string,string[]>)[kind.value]||[])
 const optionalFields=computed(()=>{
  const definitions:Record<string,{key:string;label:string;value:any}[]>={
- ARTICLE:[{key:'video',label:'Հարցի վիդեո',value:''},{key:'image',label:'Հոդվածի նկար',value:''},{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}}],
+ ARTICLE:[{key:'video',label:'Մանրամասն բաժնի վիդեո',value:''},{key:'image',label:'Հոդվածի նկար',value:''},{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}}],
  CATEGORY:[{key:'image',label:'Բաժնի նկար',value:''},{key:'cardVideo',label:'Քարտի շարժվող նախադիտում',value:''}],
  FACT:[{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}}],
  PERSON:[{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}},{key:'biographyDocument',label:'Կենսագրության փաստաթուղթ',value:{name:'',url:''}}],
