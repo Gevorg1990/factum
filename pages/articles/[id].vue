@@ -53,6 +53,8 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
         >
       </div>
 
+      <ArticleVideo v-if="question.video" :src="question.video" :title="question.title" :poster="question.image" />
+
       <template v-if="isAtomArticle">
         <p class="atom-image-caption">
           Պատկերը գեղարվեստական պատկերացում է․ էլեկտրոնները իրականում չեն շարժվում

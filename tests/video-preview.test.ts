@@ -34,3 +34,19 @@ test('category media keeps original previews and allows a CMS picture plus optim
  const plain=categoryMedia({slug:'custom',image:'/images/custom.webp',cardVideo:''});assert.equal(plain.video,'');assert.equal(plain.image,'/images/custom.webp')
  assert.throws(()=>parseContent({...old,data:{...old.data,cardVideo:'https://example.com/raw.mp4'}}))
 })
+
+test('article videos preserve full duration and audio while optimizing delivery',async()=>{
+ const {optimizeArticleVideo}=await import('../server/utils/previewVideo')
+ assert.ok(ffmpeg)
+ const dir=await mkdtemp(join(tmpdir(),'factum-article-video-test-'))
+ try{
+  const source=join(dir,'source.mp4'),output=join(dir,'article.mp4')
+  await run(ffmpeg!,['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=640x360:rate=30','-f','lavfi','-i','sine=frequency=440','-t','10','-c:v','libx264','-threads','2','-preset','ultrafast','-c:a','aac','-y',source],{timeout:30000})
+  const optimized=await optimizeArticleVideo(await readFile(source))
+  assert.ok(optimized.indexOf(Buffer.from('moov'))<optimized.indexOf(Buffer.from('mdat')))
+  await writeFile(output,optimized)
+  const metadata=await run(ffmpeg!,['-hide_banner','-i',output,'-f','null','-'],{timeout:30000})
+  assert.match(metadata.stderr,/Duration: 00:00:10/)
+  assert.match(metadata.stderr,/Audio: aac/)
+ }finally{await rm(dir,{recursive:true,force:true})}
+})

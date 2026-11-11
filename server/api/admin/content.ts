@@ -52,6 +52,7 @@ export default defineEventHandler(async event => {
   }
   const { action, version, data, ...fields } = input
   if(input.kind==='CATEGORY'&&data.cardVideo&&String(data.cardVideo).startsWith('https:')&&!(await db.videoPreview.findUnique({where:{url:String(data.cardVideo)}})))throw createError({statusCode:400,statusMessage:'Վիդեոն նախ վերբեռնիր և օպտիմիզացրու CMS-ից'})
+  if(input.kind==='ARTICLE'&&typeof data.video==='string'&&/^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/factum\/articles\//i.test(data.video)&&!(await db.videoPreview.findUnique({where:{url:data.video}})))throw createError({statusCode:400,statusMessage:'Վիդեոն նախ վերբեռնիր և օպտիմիզացրու CMS-ից'})
   for (const [id,kind] of [[fields.categoryId,'CATEGORY'],[fields.authorId,'AUTHOR']] as const) {
     if (id && !(await db.content.findFirst({where:{id,kind}}))) throw createError({statusCode:400,statusMessage:'Սխալ հեղինակ կամ կատեգորիա'})
   }
