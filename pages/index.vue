@@ -53,7 +53,7 @@ const popularQuestions=computed(()=>popularSets[popularIndex.value])
 function rotateHighlights(){
   refreshHomeFacts()
   popularIndex.value=(popularIndex.value+1)%popularSets.length
-  if(featuredPeople.value.length) personIndex.value=(personIndex.value+1)%featuredPeople.value.length
+  void nextPerson(1)
 }
 let rotationTimer: ReturnType<typeof setInterval> | undefined
 onMounted(()=>{
@@ -131,7 +131,21 @@ const tiles = computed(() => subjectOrder.value.map(slug => homeSubjects.find(su
 })))
 const games=[{id:'million',name:'FACTUM Million',desc:'15 հարց՝ 5 հեշտ ու հումորային, 5 միջին և 5 շատ բարդ։',button:'Խաղալ',tone:'gold'},{id:'genius',name:'FACTUM Genius',desc:'Հեշտ, միջին և դժվար մակարդակներ․ հաջորդը բացվում է հաջող ավարտից հետո։',button:'Խաղալ',tone:'blue'},{id:'logic',name:'FACTUM Logic',desc:'Երեք բարդության մակարդակ՝ նոր գլուխկոտրուկներով ու հաջորդական բացմամբ։',button:'Խաղալ',tone:'purple'}]
 function goSearch(){if(search.value.trim())navigateTo('/search?q='+encodeURIComponent(search.value.trim()))}
-function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+featuredPeople.value.length)%featuredPeople.value.length}
+let personRequest = 0
+let requestedPersonIndex = 0
+async function nextPerson(direction: number) {
+  if (!featuredPeople.value.length) return
+  const request = ++personRequest
+  requestedPersonIndex = (requestedPersonIndex + direction + featuredPeople.value.length) % featuredPeople.value.length
+  const nextIndex = requestedPersonIndex
+  const person = featuredPeople.value[nextIndex]
+  if (person?.img) {
+    const image = new Image()
+    image.src = person.img
+    try { await image.decode() } catch { /* A missing image must not lock the carousel. */ }
+  }
+  if (request === personRequest) personIndex.value = nextIndex
+}
 </script>
 <template><main class="factum-home">
 <div class="home-cosmic-backdrop" aria-hidden="true"></div>
@@ -156,7 +170,7 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
       <button type="button" aria-label="Հաջորդ փաստը" :disabled="homeFacts.length < 2" @click="nextFact(1)"><ChevronRight :size="18" /></button>
     </div>
   </article>
-</div><div class="history-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/history" class="encyclopedia-heading-link">✦ Հայոց պատմություն <ArrowRight :size="18" /></NuxtLink></h2></div><article class="history-card"><div class="history-scroll" tabindex="0" role="region" aria-label="Հայոց պատմության ժամանակագրություն"><div class="history-track"><NuxtLink prefetch-on="interaction" v-for="e in homeTimeline" :key="e.year" :to="{ path: '/history', query: { event: e.year } }" class="history-entry"><span class="history-year">{{e.year}}</span><div class="history-event"><strong>{{e.title}}</strong><small>{{e.era}}</small></div></NuxtLink></div></div></article></div><div class="people-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/people" class="encyclopedia-heading-link">✦ Հայ հայտնիներ <ArrowRight :size="18" /></NuxtLink></h2></div><article class="people-card" :aria-busy="!peopleReady"><div v-if="peopleReady && chosenPerson" class="person-feature"><div class="person-photo"><img v-if="chosenPerson.img" :src="chosenPerson.img" :alt="chosenPerson.name"/><PersonPortrait v-else :key="chosenPerson.id" :person="chosenPerson" size="large"/></div><div class="person-description"><h3>{{chosenPerson.name}}</h3><small>{{chosenPerson.years}} · {{chosenPerson.role}}</small><p>{{chosenPerson.bio}}</p><NuxtLink prefetch-on="interaction" :to="`/people/${chosenPerson.id}`">Կարդալ ավելին <ArrowRight :size="15"/></NuxtLink></div></div><div v-else class="person-feature person-placeholder" aria-hidden="true"><div class="person-photo"></div><div class="person-description"><span class="placeholder-line placeholder-name"></span><span class="placeholder-line"></span><span class="placeholder-line"></span><span class="placeholder-line"></span></div></div><div class="person-controls" :style="{ visibility: peopleReady ? undefined : 'hidden' }"><button aria-label="Նախորդ մարդը" @click="nextPerson(-1)"><ChevronLeft :size="18"/></button><span class="muted text-xs" aria-live="polite">{{ personIndex + 1 }} / {{ featuredPeople.length }}</span><button aria-label="Հաջորդ մարդը" @click="nextPerson(1)"><ChevronRight :size="18"/></button></div></article></div></section>
+</div><div class="history-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/history" class="encyclopedia-heading-link">✦ Հայոց պատմություն <ArrowRight :size="18" /></NuxtLink></h2></div><article class="history-card"><div class="history-scroll" tabindex="0" role="region" aria-label="Հայոց պատմության ժամանակագրություն"><div class="history-track"><NuxtLink prefetch-on="interaction" v-for="e in homeTimeline" :key="e.year" :to="{ path: '/history', query: { event: e.year } }" class="history-entry"><span class="history-year">{{e.year}}</span><div class="history-event"><strong>{{e.title}}</strong><small>{{e.era}}</small></div></NuxtLink></div></div></article></div><div class="people-column"><div class="section-title"><h2><NuxtLink prefetch-on="interaction" to="/people" class="encyclopedia-heading-link">✦ Հայ հայտնիներ <ArrowRight :size="18" /></NuxtLink></h2></div><article class="people-card" :aria-busy="!peopleReady"><div v-if="peopleReady && chosenPerson" :key="chosenPerson.id" class="person-feature"><div class="person-photo"><img v-if="chosenPerson.img" :src="chosenPerson.img" :alt="chosenPerson.name"/><PersonPortrait v-else :key="chosenPerson.id" :person="chosenPerson" size="large"/></div><div class="person-description"><h3>{{chosenPerson.name}}</h3><small>{{chosenPerson.years}} · {{chosenPerson.role}}</small><p>{{chosenPerson.bio}}</p><NuxtLink prefetch-on="interaction" :to="`/people/${chosenPerson.id}`">Կարդալ ավելին <ArrowRight :size="15"/></NuxtLink></div></div><div v-else class="person-feature person-placeholder" aria-hidden="true"><div class="person-photo"></div><div class="person-description"><span class="placeholder-line placeholder-name"></span><span class="placeholder-line"></span><span class="placeholder-line"></span><span class="placeholder-line"></span></div></div><div class="person-controls" :style="{ visibility: peopleReady ? undefined : 'hidden' }"><button aria-label="Նախորդ մարդը" @click="nextPerson(-1)"><ChevronLeft :size="18"/></button><span class="muted text-xs" aria-live="polite">{{ personIndex + 1 }} / {{ featuredPeople.length }}</span><button aria-label="Հաջորդ մարդը" @click="nextPerson(1)"><ChevronRight :size="18"/></button></div></article></div></section>
 <div class="stats-bar"><div><BookOpen/><strong>10,000+</strong><small>նախատեսվող հոդվածներ</small></div><div><CircleHelp/><strong>500,000+</strong><small>հարցերի երկարաժամկետ նպատակ</small></div><div><Brain/><strong>3</strong><small>ինտելեկտուալ խաղ</small></div><div><Users/><strong>100%</strong><small>անվճար հասանելիություն</small></div><div><Globe2/><strong>3 լեզու</strong><small>նախատեսված՝ Հայերեն / English / Русский</small></div></div><p class="demo-disclaimer">Ցուցադրական տարբերակ․ հոդվածների և հարցերի նշված քանակները զարգացման նպատակներ են, ոչ հրապարակված բովանդակության փաստացի հաշվարկ։</p>
 </div></main></template>
 

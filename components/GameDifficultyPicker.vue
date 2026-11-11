@@ -20,10 +20,10 @@ const gameTitles = {
 </script>
 
 <template>
-  <component :is="embedded ? 'section' : 'main'" class="shell difficulty-page">
-    <NuxtLink to="/" class="gold back-link">← Գլխավոր էջ</NuxtLink>
+  <component :is="embedded ? 'section' : 'main'" class="shell difficulty-page" :class="{ 'difficulty-embedded': embedded }">
+    <NuxtLink v-if="!embedded" to="/" class="gold back-link">← Գլխավոր էջ</NuxtLink>
     <p class="gold text-sm font-semibold mt-6">ԽԱՂԱՅԻՆ ՄԱԿԱՐԴԱԿՆԵՐ</p>
-    <h1 class="heading mt-2">{{ gameTitles[game] }}</h1>
+    <h1 v-if="!embedded" class="heading mt-2">{{ gameTitles[game] }}</h1>
     <p class="muted mt-3 mb-7">{{ game === 'million' ? 'Յուրաքանչյուր ռեժիմում կա 15 հարց՝ բարդացող երեք հնգյակով։ Հաջորդ ռեժիմը կբացվի միայն բոլոր 15 հարցերին ճիշտ պատասխանելուց հետո։' : 'Անցիր մակարդակը՝ ճիշտ պատասխանելով հարցերի առնվազն 80%-ին։ Հաջորդ մակարդակը կբացվի միայն հաջող ավարտից հետո։' }}</p>
 
     <section class="difficulty-list" aria-label="Ընտրիր խաղի բարդությունը">
@@ -45,6 +45,7 @@ const gameTitles = {
 
 <style scoped>
 .difficulty-page { max-width: 850px; padding-top: 32px; padding-bottom: 48px; }
+.difficulty-embedded { padding: 0; width: 100%; }
 .back-link { font-size: 13px; }
 .difficulty-list { display: grid; gap: 14px; }
 .difficulty-card { display: flex; align-items: center; gap: 18px; padding: 20px; }
