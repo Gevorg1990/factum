@@ -17,7 +17,7 @@ const hint=computed(()=>fieldHints[props.field||''])
 const longFields=new Set(['text','detail','answer','bio','explanation','description','significance','example','takeaway','intro','body','hint','statement','question'])
 const numberFields=new Set(['openedYear','installedYear','slot','index'])
 const imageFields=new Set(['portrait','image','src','preview'])
-const personCategories=['Գրականություն','Մշակույթ և պատմություն','Կերպարվեստ և ճարտարապետություն','Երաժշտություն','Կինո և թատրոն','Գիտություն և տեխնոլոգիա','Սպորտ','Պետական և ռազմական գործիչներ']
+const personCategories=['Գրականություն','Մշակույթ և պատմություն','Կերպարվեստ և ճարտարապետություն','Երաժշտություն','Կինո և թատրոն','Գիտություն և տեխնոլոգիա','Սպորտ','Պետական և ռազմական գործիչներ','Գործարարներ և բարերարներ']
 const options=computed(()=>{
  if(props.field==='difficulty')return [{value:'easy',label:'Հեշտ'},{value:'medium',label:'Միջին'},{value:'hard',label:'Բարդ'}]
  if(props.field==='category'&&props.kind==='PERSON')return personCategories.map(x=>({value:x,label:x}))
