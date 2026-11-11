@@ -44,12 +44,8 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
             քիմիական տարրերը և ինչու է ատոմային աշխարհը կարևոր մեր կյանքում։
           </p>
         </div>
-
       </div>
 
-      <section class="atom-article-section">
-        <h2 v-if="!isAtomArticle || question.video">Մանրամասն</h2>
-        <p v-if="!isAtomArticle || question.video">{{ question.detail }}</p>
         <img
           v-if="question.image || isAtomArticle"
           class="article-content-image"
@@ -57,6 +53,11 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
           :alt="question.image ? question.title : 'Ատոմի լուսարձակող գիտական գեղարվեստական պատկեր'"
           loading="lazy"
         >
+
+      <section v-if="!isAtomArticle || question.video" class="atom-article-section">
+        <h2>Մանրամասն</h2>
+        <p>{{ question.detail }}</p>
+
         <ArticleVideo v-if="question.video" :src="question.video" :title="question.title" :poster="question.image" />
       </section>
 
