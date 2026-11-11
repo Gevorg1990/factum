@@ -21,7 +21,9 @@ const type = computed(() => {
   if (category === 'Պետական և ռազմական գործիչներ') return 'Պետական և ռազմական գործունեություն'
   return 'Գիտական և տեխնիկական ձեռքբերում'
 })
+const isDocumentaryAchievement = computed(() => ['Գործարար ձեռքբերում', 'Բարեգործական գործունեություն', 'Կրթության աջակցություն', 'Պետական բարձրագույն գնահատանք'].includes(info.value?.type || ''))
 const suggestions = computed(() => {
+  if (isDocumentaryAchievement.value) return ['Ուսումնասիրել նշված պաշտոնական և համալսարանական աղբյուրները', 'Համադրել ծրագրերի պատմությունը, փաստաթղթերն ու ժամանակագրությունը']
   if (info.value?.type === 'Գրական ստեղծագործություն') return ['Կարդալ ամբողջական ստեղծագործությունը', 'Ուսումնասիրել գրական և պատմական համատեքստը']
   switch (person.value?.category) {
     case 'Գրականություն': return ['Կարդալ ամբողջական ստեղծագործությունը', 'Համեմատել գրական մեկնաբանություններն ու պատմական համատեքստը']
@@ -35,7 +37,7 @@ const suggestions = computed(() => {
   }
 })
 const libraryQuery = computed(() => `${person.value?.name || ''} ${work.value || ''}`)
-const libraryUrl = computed(() => `https://www.google.com/search?q=${encodeURIComponent(libraryQuery.value + (person.value?.category === 'Գրականություն' ? ' site:hy.wikisource.org' : ''))}`)
+const libraryUrl = computed(() => `https://www.google.com/search?q=${encodeURIComponent(libraryQuery.value + (!isDocumentaryAchievement.value && person.value?.category === 'Գրականություն' ? ' site:hy.wikisource.org' : ''))}`)
 const mediaUrl = computed(() => `https://www.youtube.com/results?search_query=${encodeURIComponent(libraryQuery.value)}`)
 useHead({ title: computed(() => `${work.value || 'Գործ'} — FACTUM`), meta: [{ name: 'description', content: 'FACTUM․ հայտնի գործերի բացատրություններ և լրացուցիչ ուսումնասիրության հնարավորություններ' }] })
 </script>
