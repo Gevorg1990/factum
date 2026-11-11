@@ -12,6 +12,6 @@ export default defineEventHandler(async event=>{
  const rows=await db.$queryRaw<{key:string;metadata:Record<string,unknown>}[]>(Prisma.sql`SELECT key, "publishedData" - 'text' AS metadata FROM "Content" WHERE kind = 'BOOK' AND "publishedData" IS NOT NULL AND "publishedData" <> 'null'::jsonb ORDER BY key LIMIT ${limit} OFFSET ${(page-1)*limit}`)
  const total=await db.content.count({where:{kind:'BOOK',publishedData:{not:Prisma.DbNull}}})
  const custom=rows.map(({key,metadata:d})=>({...d,id:key,language:'Հայերեն',originalTitle:d.title,shelf:libraryTopics.find(topic=>topic.id===d.topic)?.shelf??0,color:'#426078',file:`/api/library/${encodeURIComponent(key)}/text`}) as LibraryBook)
- const overridden=new Set(custom.map(book=>book.id))
- return {items:[...(page===1?libraryBooks.filter(book=>!overridden.has(book.id)):[]),...custom],total:total+libraryBooks.length,page,hasMore:page*limit<total}
+ // With a configured database, CMS is authoritative, including archived/deleted books.
+ return {items:custom,total,page,hasMore:page*limit<total}
 })
