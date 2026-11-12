@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
 const sectionDefinitions = [
   { id: 'encyclopedia', title: 'Հանրագիտարան', icon: EncyclopediaSectionIcon, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
   { id: 'games', title: 'Խաղեր', icon: GameSectionIcon, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
-  { id: 'library', title: 'Գրադարան', icon: BookOpen, description: 'Պահպանված գրքեր, էջանշված տողեր և անձնական նշումներ', to: '/library' },
+  { id: 'library', title: 'Գրադարան', icon: EncyclopediaSectionIcon, description: 'Պահպանված գրքեր, էջանշված տողեր և անձնական նշումներ', to: '/library' },
   { id: 'bible', title: 'Աստվածաշունչ', icon: ScrollText, description: 'Պահպանված գրքեր և գլուխներ', to: '/bible' },
   { id: 'facts', title: 'Հետաքրքիր փաստեր', icon: Sparkles, description: 'Քեզ հետաքրքրած փաստերն ու բացահայտումները', to: '/facts' },
   { id: 'people', title: 'Նշանավոր մարդիկ', icon: Users, description: 'Կենսագրություններ և ստեղծագործություններ', to: '/people' },
