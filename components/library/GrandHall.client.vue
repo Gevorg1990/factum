@@ -20,7 +20,7 @@ const raycaster=new THREE.Raycaster(),floorPlane=new THREE.Plane(new THREE.Vecto
 let clickTimer:ReturnType<typeof setTimeout>|undefined
 let destinationMarker:THREE.Mesh|undefined,markerUntil=0
 let visible=true,disposed=false,last=0,yaw=0,pitch=.12,targetHeight=EYE_HEIGHT,keys=new Set<string>(),lookAt:THREE.Vector3|undefined
-let journey:{points:THREE.Vector3[];lengths:number[];total:number;started:number;duration:number;height:number}|undefined
+let journey:{points:THREE.Vector3[];lengths:number[];total:number;started:number;duration:number;height:number;onArrive?:()=>void}|undefined
 const walkVelocity=new THREE.Vector2()
 let hoverMesh:THREE.Object3D|undefined
 let bookObjects:BookObject[]=[],pickableBooks:THREE.Object3D[]=[],hoverPoint:THREE.Vector2|undefined,lastHover=0
@@ -28,7 +28,7 @@ let colliders:{x:number;z:number;r:number}[]=[],down:{x:number;y:number;id:numbe
 function enter(){walking.value=true;targetHeight=EYE_HEIGHT;host.value?.focus({preventScroll:true})}
 function reset(){closeBook();keys.clear();journey=undefined;walkVelocity.set(0,0);touring.value=false;walking.value=false;targetHeight=EYE_HEIGHT;camera?.position.set(0,EYE_HEIGHT,13.3);yaw=0;pitch=.12;lookAt=undefined;joystick.value={x:0,y:0};document.exitPointerLock?.()}
 function dome(){lookAt=undefined;journey=undefined;walkVelocity.set(0,0);touring.value=false;pitch=1.04;host.value?.focus({preventScroll:true})}
-function beginJourney(x:number,z:number){
+function beginJourney(x:number,z:number,onArrive?:()=>void){
  const start=constrainPosition(camera.position.x,camera.position.z)
  camera.position.x=start.x;camera.position.z=start.z
  const route=findWalkPath(start,{x,z},colliders)
@@ -36,7 +36,7 @@ function beginJourney(x:number,z:number){
  keys.clear();walkVelocity.set(0,0);walking.value=true;targetHeight=EYE_HEIGHT;lookAt=undefined
  const points=[camera.position.clone(),...route.map(p=>new THREE.Vector3(p.x,EYE_HEIGHT,p.z))],lengths:number[]=[]
  let total=0;for(let i=1;i<points.length;i++){const a=points[i-1]!,b=points[i]!;const length=Math.hypot(b.x-a.x,b.z-a.z);lengths.push(length);total+=length}
- journey={points,lengths,total,started:performance.now(),duration:Math.max(.9,total/3.1)*1000,height:camera.position.y}
+ journey={points,lengths,total,started:performance.now(),duration:Math.max(.9,total/3.1)*1000,height:camera.position.y,onArrive}
  touring.value=true;return true
 }
 function visit(shelf:number){
@@ -52,7 +52,7 @@ function focusBook(id:string){
  const matrix=new THREE.Matrix4();mesh.getMatrixAt(0,matrix)
  const position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();matrix.decompose(position,rotation,scale)
  const goal=position.clone().addScaledVector(new THREE.Vector3(0,0,1).applyQuaternion(rotation),6.6)
- closeBook();if(beginJourney(goal.x,goal.z))lookAt=position
+ closeBook();if(beginJourney(goal.x,goal.z,()=>toggleBookCopy({object:mesh,instanceId:0})))lookAt=position
  host.value?.focus({preventScroll:true})
 }
 watch(()=>props.paused,value=>{if(value)clearInput()})
@@ -105,7 +105,7 @@ function pickBook(clientX:number,clientY:number){
  camera.updateMatrixWorld();scene.updateMatrixWorld();raycaster.setFromCamera(point,camera)
  return raycaster.intersectObjects(pickableBooks,false)[0]
 }
-function toggleBookCopy(hit:THREE.Intersection){
+function toggleBookCopy(hit:Pick<THREE.Intersection,'object'|'instanceId'>){
  const mesh=hit.object as THREE.Mesh,book=props.books.find(book=>book.id===mesh.userData.bookId)
  if(!book)return
  const key=mesh.uuid+':'+(hit.instanceId??'single')
@@ -171,7 +171,7 @@ onMounted(async()=>{
     let travelled=0,index=0;while(index<journey.lengths.length-1&&travelled+journey.lengths[index]!<distance){travelled+=journey.lengths[index]!;index++}
     const t=Math.min(1,(distance-travelled)/(journey.lengths[index]||1))
     camera.position.lerpVectors(journey.points[index]!,journey.points[index+1]!,t);camera.position.y=THREE.MathUtils.lerp(journey.height,EYE_HEIGHT,smoothJourneyProgress(progress))
-    if(progress>=1){journey=undefined;touring.value=false}
+    if(progress>=1){const onArrive=journey.onArrive;journey=undefined;touring.value=false;onArrive?.()}
    }
    let forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-joystick.value.y
    let side=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+joystick.value.x
