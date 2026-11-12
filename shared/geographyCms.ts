@@ -1,0 +1,11 @@
+import {z} from 'zod'
+export const geographyAreas=[{id:'world-facts',label:'Բացահայտիր աշխարհը'},{id:'records',label:'Աշխարհի ռեկորդներ'},{id:'places',label:'Աշխարհագրական վայրեր'},{id:'facts',label:'Գիտեի՞ր, որ…'}] as const
+export const geographyAreaSchema=z.enum(['world-facts','records','places','facts'])
+export type GeographyArea=z.infer<typeof geographyAreaSchema>
+const short=z.string().trim().max(500)
+export const geographyCategorySchema=z.object({id:short.min(1),title:short.min(1),area:geographyAreaSchema,sortOrder:z.number().int().min(0).max(100000).default(0)})
+export const geographyEntrySchema=z.object({id:short.min(1),title:short.min(1),area:geographyAreaSchema,category:short.min(1),detail:z.string().trim().min(1).max(30000),answer:z.string().trim().max(3000).default(''),measure:short.default(''),location:short.default(''),longitude:z.number().min(-180).max(180).nullish(),latitude:z.number().min(-90).max(90).nullish(),countryCode:z.string().regex(/^(?:[A-Z]{3})?$/).default(''),dataYear:z.number().int().min(1).max(3000).nullish(),source:z.object({name:short.min(1),url:z.string().url().refine(value=>value.startsWith('https://'))}),sortOrder:z.number().int().min(0).max(100000).default(0),globeSearch:z.boolean().default(false),includeInFacts:z.boolean().default(false),livePopulation:z.boolean().default(false)}).superRefine((data,ctx)=>{if((data.longitude==null)!==(data.latitude==null))ctx.addIssue({code:'custom',path:['latitude'],message:'Լրացրու երկու կոորդինատներն էլ կամ երկուսն էլ թող դատարկ։'});if(data.area==='world-facts'&&!data.answer)ctx.addIssue({code:'custom',path:['answer'],message:'Լրացրու կարճ պատասխանը։'});if(data.area==='records')for(const key of ['measure','location'] as const)if(!data[key])ctx.addIssue({code:'custom',path:[key],message:'Լրացրու ռեկորդի տվյալը։'})})
+export type GeographyCategory=z.infer<typeof geographyCategorySchema>
+export type GeographyEntry=z.infer<typeof geographyEntrySchema>
+export type GeographyItem=GeographyEntry&{question:string;coordinates?:[number,number];kind:string;categoryName:string}
+export type GeographyPage={items:GeographyItem[];categories:GeographyCategory[];total:number;page:number;limit:number;hasMore:boolean}

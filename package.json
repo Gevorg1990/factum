@@ -31,7 +31,10 @@
     "test:video": "node --import tsx --test tests/video-preview.test.ts",
     "test:cms": "node --import tsx --test tests/cms.test.ts tests/cms-editor.test.ts tests/million-stages.test.ts",
     "db:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup.ts",
-    "test:cms:integration": "node --env-file-if-exists=.env --import tsx scripts/test-cms-integration.ts"
+    "test:cms:integration": "node --env-file-if-exists=.env --import tsx scripts/test-cms-integration.ts",
+    "db:import:geography": "node --env-file-if-exists=.env --import tsx scripts/import-geography.ts",
+    "test:geography:cms": "node --import tsx --test tests/geography-cms.test.ts",
+    "test:geography:integration": "node --env-file-if-exists=.env --import tsx scripts/test-geography-cms.ts"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",

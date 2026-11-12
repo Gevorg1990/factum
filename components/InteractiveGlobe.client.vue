@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type {PlaceSearchResult} from '~/utils/geography/placeSearch'
-import type {AtlasCountry,MapLocation,WorldRecord} from '~/utils/geography/types'
+import type {AtlasCountry,MapLocation} from '~/utils/geography/types'
 import {normalizeGeoSearch,populationColor,validCoordinates,density} from '~/utils/geography/core'
 import {capitalName} from '~/data/geography/labels'
-import {geographicPlaces} from '~/data/geography/places'
 import { countryPopulation } from '~/data/countryPopulation'
 import { Globe2, RotateCcw, Minus, Plus, Search, MapPin, MousePointer2 } from 'lucide-vue-next'
 import { orientCountry, simplifyGlobeFeature, rotateGlobe, type CountryFeature, type CountryDetails, type GlobeApi, type GlobeProjection } from '~/utils/globe'
@@ -48,7 +47,7 @@ function chooseWorldPlace(place:PlaceSearchResult){
 }
 const night=ref(false),showPopulation=ref(false),lightsFailed=ref(false),populationMetric=ref<'total'|'density'>('total')
 const layerError=ref(''),selectedCode=ref('ARM'),location=ref<MapLocation|null>(null)
-const records=shallowRef<WorldRecord[]>([])
+const {items:geographicPlaces}=useGeographyContent('places',{query:search,limit:6,globeSearch:true})
 const quizCandidate=ref<string|null>(null)
 const nearbyQuizCountries=shallowRef<AtlasCountry[]>([])
 const candidateCountry=computed(()=>atlas.countries.value.find(c=>c.cca3===quizCandidate.value))
@@ -118,7 +117,7 @@ const landmarkPoints=computed(()=>{
  rotation.value;zoom.value;countries.value
  if(!projection)return []
  const rad=Math.PI/180
- return geographicPlaces.filter(place=>['bishop-rock','tromelin'].includes(place.id)&&place.coordinates).flatMap(place=>{
+ return geographicPlaces.value.filter(place=>['bishop-rock','tromelin'].includes(place.id)&&place.coordinates).flatMap(place=>{
   const [lon,lat]=place.coordinates!
   const visible=Math.sin(lat*rad)*Math.sin(-rotation.value[1]*rad)+Math.cos(lat*rad)*Math.cos(-rotation.value[1]*rad)*Math.cos((lon+rotation.value[0])*rad)>0
   if(!visible)return []
@@ -248,7 +247,7 @@ const results = computed(() => {
 })
 const placeResults=computed(()=>{
  const q=normalizeGeoSearch(search.value);if(!q)return []
- const find=(term:string)=>geographicPlaces.filter(p=>p.category==='Կղզիներ և ժայռեր').filter(p=>normalizeGeoSearch([p.title,'measure' in p?p.measure:'',p.category].join(' ')).includes(term)).slice(0,6)
+ const find=(term:string)=>geographicPlaces.value.filter(p=>p.globeSearch).filter(p=>normalizeGeoSearch([p.title,'measure' in p?p.measure:'',p.category].join(' ')).includes(term)).slice(0,6)
  const exact=find(q)
  return exact.length||q.length<4?exact:find(q.replace(/[ըն]$/u,''))
 })
@@ -409,7 +408,7 @@ function keyRotate(event: KeyboardEvent) {
   hovered.value = null
 }
 function reset() { cancelRotation();location.value=null; selectedContinent.value = null; rotation.value = [-45, -25, 0]; zoom.value = 1; hovered.value = null }
-onMounted(()=>{void load();void $fetch<WorldRecord[]>('/data/geography/records-v1.json',{timeout:10000}).then(value=>{if(!disposed)records.value=value}).catch(()=>{})})
+onMounted(()=>{void load()})
 onBeforeUnmount(() => { disposed = true; controller?.abort(); worldSearchController?.abort(); cancelWorldSearchTimer(); cancelRotation() })
 defineExpose({ getSurfaceFeatures: () => countries.value })
 </script>
@@ -422,7 +421,7 @@ defineExpose({ getSurfaceFeatures: () => countries.value })
           <input id="globe-country-search" v-model="search" class="input" type="search" maxlength="160" placeholder="Երկիր, տարածք, կղզի…" autocomplete="off" :disabled="loading || error || mapQuiz" />
         </div>
         <ul v-if="results.length" class="globe-results"><li v-for="country in results" :key="country.cca3"><button type="button" @click="chooseCode(country.cca3)"><CountryFlag :code="country.cca2"/><span class="globe-result-name">{{country.nameHy}}<small>{{capitalName(country.cca3,country.capital)}}</small></span><MapPin :size="14"/></button></li></ul>
-        <ul v-if="placeResults.length" class="globe-results"><li v-for="place in placeResults" :key="place.id"><button type="button" @click="place.coordinates && locate({coordinates:place.coordinates,label:place.title,detail:place.detail,source:place.source})"><span class="globe-result-name">{{place.title}}<small>{{place.category}}</small></span><MapPin :size="14"/></button></li></ul>
+        <ul v-if="placeResults.length" class="globe-results"><li v-for="place in placeResults" :key="place.id"><button type="button" @click="place.coordinates && locate({coordinates:place.coordinates,label:place.title,detail:place.detail,source:place.source})"><span class="globe-result-name">{{place.title}}<small>{{place.categoryName}}</small></span><MapPin :size="14"/></button></li></ul>
         <ul v-if="worldResults.length" class="globe-results"><li v-for="place in worldResults" :key="place.id"><button type="button" @click="chooseWorldPlace(place)"><MapPin :size="17"/><span class="globe-result-name">{{place.label}}<small>{{place.context}}</small></span></button></li></ul>
         <p v-if="worldSearchState==='loading'" class="globe-data-note" role="status">Որոնում ենք աշխարհի տեղանուններում…</p>
         <p v-else-if="worldSearchState==='error'" class="globe-data-note" role="status">{{worldSearchMessage}}</p>
