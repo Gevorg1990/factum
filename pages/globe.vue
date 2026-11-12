@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Globe2, Mic, Layers } from 'lucide-vue-next'
+import { Globe2, Mic, Layers, MapPin } from 'lucide-vue-next'
 import '~/assets/css/geography.css'
 import type {MapLocation} from '~/utils/geography/types'
 import type { CountryFeature } from '~/utils/globe'
@@ -58,6 +58,7 @@ useHead({ title: 'Երկրագունդ — FACTUM', meta: [{ name: 'description'
       <p class="muted">Պտտիր աշխարհը և բացահայտիր երկրները՝ մեկ հպումով։</p>
       <div class="globe-heading-actions">
       <button v-if="mode === 'globe'" type="button" class="btn-secondary globe-game-link globe-interior-button" @click="setMode('interior')"><Layers :size="17" /> Երկրի խորքերը · 3D</button>
+      <a v-show="mode === 'globe'" href="#armenia-regions" class="btn-secondary globe-game-link" @click.prevent="scrollToSection('armenia-regions')"><MapPin :size="17"/>Հայաստանի մարզերը</a>
       <a v-show="mode === 'globe'" href="#globe-atlas" class="btn-secondary globe-game-link" @click.prevent="scrollToSection('globe-atlas')">Աշխարհագրական հանրագիտարան ↓</a>
       <a v-show="mode === 'globe'" @click.prevent="scrollToSection('world-facts-title')" href="#world-facts-title" class="btn-secondary globe-game-link"><Globe2 :size="17" /> Աշխարհը՝ հարց ու պատասխանով</a>
       <a v-show="mode === 'globe'" @click.prevent="scrollToSection('globe-knowledge')" href="#globe-knowledge" class="btn-secondary globe-game-link"><Mic :size="17" /> Փորձիր քո գիտելիքները</a>
@@ -70,6 +71,7 @@ useHead({ title: 'Երկրագունդ — FACTUM', meta: [{ name: 'description'
       <a v-if="mapFocus" @click.prevent="scrollToSection(mapReturnTarget)" :href="`#${mapReturnTarget}`" class="btn-secondary globe-game-link">Վերադառնալ հարցին ↓</a>
       <template #fallback><div class="panel globe-placeholder" role="status">Բեռնում ենք երկրագունդը…</div></template>
     </ClientOnly>
+    <LazyGlobeArmeniaRegions/>
     <ClientOnly><LazyGlobeAtlas @locate="locate"/></ClientOnly>
     <WorldFacts @show-on-map="showOnMap($event, 'world-facts-title')" />
     <ClientOnly><LazyGlobeGames :paused="mode !== 'globe'" :map-answer="mapAnswer" @map-task="mapTask=$event" @map-visit="scrollToSection('interactive-globe')" @map-reveal="showOnMap($event, 'globe-games')" @show-on-map="showOnMap" /></ClientOnly>

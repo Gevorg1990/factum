@@ -72,9 +72,9 @@ test('article section images survive editing, validation and publishing without 
  assert.throws(()=>parseContent(prepareContent(imported)));
 })
 
-test('Armenian library books preserve source and text, require a valid genre and publication permission',()=>{
+test('Armenian library books save without publication metadata and still validate content',()=>{
  const form=newContent('BOOK');form.title='Փորձնական գիրք'
- Object.assign(form.data,{author:'Փորձնական հեղինակ',description:'Հայերեն պատմություն',cover:'/images/library/gikor-hy.webp',text:'Հայերեն ամբողջական տեքստ։ '.repeat(20),source:'https://example.com/book',textLicense:'Իրավատիրոջ թույլտվությամբ',coverCredit:'Իրավատեր',coverSource:'https://example.com/cover',coverLicense:'Թույլտվությամբ',edition:'Հայերեն հրատարակություն',rightsConfirmed:true})
- const result=parseContent(prepareContent(form));assert.equal(result.data.id,form.key);assert.equal(result.data.title,form.title);assert.equal(result.data.source,form.data.source);assert.equal(result.data.text,form.data.text.trim())
- for(const patch of [{rightsConfirmed:false},{topic:'missing'},{text:'English only '.repeat(20)},{cover:'javascript:alert(1)'}])assert.throws(()=>parseContent(prepareContent({...form,data:{...form.data,...patch}})))
+ Object.assign(form.data,{author:'Փորձնական հեղինակ',description:'Հայերեն պատմություն',cover:'/images/library/gikor-hy.webp',text:'Հայերեն ամբողջական տեքստ։ '.repeat(20)})
+ const result=parseContent(prepareContent(form));assert.equal(result.data.id,form.key);assert.equal(result.data.title,form.title);for(const key of ['source','textLicense','coverCredit','coverSource','coverLicense','edition','rightsConfirmed'])assert.equal(Object.hasOwn(form.data,key),false);assert.equal(result.data.text,form.data.text.trim())
+ for(const patch of [{topic:'missing'},{text:'English only '.repeat(20)},{cover:'javascript:alert(1)'}])assert.throws(()=>parseContent(prepareContent({...form,data:{...form.data,...patch}})))
 })

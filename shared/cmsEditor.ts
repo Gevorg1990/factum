@@ -17,7 +17,7 @@ export const contentSections: {kind:CmsKind;label:string;singular:string;descrip
   {kind:'SETTING',label:'Կայքի տեղեկություններ',singular:'տեղեկություն',description:'Կայքի ստորագրության և այլ տեղեկությունների տեքստերը։',icon:'Settings2',group:'Կայքի կարգավորումներ'},
 ]
 export const editorTemplates:Record<CmsKind,Record<string,any>> = {
-  BOOK:{id:'',title:'',author:'',topic:'detective',description:'',cover:'',text:'',source:'',textLicense:'',coverCredit:'',coverSource:'',coverLicense:'',edition:'',rightsConfirmed:false},
+  BOOK:{id:'',title:'',author:'',topic:'detective',description:'',cover:'',text:''},
   ARTICLE:{id:'',title:'',subject:'',answer:'',detail:'',image:'',video:'',listed:true,sections:[],example:'',takeaway:''},
   CATEGORY:{slug:'',name:'',image:'',cardVideo:''},AUTHOR:{name:'',bio:''},
   PERSON:{id:'',name:'',years:'',role:'',category:'Գրականություն',bio:'',portrait:'',isArmenian:true,works:[],biographySections:[],timeline:[]},
