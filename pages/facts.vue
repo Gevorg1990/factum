@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { facts as legacyFacts, factCategories } from '~/data/facts'
 import type { FactCategoryId } from '~/data/facts'
-import { Search, Sparkles } from 'lucide-vue-next'
+import { Search, Sparkles, Star } from 'lucide-vue-next'
 
 const facts = await usePublishedContent('FACT', legacyFacts)
 const { saved, toggleSaved } = useProgress()
@@ -105,7 +105,7 @@ useSavedScroll(
           <p class="muted mt-4 mb-6 facts-text"><template v-for="(part, index) in highlightedParts(fact.text)" :key="index"><mark v-if="part.match">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></p>
           <div class="mt-auto">
             <a :href="fact.source.url" target="_blank" rel="noopener noreferrer" class="facts-source">Աղբյուր՝ {{ fact.source.name }} <span aria-hidden="true">↗</span><span class="sr-only"> (բացվում է նոր ներդիրում)</span></a>
-            <button type="button" class="btn-secondary mt-4" :aria-pressed="saved.includes(fact.id)" @click="toggleSaved(fact.id, $event)">{{ saved.includes(fact.id) ? '★ Պահպանված' : '☆ Պահպանել' }}</button>
+            <button type="button" class="btn-secondary mt-4 save-control" :aria-pressed="saved.includes(fact.id)" @click="toggleSaved(fact.id, $event)"><Star :size="16" :fill="saved.includes(fact.id)?'currentColor':'none'" aria-hidden="true"/><span>{{saved.includes(fact.id)?'Պահպանված':'Պահպանել'}}</span></button>
           </div>
         </div>
       </article>

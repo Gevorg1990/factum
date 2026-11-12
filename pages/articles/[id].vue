@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {Star} from 'lucide-vue-next'
 import { allEncyclopediaQuestions, subjects, collectionSubjects } from '~/data/content'
 import { atomFacts, atomParticles, atomSections } from '~/data/atomArticle'
 
@@ -126,8 +127,8 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
       </footer>
 
       <div class="flex flex-wrap gap-3 mt-8">
-        <button class="btn-secondary" @click="toggleSaved(question.id, $event)">
-          {{ saved.includes(question.id) ? '★ Պահպանված' : '☆ Պահպանել' }}
+        <button class="btn-secondary save-control" :aria-pressed="saved.includes(question.id)" @click="toggleSaved(question.id, $event)">
+          <Star :size="16" :fill="saved.includes(question.id)?'currentColor':'none'" aria-hidden="true"/><span>{{saved.includes(question.id)?'Պահպանված':'Պահպանել'}}</span>
         </button>
       </div>
     </article>

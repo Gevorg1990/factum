@@ -15,7 +15,7 @@ const filename = 'pages/profile.vue'
 const { descriptor } = parse(readFileSync(new URL('../' + filename, import.meta.url), 'utf8'), { filename })
 const compiled = compileScript(descriptor, { id: 'profile-record-test' })
 const code = ts.transpileModule(compiled.content, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-function setup(savedIds = []) {
+function setup(savedIds = [], libraryIds = [], libraryState = {}) {
   const values = new Map([
     ['factum-genius-record-v1', '{"best":10,"bestLevel":"hard","completed":["easy","medium","hard"]}'],
     ['factum-million-best-v1-easy', '15'],
@@ -26,7 +26,8 @@ function setup(savedIds = []) {
   runInNewContext(code, {
     ...vue, exports,
     $fetch: async () => JSON.parse(readFileSync(new URL('../public/data/geography/facts-v1.json', import.meta.url), 'utf8')),
-    useProgress: () => ({ saved: vue.ref(savedIds), removeSaved() {} }),
+    useProgress: () => ({ saved: vue.ref(savedIds), library: vue.ref(libraryIds), removeSaved() {} }),
+    useLibraryReading: () => ({records:vue.ref(libraryState),loadSaved() {}}),
     onMounted: fn => mounted.push(fn), onBeforeUnmount() {},
     window: { addEventListener() {}, removeEventListener() {} },
     require: name => {
@@ -113,4 +114,13 @@ test('saved legacy health articles restore their original titles and destination
   assert.equal(article.title, 'Ի՞նչ է անում սիրտը')
   assert.equal(article.category, 'encyclopedia')
   assert.equal(article.to, '/articles/health-heart-1-a#saved-article')
+})
+
+test('My FACTUM includes saved and bookmarked library books once without counting unmarked reading history',()=>{
+ const mark={page:1,line:12,note:'հիշել',updatedAt:1}
+ const profile=setup([],['anush'],{anush:{bookmarks:[mark]},gikor:{bookmarks:[mark]},'qaj-nazar':{bookmarks:[]}})
+ assert.equal(profile.savedLibraryCount.value,2)
+ assert.deepEqual([...profile.savedLibraryIds.value],['anush','gikor'])
+ assert.equal(profile.sections.value.find(section=>section.id==='library').count,2)
+ assert.equal(profile.savedCount.value,5)
 })

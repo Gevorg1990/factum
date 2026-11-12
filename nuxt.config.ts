@@ -3,6 +3,8 @@ export default defineNuxtConfig({
   // Production builds must not replace a running dev server's generated aliases.
   $production: { buildDir: '.nuxt-build' },
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
+  // Production build files must not invalidate the live reader in Vite dev.
+  vite: { server: { watch: { ignored: ['**/.nuxt-build/**', '**/.output/**'] } } },
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
   nitro: {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as THREE from 'three'
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js'
 import {Expand,Move,Heart,RotateCcw,ArrowUp,ArrowDown,ArrowLeft,ArrowRight,Landmark,X} from 'lucide-vue-next'
 import {libraryTopics,type LibraryBook} from '~/data/library/catalog'
 import type {BookObject} from '~/utils/library/createRoom'
@@ -8,6 +9,7 @@ import {createLibraryRoom} from '~/utils/library/createRoom'
 import {constrainPosition,EYE_HEIGHT,shelfPoint,isWalkablePoint,findWalkPath,smoothJourneyProgress} from '~/utils/library/navigation'
 const {library,toggleBook}=useProgress()
 const props=defineProps<{paused?:boolean;books:readonly LibraryBook[]}>()
+const initialView={x:0,z:5.2,pitch:.08}
 const emit=defineEmits<{ready:[];error:[];read:[id:string]}>()
 const host=ref<HTMLElement>(),canvasHost=ref<HTMLElement>(),loading=ref(true),failed=ref(false),walking=ref(false),locked=ref(false),touring=ref(false)
 const selectedBook=ref<LibraryBook|null>(null)
@@ -15,18 +17,20 @@ const pullouts=new Map<string,ReturnType<typeof createBookPullout>>()
 let selectedCopy:string|undefined
 const hovered=ref<LibraryBook|null>(null),hoverPosition=ref({x:0,y:0})
 const joystick=ref({x:0,y:0}),mobile=ref(false),tip=ref('')
+let environmentTarget:THREE.WebGLRenderTarget|undefined
+let renderFrame:((time:number)=>void)|undefined
 let renderer:THREE.WebGLRenderer|undefined,camera:THREE.PerspectiveCamera,scene:THREE.Scene,observer:ResizeObserver,intersection:IntersectionObserver
 const raycaster=new THREE.Raycaster(),floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0)
 let clickTimer:ReturnType<typeof setTimeout>|undefined
 let destinationMarker:THREE.Mesh|undefined,markerUntil=0
-let visible=true,disposed=false,last=0,yaw=0,pitch=.12,targetHeight=EYE_HEIGHT,keys=new Set<string>(),lookAt:THREE.Vector3|undefined
+let visible=true,disposed=false,last=0,yaw=0,pitch=initialView.pitch,targetHeight=EYE_HEIGHT,keys=new Set<string>(),lookAt:THREE.Vector3|undefined
 let journey:{points:THREE.Vector3[];lengths:number[];total:number;started:number;duration:number;height:number;onArrive?:()=>void}|undefined
 const walkVelocity=new THREE.Vector2()
 let hoverMesh:THREE.Object3D|undefined
 let bookObjects:BookObject[]=[],pickableBooks:THREE.Object3D[]=[],hoverPoint:THREE.Vector2|undefined,lastHover=0
 let colliders:{x:number;z:number;r:number}[]=[],down:{x:number;y:number;id:number;travel:number;dragging:boolean}|undefined,joyId:number|undefined,joyOrigin={x:0,y:0},cleanup:(()=>void)[]=[]
 function enter(){walking.value=true;targetHeight=EYE_HEIGHT;host.value?.focus({preventScroll:true})}
-function reset(){closeBook();keys.clear();journey=undefined;walkVelocity.set(0,0);touring.value=false;walking.value=false;targetHeight=EYE_HEIGHT;camera?.position.set(0,EYE_HEIGHT,13.3);yaw=0;pitch=.12;lookAt=undefined;joystick.value={x:0,y:0};document.exitPointerLock?.()}
+function reset(){closeBook();keys.clear();journey=undefined;walkVelocity.set(0,0);touring.value=false;walking.value=false;targetHeight=EYE_HEIGHT;camera?.position.set(initialView.x,EYE_HEIGHT,initialView.z);yaw=0;pitch=initialView.pitch;lookAt=undefined;joystick.value={x:0,y:0};document.exitPointerLock?.()}
 function dome(){lookAt=undefined;journey=undefined;walkVelocity.set(0,0);touring.value=false;pitch=1.04;host.value?.focus({preventScroll:true})}
 function beginJourney(x:number,z:number,onArrive?:()=>void){
  const start=constrainPosition(camera.position.x,camera.position.z)
@@ -36,7 +40,7 @@ function beginJourney(x:number,z:number,onArrive?:()=>void){
  keys.clear();walkVelocity.set(0,0);walking.value=true;targetHeight=EYE_HEIGHT;lookAt=undefined
  const points=[camera.position.clone(),...route.map(p=>new THREE.Vector3(p.x,EYE_HEIGHT,p.z))],lengths:number[]=[]
  let total=0;for(let i=1;i<points.length;i++){const a=points[i-1]!,b=points[i]!;const length=Math.hypot(b.x-a.x,b.z-a.z);lengths.push(length);total+=length}
- journey={points,lengths,total,started:performance.now(),duration:Math.max(.9,total/3.1)*1000,height:camera.position.y,onArrive}
+ journey={points,lengths,total,started:performance.now(),duration:Math.max(.7,total/4.6)*1000,height:camera.position.y,onArrive}
  touring.value=true;return true
 }
 function visit(shelf:number){
@@ -55,7 +59,7 @@ function focusBook(id:string){
  closeBook();if(beginJourney(goal.x,goal.z,()=>toggleBookCopy({object:mesh,instanceId:0})))lookAt=position
  host.value?.focus({preventScroll:true})
 }
-watch(()=>props.paused,value=>{if(value)clearInput()})
+watch(()=>props.paused,value=>{if(value){clearInput();renderer?.setAnimationLoop(null)}else if(renderFrame&&!disposed){last=performance.now();renderer?.setAnimationLoop(renderFrame)}})
 function keyUp(e:KeyboardEvent){keys.delete(e.code)}
 function clearInput(){journey=undefined;touring.value=false;hovered.value=null;hoverPoint=undefined;walkVelocity.set(0,0);keys.clear();joystick.value={x:0,y:0};joyId=undefined;down=undefined}
 function pointerDown(e:PointerEvent){if(e.button!==0)return;host.value?.focus({preventScroll:true});down={x:e.clientX,y:e.clientY,id:e.pointerId,travel:0,dragging:false};renderer?.domElement.setPointerCapture(e.pointerId)}
@@ -147,14 +151,17 @@ onMounted(async()=>{
  try{
   // A slow font must not prevent the 3D room from opening.
   await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1500))]);if(disposed||!canvasHost.value)return
-  renderer=new THREE.WebGLRenderer({antialias:!mobile.value,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile.value?1.3:1.7));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08
+  renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05
   canvasHost.value.appendChild(renderer.domElement);renderer.domElement.setAttribute('aria-label','Իրական եռաչափ գրադարանի սրահ')
-  scene=new THREE.Scene();scene.background=new THREE.Color('#b4a184');scene.fog=new THREE.Fog('#9e9684',28,64)
-  camera=new THREE.PerspectiveCamera(70,1,.08,95);camera.position.set(0,EYE_HEIGHT,13.3);camera.rotation.order='YXZ'
-  const room=createLibraryRoom(scene,mobile.value,props.books);colliders=room.colliders;bookObjects=room.selectable;pickableBooks=[...room.selectable.map(book=>book.mesh),...room.stackMeshes]
+  scene=new THREE.Scene();scene.background=new THREE.Color('#c8c5ba');scene.fog=new THREE.Fog('#c8c5ba',42,90)
+  // A small, locally generated environment adds soft reflections without an HDR download.
+  const environment=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer)
+  try{environmentTarget=pmrem.fromScene(environment,.06,.1,100,{size:256});scene.environment=environmentTarget.texture;scene.environmentIntensity=.38}finally{environment.dispose();pmrem.dispose()}
+  camera=new THREE.PerspectiveCamera(70,1,.12,80);camera.position.set(initialView.x,EYE_HEIGHT,initialView.z);camera.rotation.order='YXZ'
+  const room=createLibraryRoom(scene,mobile.value,props.books);for(const texture of room.textures)texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),mobile.value?4:8);colliders=room.colliders;bookObjects=room.selectable;pickableBooks=[...room.selectable.map(book=>book.mesh),...room.stackMeshes]
   destinationMarker=new THREE.Mesh(new THREE.RingGeometry(.28,.4,32),new THREE.MeshBasicMaterial({color:'#ffe0a0',transparent:true,opacity:.8,depthWrite:false,side:THREE.DoubleSide}))
   destinationMarker.rotation.x=-Math.PI/2;destinationMarker.visible=false;scene.add(destinationMarker)
-  const resize=()=>{if(!canvasHost.value||!renderer)return;const {width,height}=canvasHost.value.getBoundingClientRect();if(!width||!height)return;renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix()};observer=new ResizeObserver(resize);observer.observe(canvasHost.value);resize()
+  const resize=()=>{if(!canvasHost.value||!renderer)return;const {width,height}=canvasHost.value.getBoundingClientRect();if(!width||!height)return;const ratio=Math.min(devicePixelRatio||1,mobile.value?1.6:2,Math.sqrt((mobile.value?1_250_000:4_000_000)/(width*height)));if(Math.abs(renderer.getPixelRatio()-ratio)>.01)renderer.setPixelRatio(ratio);renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix()};observer=new ResizeObserver(resize);observer.observe(canvasHost.value);resize()
   intersection=new IntersectionObserver(([entry])=>{visible=Boolean(entry?.isIntersecting);if(!visible)clearInput()});intersection.observe(canvasHost.value)
   const listen=(target:EventTarget,event:string,handler:EventListener)=>{target.addEventListener(event,handler);cleanup.push(()=>target.removeEventListener(event,handler))}
   listen(window,'keydown',keyDown as EventListener);listen(window,'keyup',keyUp as EventListener);listen(window,'blur',clearInput)
@@ -163,7 +170,7 @@ onMounted(async()=>{
   listen(renderer.domElement,'pointerdown',pointerDown as EventListener);listen(renderer.domElement,'pointermove',pointerMove as EventListener);listen(renderer.domElement,'pointerup',pointerUp as EventListener);listen(renderer.domElement,'pointercancel',()=>{down=undefined});listen(renderer.domElement,'lostpointercapture',()=>{down=undefined});listen(renderer.domElement,'pointerleave',()=>{hovered.value=null;hoverPoint=undefined})
   listen(renderer.domElement,'dblclick',((event:MouseEvent)=>{event.preventDefault();clearTimeout(clickTimer);approachPoint(event.clientX,event.clientY)}) as EventListener)
   listen(renderer.domElement,'webglcontextlost',e=>{e.preventDefault();failed.value=true;clearInput();emit('error')})
-  renderer.setAnimationLoop(time=>{
+  renderFrame=time=>{
    if(disposed||props.paused||document.hidden||!visible||time-last<(mobile.value?32:16))return
    const dt=Math.min((time-last)/1000,.05);last=time
    if(journey){
@@ -176,7 +183,7 @@ onMounted(async()=>{
    let forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-joystick.value.y
    let side=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+joystick.value.x
    const len=Math.max(1,Math.hypot(forward,side));forward/=len;side/=len
-   walkVelocity.lerp(new THREE.Vector2(-Math.sin(yaw)*forward+Math.cos(yaw)*side,-Math.cos(yaw)*forward-Math.sin(yaw)*side).multiplyScalar(3.4),1-Math.exp(-dt*((forward||side)?1.8:7)))
+   walkVelocity.lerp(new THREE.Vector2(-Math.sin(yaw)*forward+Math.cos(yaw)*side,-Math.cos(yaw)*forward-Math.sin(yaw)*side).multiplyScalar(4.8),1-Math.exp(-dt*((forward||side)?2.6:8)))
    if(!journey&&walkVelocity.lengthSq()>.0001)safeMove(walkVelocity.x*dt,walkVelocity.y*dt)
    if(!journey)camera.position.y=THREE.MathUtils.lerp(camera.position.y,targetHeight,1-Math.exp(-dt*4))
    if(lookAt){const dx=lookAt.x-camera.position.x,dz=lookAt.z-camera.position.z,distance=Math.hypot(dx,dz);if(distance<.35){lookAt=undefined}else{const targetYaw=Math.atan2(-dx,-dz),dy=Math.atan2(lookAt.y-camera.position.y,distance);yaw+=Math.atan2(Math.sin(targetYaw-yaw),Math.cos(targetYaw-yaw))*(1-Math.exp(-dt*3));pitch=THREE.MathUtils.lerp(pitch,dy,1-Math.exp(-dt*3))}}
@@ -191,7 +198,8 @@ onMounted(async()=>{
    for(const book of bookObjects){if(pullouts.has(book.mesh.uuid+':single'))continue;const active=book.mesh===hoverMesh&&book.id===hovered.value?.id;book.mesh.position.lerp(book.rest.clone().addScaledVector(book.normal,active?.3:0),1-Math.exp(-dt*10))}
    for(const [key,animation] of pullouts){if(!animation.update(dt))pullouts.delete(key)}
    renderer?.render(scene,camera)
-  })
+  }
+  renderer.setAnimationLoop(props.paused?null:renderFrame)
   loading.value=false;emit('ready')
  }catch(error){console.error('Library room initialization failed',error);failed.value=true;loading.value=false;emit('error')}
 })
@@ -199,7 +207,7 @@ onUnmounted(()=>{
  disposed=true;clearTimeout(clickTimer);pullouts.forEach(animation=>animation.restore());pullouts.clear();clearInput();if(document.pointerLockElement===renderer?.domElement)document.exitPointerLock();cleanup.forEach(fn=>fn());observer?.disconnect();intersection?.disconnect();renderer?.setAnimationLoop(null)
  const geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>(),textures=new Set<THREE.Texture>()
  scene?.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material]){materials.add(material);for(const value of Object.values(material))if(value instanceof THREE.Texture)textures.add(value)}}})
- geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer?.dispose();renderer?.domElement.remove()
+ geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()
 })
 defineExpose({visit,reset,focusBook})
 </script>
@@ -215,7 +223,7 @@ defineExpose({visit,reset,focusBook})
     <header class="book-panel-heading"><span>FACTUM · ԳՐԱԴԱՐԱՆ</span><button type="button" class="return-book" aria-label="Փակել և վերադարձնել գիրքը դարակին" @click="closeBook"><X :size="18"/></button></header>
     <div class="book-panel-summary"><div class="book-cover-frame"><img :src="selectedBook.cover" :alt="selectedBook.title"/></div><div class="book-panel-title"><small>{{libraryTopics.find(topic=>topic.id===selectedBook?.topic)?.short}}</small><h2>{{selectedBook.title}}</h2><p>{{selectedBook.author}}</p><span class="book-language">Հայերեն</span></div></div>
     <p class="book-panel-description">{{selectedBook.description}}</p>
-    <div class="book-panel-actions"><button v-if="selectedBook.file" type="button" class="book-read-action" @click="emit('read',selectedBook.id)">Կարդալ գիրքը <ArrowRight :size="16"/></button><button type="button" class="book-save-action" :aria-pressed="library.includes(selectedBook.id)" @click="toggleBook(selectedBook.id)"><Heart :size="16" :fill="library.includes(selectedBook.id)?'currentColor':'none'"/>{{library.includes(selectedBook.id)?'Սիրված է':'Պահպանել'}}</button></div>
+    <div class="book-panel-actions"><button v-if="selectedBook.file" type="button" class="book-read-action" @click="emit('read',selectedBook.id)">Կարդալ գիրքը <ArrowRight :size="16"/></button><button type="button" class="book-save-action save-control" :aria-pressed="library.includes(selectedBook.id)" @click="toggleBook(selectedBook.id)"><Heart :size="16" :fill="library.includes(selectedBook.id)?'currentColor':'none'"/>{{library.includes(selectedBook.id)?'Պահպանված է':'Պահպանել'}}</button></div>
     <button type="button" class="book-return-action" @click="closeBook">Վերադարձնել դարակին</button>
    </aside>
    <aside v-if="hovered&&!selectedBook" class="book-hover" :style="{left:`${hoverPosition.x}px`,top:`${hoverPosition.y}px`}"><img :src="hovered.cover" :alt="hovered.title"/><div><small>{{libraryTopics.find(topic=>topic.id===hovered?.topic)?.short}}</small><strong>{{hovered.title}}</strong><span>{{hovered.author}}</span></div></aside>
