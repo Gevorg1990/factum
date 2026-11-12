@@ -57,3 +57,18 @@ export function findWalkPath(start:WalkPoint,goal:WalkPoint,obstacles:readonly W
  return []
 }
 export function smoothJourneyProgress(progress:number){const t=Math.max(0,Math.min(1,progress));return t*t*t*(t*(t*6-15)+10)}
+
+// Numbered headings in verse collections mark complete poems, not stanzas.
+export function splitBookPages(text:string,topic:string,maxLength=4400){
+ const normalized=text.replace(/\r\n?/g,'\n').trim()
+ if(topic==='poetry')return [normalized]
+ if(topic!=='verse')return splitReadingPages(normalized,maxLength)
+ const headings=[...normalized.matchAll(/^(?:\d+[.)]\s+[^\n]+)\n(?=\s*\n)/gm)]
+ if(headings.length<2)return [normalized]
+ return headings.map((heading,index)=>normalized.slice(index===0?0:heading.index,headings[index+1]?.index??normalized.length).trim())
+}
+
+export function readingPageTitle(page:string,index:number){
+ const heading=page.split('\n').find(line=>/^\d+[.)]\s+/.test(line.trim()))
+ return heading?.trim().replace(/^\d+[.)]\s+/,'')||page.split('\n').find(line=>line.trim())?.trim()||`Բանաստեղծություն ${index+1}`
+}

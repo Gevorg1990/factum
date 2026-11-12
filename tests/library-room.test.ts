@@ -20,7 +20,7 @@ test('walking stays in the hall and outside the central reading desk',()=>{
 
 test('the hall builds finite real geometry with exactly one physical copy per real book',()=>{
  const previous=Object.getOwnPropertyDescriptor(globalThis,'document')
- const context=new Proxy({measureText:(text:string)=>({width:text.length*22}),createLinearGradient:()=>({addColorStop:()=>{}})},{get:(target,key)=>key in target?target[key as keyof typeof target]:()=>undefined})
+ const context=new Proxy({measureText:(text:string)=>({width:text.length*22}),createRadialGradient:()=>({addColorStop:()=>{}}),createLinearGradient:()=>({addColorStop:()=>{}})},{get:(target,key)=>key in target?target[key as keyof typeof target]:()=>undefined})
  Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>({width:0,height:0,getContext:()=>context})}})
  try{
   for(const mobile of [false,true]){

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {Star} from 'lucide-vue-next'
 import { people } from '~/data/content'
 import { workDetails } from '~/data/peopleWorks'
 
@@ -83,7 +84,7 @@ useSavedScroll(() => route.hash === '#saved-person' ? 'saved-person' : undefined
         </section>
       </div>
       <div class="flex gap-3 mt-7 flex-wrap">
-        <button class="btn-secondary" @click="toggleSaved('person-' + person.id, $event)">{{ saved.includes('person-' + person.id) ? '★ Պահպանված' : '☆ Պահպանել' }}</button>
+        <button class="btn-secondary save-control" :aria-pressed="saved.includes('person-' + person.id)" @click="toggleSaved('person-' + person.id, $event)"><Star :size="16" :fill="saved.includes('person-'+person.id)?'currentColor':'none'" aria-hidden="true"/><span>{{saved.includes('person-'+person.id)?'Պահպանված':'Պահպանել'}}</span></button>
       </div>
     </article>
     <p v-else class="muted mt-6">Այս կենսագրությունը չի գտնվել։</p>
