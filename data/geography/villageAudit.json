@@ -1,0 +1,4905 @@
+{
+  "snapshot": "2026-11-11T18:47:24Z",
+  "counts": {
+    "AM-GR": {
+      "count": 107,
+      "bytes": 26639
+    },
+    "AM-SU": {
+      "count": 141,
+      "bytes": 34732
+    },
+    "AM-TV": {
+      "count": 66,
+      "bytes": 16339
+    },
+    "AM-SH": {
+      "count": 140,
+      "bytes": 34615
+    },
+    "AM-LO": {
+      "count": 123,
+      "bytes": 31000
+    },
+    "AM-KT": {
+      "count": 69,
+      "bytes": 17143
+    },
+    "AM-VD": {
+      "count": 53,
+      "bytes": 13151
+    },
+    "AM-AV": {
+      "count": 95,
+      "bytes": 23872
+    },
+    "AM-AG": {
+      "count": 119,
+      "bytes": 29904
+    },
+    "AM-ER": {
+      "count": 0,
+      "bytes": 135
+    },
+    "AM-AR": {
+      "count": 101,
+      "bytes": 24898
+    }
+  },
+  "removed": [
+    {
+      "id": "node/1249043378",
+      "reason": "same_wikidata",
+      "name": "Արաքս"
+    },
+    {
+      "id": "node/1379054557",
+      "reason": "same_wikidata",
+      "name": "Այգեվան"
+    },
+    {
+      "id": "node/1379097072",
+      "reason": "same_wikidata",
+      "name": "Այգեշատ"
+    },
+    {
+      "id": "node/1380065765",
+      "reason": "same_wikidata",
+      "name": "Բաղրամյան"
+    },
+    {
+      "id": "node/1890119794",
+      "reason": "same_wikidata",
+      "name": "Կաթնաղբյուր"
+    },
+    {
+      "id": "node/3278974773",
+      "reason": "same_wikidata",
+      "name": "Վերին Ծաղկավան"
+    },
+    {
+      "id": "way/539705540",
+      "reason": "same_wikidata",
+      "name": "Թեղուտ"
+    },
+    {
+      "id": "relation/11699422",
+      "reason": "same_wikidata",
+      "name": "Քարկոփ"
+    },
+    {
+      "id": "relation/18982159",
+      "reason": "same_wikidata",
+      "name": "Ձորաղբյուր"
+    },
+    {
+      "id": "relation/18982160",
+      "reason": "same_wikidata",
+      "name": "Զովք"
+    },
+    {
+      "id": "node/10973341911",
+      "reason": "manual_review",
+      "name": "Հորբատեղ"
+    },
+    {
+      "id": "node/12296547256",
+      "reason": "manual_review",
+      "name": "Ջրառատ"
+    },
+    {
+      "id": "node/13069494838",
+      "reason": "manual_review",
+      "name": "Ոսկեհասկ"
+    },
+    {
+      "id": "node/13069494840",
+      "reason": "manual_review",
+      "name": "Հովունի"
+    },
+    {
+      "id": "way/74370158",
+      "reason": "same_wikidata",
+      "name": "Սուրենավան"
+    },
+    {
+      "id": "way/74370179",
+      "reason": "same_wikidata",
+      "name": "Արմաշ"
+    },
+    {
+      "id": "way/74370982",
+      "reason": "same_wikidata",
+      "name": "Քաղցրաշեն"
+    },
+    {
+      "id": "way/74371029",
+      "reason": "same_wikidata",
+      "name": "Նոր Կյանք"
+    },
+    {
+      "id": "way/74371032",
+      "reason": "same_wikidata",
+      "name": "Արալեզ"
+    },
+    {
+      "id": "way/74371037",
+      "reason": "same_wikidata",
+      "name": "Գոռավան"
+    },
+    {
+      "id": "way/74371041",
+      "reason": "same_wikidata",
+      "name": "Վանաշեն"
+    },
+    {
+      "id": "way/74371050",
+      "reason": "same_wikidata",
+      "name": "Եղեգնավան"
+    },
+    {
+      "id": "way/74371051",
+      "reason": "same_wikidata",
+      "name": "Լուսառատ"
+    },
+    {
+      "id": "way/74371052",
+      "reason": "same_wikidata",
+      "name": "Տափերական"
+    },
+    {
+      "id": "way/74371054",
+      "reason": "same_wikidata",
+      "name": "Գինեվետ"
+    },
+    {
+      "id": "way/74371055",
+      "reason": "same_wikidata",
+      "name": "Նոյակերտ"
+    },
+    {
+      "id": "way/74392078",
+      "reason": "same_wikidata",
+      "name": "Ջրաշեն"
+    },
+    {
+      "id": "way/74486897",
+      "reason": "same_wikidata",
+      "name": "Դիմիտրով"
+    },
+    {
+      "id": "way/74514012",
+      "reason": "same_wikidata",
+      "name": "Նոր Արտամետ"
+    },
+    {
+      "id": "way/75048765",
+      "reason": "same_wikidata",
+      "name": "Վազաշեն"
+    },
+    {
+      "id": "way/75509977",
+      "reason": "same_wikidata",
+      "name": "Ճոճկան"
+    },
+    {
+      "id": "way/75519448",
+      "reason": "same_wikidata",
+      "name": "Սարչապետ"
+    },
+    {
+      "id": "way/75519449",
+      "reason": "same_wikidata",
+      "name": "Ձորամուտ"
+    },
+    {
+      "id": "way/75519450",
+      "reason": "same_wikidata",
+      "name": "Լեռնահովիտ"
+    },
+    {
+      "id": "way/75519451",
+      "reason": "same_wikidata",
+      "name": "Մեծավան"
+    },
+    {
+      "id": "way/75523413",
+      "reason": "same_wikidata",
+      "name": "Սարատովկա"
+    },
+    {
+      "id": "way/75523421",
+      "reason": "same_wikidata",
+      "name": "Գետավան"
+    },
+    {
+      "id": "way/75523554",
+      "reason": "same_wikidata",
+      "name": "Դաշտադեմ"
+    },
+    {
+      "id": "way/75524002",
+      "reason": "same_wikidata",
+      "name": "Սվերդլով"
+    },
+    {
+      "id": "way/75525274",
+      "reason": "same_wikidata",
+      "name": "Վարդաբլուր"
+    },
+    {
+      "id": "way/75525310",
+      "reason": "same_wikidata",
+      "name": "Ուռուտ"
+    },
+    {
+      "id": "way/75528514",
+      "reason": "same_wikidata",
+      "name": "Արմանիս"
+    },
+    {
+      "id": "way/75529454",
+      "reason": "same_wikidata",
+      "name": "Միխայելովկա"
+    },
+    {
+      "id": "way/75529758",
+      "reason": "same_wikidata",
+      "name": "Պետրովկա"
+    },
+    {
+      "id": "way/75530667",
+      "reason": "same_wikidata",
+      "name": "Նորաշեն"
+    },
+    {
+      "id": "way/75777234",
+      "reason": "same_wikidata",
+      "name": "Ջիլիզա"
+    },
+    {
+      "id": "way/78801346",
+      "reason": "same_wikidata",
+      "name": "Պրիվոլնոյե"
+    },
+    {
+      "id": "way/78821150",
+      "reason": "same_wikidata",
+      "name": "Ձյունաշող"
+    },
+    {
+      "id": "way/80032492",
+      "reason": "same_wikidata",
+      "name": "Մեծ Սեպասար"
+    },
+    {
+      "id": "way/80032499",
+      "reason": "same_wikidata",
+      "name": "Կրասար"
+    },
+    {
+      "id": "way/80032508",
+      "reason": "same_wikidata",
+      "name": "Աշոցք"
+    },
+    {
+      "id": "way/80032516",
+      "reason": "same_wikidata",
+      "name": "Ղազանչի"
+    },
+    {
+      "id": "way/80043199",
+      "reason": "same_wikidata",
+      "name": "Սարագյուղ"
+    },
+    {
+      "id": "way/80045565",
+      "reason": "same_wikidata",
+      "name": "Սիզավետ"
+    },
+    {
+      "id": "way/80046932",
+      "reason": "same_wikidata",
+      "name": "Աղվորիկ"
+    },
+    {
+      "id": "way/80048437",
+      "reason": "same_wikidata",
+      "name": "Զորակերտ"
+    },
+    {
+      "id": "way/80128787",
+      "reason": "same_wikidata",
+      "name": "Արծնի"
+    },
+    {
+      "id": "way/80128791",
+      "reason": "same_wikidata",
+      "name": "Ապավեն"
+    },
+    {
+      "id": "way/81990328",
+      "reason": "same_wikidata",
+      "name": "Խոր Վիրապ"
+    },
+    {
+      "id": "way/82634794",
+      "reason": "same_wikidata",
+      "name": "Սիսավան"
+    },
+    {
+      "id": "way/83059543",
+      "reason": "same_wikidata",
+      "name": "Նոր Ուղի"
+    },
+    {
+      "id": "way/83388908",
+      "reason": "same_wikidata",
+      "name": "Ենոքավան"
+    },
+    {
+      "id": "way/83391587",
+      "reason": "same_wikidata",
+      "name": "Գետահովիտ"
+    },
+    {
+      "id": "way/103321815",
+      "reason": "same_wikidata",
+      "name": "Անիպեմզա"
+    },
+    {
+      "id": "way/103478314",
+      "reason": "same_wikidata",
+      "name": "Անիավան"
+    },
+    {
+      "id": "way/103480404",
+      "reason": "same_wikidata",
+      "name": "Թլիկ"
+    },
+    {
+      "id": "way/103563682",
+      "reason": "same_wikidata",
+      "name": "Բագրավան"
+    },
+    {
+      "id": "way/103586227",
+      "reason": "same_wikidata",
+      "name": "Ջրափի"
+    },
+    {
+      "id": "way/105216078",
+      "reason": "same_wikidata",
+      "name": "Հայկաձոր"
+    },
+    {
+      "id": "way/108105342",
+      "reason": "same_wikidata",
+      "name": "Նարեկ"
+    },
+    {
+      "id": "way/112050157",
+      "reason": "same_wikidata",
+      "name": "Փոքր Սեպասար"
+    },
+    {
+      "id": "way/112050258",
+      "reason": "same_wikidata",
+      "name": "Ալվար"
+    },
+    {
+      "id": "way/121744056",
+      "reason": "same_wikidata",
+      "name": "Ագարակավան"
+    },
+    {
+      "id": "way/121744059",
+      "reason": "same_wikidata",
+      "name": "Ներքին Բազմաբերդ"
+    },
+    {
+      "id": "way/121750773",
+      "reason": "same_wikidata",
+      "name": "Շիրակավան"
+    },
+    {
+      "id": "way/121750774",
+      "reason": "same_wikidata",
+      "name": "Գետք"
+    },
+    {
+      "id": "way/121750775",
+      "reason": "same_wikidata",
+      "name": "Արևիկ"
+    },
+    {
+      "id": "way/121750776",
+      "reason": "same_wikidata",
+      "name": "Սորիկ"
+    },
+    {
+      "id": "way/121750778",
+      "reason": "same_wikidata",
+      "name": "Ղարիբջանյան"
+    },
+    {
+      "id": "way/121750780",
+      "reason": "same_wikidata",
+      "name": "Քարաբերդ"
+    },
+    {
+      "id": "way/121750781",
+      "reason": "same_wikidata",
+      "name": "Ձիթհանքով"
+    },
+    {
+      "id": "way/121750782",
+      "reason": "same_wikidata",
+      "name": "Կանչ"
+    },
+    {
+      "id": "way/121750783",
+      "reason": "same_wikidata",
+      "name": "Սարակապ"
+    },
+    {
+      "id": "way/121750784",
+      "reason": "same_wikidata",
+      "name": "Հակո"
+    },
+    {
+      "id": "way/121750791",
+      "reason": "same_wikidata",
+      "name": "Իսահակյան"
+    },
+    {
+      "id": "way/122145425",
+      "reason": "same_wikidata",
+      "name": "Քարաշեն"
+    },
+    {
+      "id": "way/122145426",
+      "reason": "same_wikidata",
+      "name": "Տեղ"
+    },
+    {
+      "id": "way/122145431",
+      "reason": "same_wikidata",
+      "name": "Հարթաշեն"
+    },
+    {
+      "id": "way/122145435",
+      "reason": "same_wikidata",
+      "name": "Խնձորեսկ"
+    },
+    {
+      "id": "way/127095122",
+      "reason": "same_wikidata",
+      "name": "Պեմզաշեն"
+    },
+    {
+      "id": "way/127097504",
+      "reason": "same_wikidata",
+      "name": "Հայրենյաց"
+    },
+    {
+      "id": "way/131113812",
+      "reason": "same_wikidata",
+      "name": "Բավրա"
+    },
+    {
+      "id": "way/131862609",
+      "reason": "same_wikidata",
+      "name": "Քասախ"
+    },
+    {
+      "id": "way/131882606",
+      "reason": "same_wikidata",
+      "name": "Կաքավաձոր"
+    },
+    {
+      "id": "way/131882611",
+      "reason": "same_wikidata",
+      "name": "Ուջան"
+    },
+    {
+      "id": "way/131882614",
+      "reason": "same_wikidata",
+      "name": "Լեռնարոտ"
+    },
+    {
+      "id": "way/131885318",
+      "reason": "same_wikidata",
+      "name": "Ներքին Սասնաշեն"
+    },
+    {
+      "id": "way/131885320",
+      "reason": "same_wikidata",
+      "name": "Վերին Բազմաբերդ"
+    },
+    {
+      "id": "way/131885321",
+      "reason": "same_wikidata",
+      "name": "Վերին Սասնաշեն"
+    },
+    {
+      "id": "way/132923524",
+      "reason": "same_wikidata",
+      "name": "Քանաքեռավան"
+    },
+    {
+      "id": "way/132923525",
+      "reason": "same_wikidata",
+      "name": "Մրգաշեն"
+    },
+    {
+      "id": "way/133054913",
+      "reason": "same_wikidata",
+      "name": "Ծաղկունք"
+    },
+    {
+      "id": "way/133782529",
+      "reason": "same_wikidata",
+      "name": "Եղեգիս"
+    },
+    {
+      "id": "way/133782531",
+      "reason": "same_wikidata",
+      "name": "Վարդահովիտ"
+    },
+    {
+      "id": "way/133782532",
+      "reason": "same_wikidata",
+      "name": "Արատես"
+    },
+    {
+      "id": "way/133782533",
+      "reason": "same_wikidata",
+      "name": "Հերհեր"
+    },
+    {
+      "id": "way/133782536",
+      "reason": "same_wikidata",
+      "name": "Գնդեվազ"
+    },
+    {
+      "id": "way/133782538",
+      "reason": "same_wikidata",
+      "name": "Գողթանիկ"
+    },
+    {
+      "id": "way/133782539",
+      "reason": "same_wikidata",
+      "name": "Կարմրաշեն"
+    },
+    {
+      "id": "way/133782540",
+      "reason": "same_wikidata",
+      "name": "Կեչուտ"
+    },
+    {
+      "id": "way/134933949",
+      "reason": "same_wikidata",
+      "name": "Սառնաղբյուր"
+    },
+    {
+      "id": "way/152441177",
+      "reason": "same_wikidata",
+      "name": "Սարավան"
+    },
+    {
+      "id": "way/179777836",
+      "reason": "same_wikidata",
+      "name": "Կարմիր Աղեկ"
+    },
+    {
+      "id": "way/184489918",
+      "reason": "same_wikidata",
+      "name": "Նորատուս"
+    },
+    {
+      "id": "way/184791028",
+      "reason": "same_wikidata",
+      "name": "Ավշար"
+    },
+    {
+      "id": "way/184793337",
+      "reason": "same_wikidata",
+      "name": "Այգավան"
+    },
+    {
+      "id": "way/184793338",
+      "reason": "same_wikidata",
+      "name": "Ոսկետափ"
+    },
+    {
+      "id": "way/185830152",
+      "reason": "same_wikidata",
+      "name": "Լճաշեն"
+    },
+    {
+      "id": "way/191626977",
+      "reason": "same_wikidata",
+      "name": "Հացավան"
+    },
+    {
+      "id": "way/216115042",
+      "reason": "same_wikidata",
+      "name": "Մեդովկա"
+    },
+    {
+      "id": "way/216731943",
+      "reason": "same_wikidata",
+      "name": "Կապուտան"
+    },
+    {
+      "id": "way/216731947",
+      "reason": "same_wikidata",
+      "name": "Գեղարդ"
+    },
+    {
+      "id": "way/216917450",
+      "reason": "same_wikidata",
+      "name": "Բարձրավան"
+    },
+    {
+      "id": "way/217140417",
+      "reason": "same_wikidata",
+      "name": "Պուշկինո"
+    },
+    {
+      "id": "way/217319669",
+      "reason": "same_wikidata",
+      "name": "Հովիտ"
+    },
+    {
+      "id": "way/217319670",
+      "reason": "same_wikidata",
+      "name": "Ջրառատ"
+    },
+    {
+      "id": "way/222477058",
+      "reason": "same_wikidata",
+      "name": "Զովունի"
+    },
+    {
+      "id": "way/222831138",
+      "reason": "same_wikidata",
+      "name": "Ոստան"
+    },
+    {
+      "id": "way/223268528",
+      "reason": "same_wikidata",
+      "name": "Ամրակից"
+    },
+    {
+      "id": "way/223420596",
+      "reason": "same_wikidata",
+      "name": "Անտառամուտ"
+    },
+    {
+      "id": "way/223431252",
+      "reason": "same_wikidata",
+      "name": "Գյուլագարակ"
+    },
+    {
+      "id": "way/230745616",
+      "reason": "same_wikidata",
+      "name": "Ֆանտան"
+    },
+    {
+      "id": "way/238822272",
+      "reason": "same_wikidata",
+      "name": "Տանձատափ"
+    },
+    {
+      "id": "way/248960304",
+      "reason": "same_wikidata",
+      "name": "Վանանդ"
+    },
+    {
+      "id": "way/248960306",
+      "reason": "same_wikidata",
+      "name": "Կարմրավան"
+    },
+    {
+      "id": "way/249328791",
+      "reason": "same_wikidata",
+      "name": "Զորավան"
+    },
+    {
+      "id": "way/249328938",
+      "reason": "same_wikidata",
+      "name": "Արագյուղ"
+    },
+    {
+      "id": "way/249338992",
+      "reason": "same_wikidata",
+      "name": "Ակունք"
+    },
+    {
+      "id": "way/249340983",
+      "reason": "same_wikidata",
+      "name": "Կամարիս"
+    },
+    {
+      "id": "way/249341593",
+      "reason": "same_wikidata",
+      "name": "Ծաղկահովիտ"
+    },
+    {
+      "id": "way/249492743",
+      "reason": "same_wikidata",
+      "name": "Նորաբաց"
+    },
+    {
+      "id": "way/250006375",
+      "reason": "same_wikidata",
+      "name": "Դդմաշեն"
+    },
+    {
+      "id": "way/257415701",
+      "reason": "same_wikidata",
+      "name": "Բովաձոր"
+    },
+    {
+      "id": "way/257415702",
+      "reason": "same_wikidata",
+      "name": "Ուրասար"
+    },
+    {
+      "id": "way/257415704",
+      "reason": "same_wikidata",
+      "name": "Լեջան"
+    },
+    {
+      "id": "way/257542169",
+      "reason": "same_wikidata",
+      "name": "Լորուտ"
+    },
+    {
+      "id": "way/257542170",
+      "reason": "same_wikidata",
+      "name": "Աթան"
+    },
+    {
+      "id": "way/257542171",
+      "reason": "same_wikidata",
+      "name": "Ահնիձոր"
+    },
+    {
+      "id": "way/257542174",
+      "reason": "same_wikidata",
+      "name": "Շամուտ"
+    },
+    {
+      "id": "way/267094398",
+      "reason": "same_wikidata",
+      "name": "Նշխարք"
+    },
+    {
+      "id": "way/267094400",
+      "reason": "same_wikidata",
+      "name": "Թառաթումբ"
+    },
+    {
+      "id": "way/269966369",
+      "reason": "same_wikidata",
+      "name": "Ուղեձոր"
+    },
+    {
+      "id": "way/272749643",
+      "reason": "same_wikidata",
+      "name": "Դարակերտ"
+    },
+    {
+      "id": "way/281666398",
+      "reason": "same_wikidata",
+      "name": "Ջրահովիտ"
+    },
+    {
+      "id": "way/281667290",
+      "reason": "same_wikidata",
+      "name": "Մրգավետ"
+    },
+    {
+      "id": "way/281667801",
+      "reason": "same_wikidata",
+      "name": "Արևաբույր"
+    },
+    {
+      "id": "way/281668981",
+      "reason": "same_wikidata",
+      "name": "Մխչյան"
+    },
+    {
+      "id": "way/292767301",
+      "reason": "same_wikidata",
+      "name": "Նալբանդյան"
+    },
+    {
+      "id": "way/292767302",
+      "reason": "same_wikidata",
+      "name": "Նոր Արտագերս"
+    },
+    {
+      "id": "way/292777475",
+      "reason": "same_wikidata",
+      "name": "Դիան"
+    },
+    {
+      "id": "way/293272698",
+      "reason": "same_wikidata",
+      "name": "Մարց"
+    },
+    {
+      "id": "way/293586403",
+      "reason": "same_wikidata",
+      "name": "Արեգունի"
+    },
+    {
+      "id": "way/293586404",
+      "reason": "same_wikidata",
+      "name": "Դարանակ"
+    },
+    {
+      "id": "way/293586405",
+      "reason": "same_wikidata",
+      "name": "Ջիլ"
+    },
+    {
+      "id": "way/293586406",
+      "reason": "same_wikidata",
+      "name": "Փամբակ"
+    },
+    {
+      "id": "way/293587531",
+      "reason": "same_wikidata",
+      "name": "Մեծ Մասրիկ"
+    },
+    {
+      "id": "way/293587534",
+      "reason": "same_wikidata",
+      "name": "Շատվան"
+    },
+    {
+      "id": "way/293646689",
+      "reason": "same_wikidata",
+      "name": "Արփունք"
+    },
+    {
+      "id": "way/293656747",
+      "reason": "same_wikidata",
+      "name": "Գեղամաբակ"
+    },
+    {
+      "id": "way/293656748",
+      "reason": "same_wikidata",
+      "name": "Լուսակունք"
+    },
+    {
+      "id": "way/293656749",
+      "reason": "same_wikidata",
+      "name": "Շատջրեք"
+    },
+    {
+      "id": "way/293656750",
+      "reason": "same_wikidata",
+      "name": "Ջաղացաձոր"
+    },
+    {
+      "id": "way/293656751",
+      "reason": "same_wikidata",
+      "name": "Տորֆավան"
+    },
+    {
+      "id": "way/294123463",
+      "reason": "same_wikidata",
+      "name": "Ջանֆիդա"
+    },
+    {
+      "id": "way/294682230",
+      "reason": "same_wikidata",
+      "name": "Մաստարա"
+    },
+    {
+      "id": "way/295313329",
+      "reason": "same_wikidata",
+      "name": "Պռոշյան"
+    },
+    {
+      "id": "way/295313787",
+      "reason": "same_wikidata",
+      "name": "Նորաշեն"
+    },
+    {
+      "id": "way/295466496",
+      "reason": "same_wikidata",
+      "name": "Արագածոտն"
+    },
+    {
+      "id": "way/305749189",
+      "reason": "same_wikidata",
+      "name": "Ամոջ"
+    },
+    {
+      "id": "way/309926621",
+      "reason": "same_wikidata",
+      "name": "Սարդարապատ"
+    },
+    {
+      "id": "way/332631222",
+      "reason": "same_wikidata",
+      "name": "Նիզամի"
+    },
+    {
+      "id": "way/334210816",
+      "reason": "same_wikidata",
+      "name": "Կոշ"
+    },
+    {
+      "id": "way/334235987",
+      "reason": "same_wikidata",
+      "name": "Վահրամաբերդ"
+    },
+    {
+      "id": "way/350193649",
+      "reason": "same_wikidata",
+      "name": "Սալլի"
+    },
+    {
+      "id": "way/350193654",
+      "reason": "same_wikidata",
+      "name": "Աղնջաձոր"
+    },
+    {
+      "id": "way/350193664",
+      "reason": "same_wikidata",
+      "name": "Քարագլուխ"
+    },
+    {
+      "id": "way/352202421",
+      "reason": "same_wikidata",
+      "name": "Հորս"
+    },
+    {
+      "id": "way/352202423",
+      "reason": "same_wikidata",
+      "name": "Շատին"
+    },
+    {
+      "id": "way/353023372",
+      "reason": "same_wikidata",
+      "name": "Ակներ"
+    },
+    {
+      "id": "way/354932155",
+      "reason": "same_wikidata",
+      "name": "Սևաբերդ"
+    },
+    {
+      "id": "way/354932156",
+      "reason": "same_wikidata",
+      "name": "Զառ"
+    },
+    {
+      "id": "way/354932163",
+      "reason": "same_wikidata",
+      "name": "Զովաշեն"
+    },
+    {
+      "id": "way/355792149",
+      "reason": "same_wikidata",
+      "name": "Ջուջևան"
+    },
+    {
+      "id": "way/355792150",
+      "reason": "same_wikidata",
+      "name": "Կիրանց"
+    },
+    {
+      "id": "way/355792151",
+      "reason": "same_wikidata",
+      "name": "Ոսկեպար"
+    },
+    {
+      "id": "way/355797072",
+      "reason": "same_wikidata",
+      "name": "Վարդաշատ"
+    },
+    {
+      "id": "way/355797073",
+      "reason": "same_wikidata",
+      "name": "Ելփին"
+    },
+    {
+      "id": "way/355797075",
+      "reason": "same_wikidata",
+      "name": "Ուրցալանջ"
+    },
+    {
+      "id": "way/355797079",
+      "reason": "same_wikidata",
+      "name": "Լանջառ"
+    },
+    {
+      "id": "way/356777467",
+      "reason": "same_wikidata",
+      "name": "Արծվանիստ"
+    },
+    {
+      "id": "way/360244815",
+      "reason": "same_wikidata",
+      "name": "Ծովինար"
+    },
+    {
+      "id": "way/360244816",
+      "reason": "same_wikidata",
+      "name": "Վարդենիկ"
+    },
+    {
+      "id": "way/360261073",
+      "reason": "same_wikidata",
+      "name": "Գեղհովիտ"
+    },
+    {
+      "id": "way/360262190",
+      "reason": "same_wikidata",
+      "name": "Երանոս"
+    },
+    {
+      "id": "way/360262191",
+      "reason": "same_wikidata",
+      "name": "Ծովասար"
+    },
+    {
+      "id": "way/360262192",
+      "reason": "same_wikidata",
+      "name": "Վարդաձոր"
+    },
+    {
+      "id": "way/360262993",
+      "reason": "same_wikidata",
+      "name": "Արտաբույնք"
+    },
+    {
+      "id": "way/360267336",
+      "reason": "same_wikidata",
+      "name": "Ծակքար"
+    },
+    {
+      "id": "way/360267338",
+      "reason": "same_wikidata",
+      "name": "Լիճք"
+    },
+    {
+      "id": "way/360267339",
+      "reason": "same_wikidata",
+      "name": "Վերին Գետաշեն"
+    },
+    {
+      "id": "way/360267340",
+      "reason": "same_wikidata",
+      "name": "Ձորագյուղ"
+    },
+    {
+      "id": "way/360267626",
+      "reason": "same_wikidata",
+      "name": "Գեղարքունիք"
+    },
+    {
+      "id": "way/360267630",
+      "reason": "same_wikidata",
+      "name": "Լանջաղբյուր"
+    },
+    {
+      "id": "way/360267634",
+      "reason": "same_wikidata",
+      "name": "Սարուխան"
+    },
+    {
+      "id": "way/360354459",
+      "reason": "same_wikidata",
+      "name": "Խոտ"
+    },
+    {
+      "id": "way/360354461",
+      "reason": "same_wikidata",
+      "name": "Շինուհայր"
+    },
+    {
+      "id": "way/360361061",
+      "reason": "same_wikidata",
+      "name": "Շիշկերտ"
+    },
+    {
+      "id": "way/360473322",
+      "reason": "same_wikidata",
+      "name": "Սրաշեն"
+    },
+    {
+      "id": "way/360521889",
+      "reason": "same_wikidata",
+      "name": "Գեղաձոր"
+    },
+    {
+      "id": "way/360521891",
+      "reason": "same_wikidata",
+      "name": "Հնաբերդ"
+    },
+    {
+      "id": "way/360824499",
+      "reason": "same_wikidata",
+      "name": "Աղավնաձոր"
+    },
+    {
+      "id": "way/360928544",
+      "reason": "same_wikidata",
+      "name": "Անտառուտ"
+    },
+    {
+      "id": "way/360928546",
+      "reason": "same_wikidata",
+      "name": "Բյուրական"
+    },
+    {
+      "id": "way/360931070",
+      "reason": "same_wikidata",
+      "name": "Փարպի"
+    },
+    {
+      "id": "way/360972897",
+      "reason": "same_wikidata",
+      "name": "Շողակն"
+    },
+    {
+      "id": "way/360972900",
+      "reason": "same_wikidata",
+      "name": "Բուժական"
+    },
+    {
+      "id": "way/361342197",
+      "reason": "same_wikidata",
+      "name": "Գարգառ"
+    },
+    {
+      "id": "way/361342707",
+      "reason": "same_wikidata",
+      "name": "Հոբարձի"
+    },
+    {
+      "id": "way/361342708",
+      "reason": "same_wikidata",
+      "name": "Ծաթեր"
+    },
+    {
+      "id": "way/361361153",
+      "reason": "same_wikidata",
+      "name": "Կուրթան"
+    },
+    {
+      "id": "way/361361743",
+      "reason": "same_wikidata",
+      "name": "Գեղադիր"
+    },
+    {
+      "id": "way/361361744",
+      "reason": "same_wikidata",
+      "name": "Կանիաշիր"
+    },
+    {
+      "id": "way/361361745",
+      "reason": "same_wikidata",
+      "name": "Սադունց"
+    },
+    {
+      "id": "way/361361746",
+      "reason": "same_wikidata",
+      "name": "Բերքառատ"
+    },
+    {
+      "id": "way/361469364",
+      "reason": "same_wikidata",
+      "name": "Ծաղկաշեն"
+    },
+    {
+      "id": "way/361504962",
+      "reason": "same_wikidata",
+      "name": "Հորբատեղ"
+    },
+    {
+      "id": "way/361504963",
+      "reason": "same_wikidata",
+      "name": "Սևաժայռ"
+    },
+    {
+      "id": "way/361504966",
+      "reason": "same_wikidata",
+      "name": "Վերնաշեն"
+    },
+    {
+      "id": "way/364788117",
+      "reason": "same_wikidata",
+      "name": "Հալիձոր"
+    },
+    {
+      "id": "way/365917053",
+      "reason": "same_wikidata",
+      "name": "Ծափաթաղ"
+    },
+    {
+      "id": "way/365917844",
+      "reason": "same_wikidata",
+      "name": "Ծովագյուղ"
+    },
+    {
+      "id": "way/365918394",
+      "reason": "same_wikidata",
+      "name": "Նորաշեն"
+    },
+    {
+      "id": "way/365918395",
+      "reason": "same_wikidata",
+      "name": "Ծովազարդ"
+    },
+    {
+      "id": "way/365918397",
+      "reason": "same_wikidata",
+      "name": "Լճափ"
+    },
+    {
+      "id": "way/365919863",
+      "reason": "same_wikidata",
+      "name": "Հայրավանք"
+    },
+    {
+      "id": "way/365919864",
+      "reason": "same_wikidata",
+      "name": "Բերդկունք"
+    },
+    {
+      "id": "way/366775145",
+      "reason": "same_wikidata",
+      "name": "Լեռնանցք"
+    },
+    {
+      "id": "way/366775146",
+      "reason": "same_wikidata",
+      "name": "Լեռնաջուր"
+    },
+    {
+      "id": "way/366776838",
+      "reason": "same_wikidata",
+      "name": "Քարաձոր"
+    },
+    {
+      "id": "way/366776839",
+      "reason": "same_wikidata",
+      "name": "Շենավան"
+    },
+    {
+      "id": "way/366776840",
+      "reason": "same_wikidata",
+      "name": "Սարահարթ"
+    },
+    {
+      "id": "way/366776841",
+      "reason": "same_wikidata",
+      "name": "Արջահովիտ"
+    },
+    {
+      "id": "way/366776842",
+      "reason": "same_wikidata",
+      "name": "Արջուտ"
+    },
+    {
+      "id": "way/366776843",
+      "reason": "same_wikidata",
+      "name": "Նոր Խաչակապ"
+    },
+    {
+      "id": "way/366776844",
+      "reason": "same_wikidata",
+      "name": "Արևաշող"
+    },
+    {
+      "id": "way/366776969",
+      "reason": "same_wikidata",
+      "name": "Գոգարան"
+    },
+    {
+      "id": "way/366785315",
+      "reason": "same_wikidata",
+      "name": "Ավշեն"
+    },
+    {
+      "id": "way/366785316",
+      "reason": "same_wikidata",
+      "name": "Սիփան"
+    },
+    {
+      "id": "way/366785317",
+      "reason": "same_wikidata",
+      "name": "Լեռնապար"
+    },
+    {
+      "id": "way/366785318",
+      "reason": "same_wikidata",
+      "name": "Ռյա Թազա"
+    },
+    {
+      "id": "way/366785319",
+      "reason": "same_wikidata",
+      "name": "Ջամշլու"
+    },
+    {
+      "id": "way/366785320",
+      "reason": "same_wikidata",
+      "name": "Ճարճակիս"
+    },
+    {
+      "id": "way/366785321",
+      "reason": "same_wikidata",
+      "name": "Մելիքգյուղ"
+    },
+    {
+      "id": "way/366785322",
+      "reason": "same_wikidata",
+      "name": "Շենկանի"
+    },
+    {
+      "id": "way/366785323",
+      "reason": "same_wikidata",
+      "name": "Գեղարոտ"
+    },
+    {
+      "id": "way/366785324",
+      "reason": "same_wikidata",
+      "name": "Ալագյազ"
+    },
+    {
+      "id": "way/366785325",
+      "reason": "same_wikidata",
+      "name": "Ծիլքար"
+    },
+    {
+      "id": "way/366785327",
+      "reason": "same_wikidata",
+      "name": "Միջնատուն"
+    },
+    {
+      "id": "way/366786901",
+      "reason": "same_wikidata",
+      "name": "Չքնաղ"
+    },
+    {
+      "id": "way/366786902",
+      "reason": "same_wikidata",
+      "name": "Թթուջուր"
+    },
+    {
+      "id": "way/366786903",
+      "reason": "same_wikidata",
+      "name": "Ձորագլուխ"
+    },
+    {
+      "id": "way/366786904",
+      "reason": "same_wikidata",
+      "name": "Նիգավան"
+    },
+    {
+      "id": "way/366786905",
+      "reason": "same_wikidata",
+      "name": "Քուչակ"
+    },
+    {
+      "id": "way/366786906",
+      "reason": "same_wikidata",
+      "name": "Վարդենիս"
+    },
+    {
+      "id": "way/366788027",
+      "reason": "same_wikidata",
+      "name": "Սարալանջ"
+    },
+    {
+      "id": "way/366788029",
+      "reason": "same_wikidata",
+      "name": "Լուսագյուղ"
+    },
+    {
+      "id": "way/366790220",
+      "reason": "same_wikidata",
+      "name": "Եղիպատրուշ"
+    },
+    {
+      "id": "way/366911780",
+      "reason": "same_wikidata",
+      "name": "Հագվի"
+    },
+    {
+      "id": "way/366912074",
+      "reason": "same_wikidata",
+      "name": "Նովոսելցովո"
+    },
+    {
+      "id": "way/366912075",
+      "reason": "same_wikidata",
+      "name": "Կաթնաղբյուր"
+    },
+    {
+      "id": "way/366913507",
+      "reason": "same_wikidata",
+      "name": "Նորամուտ"
+    },
+    {
+      "id": "way/366913508",
+      "reason": "same_wikidata",
+      "name": "Մեղվահովիտ"
+    },
+    {
+      "id": "way/366913509",
+      "reason": "same_wikidata",
+      "name": "Կաթնառատ"
+    },
+    {
+      "id": "way/366913510",
+      "reason": "same_wikidata",
+      "name": "Բլագոդարնոյե"
+    },
+    {
+      "id": "way/368805146",
+      "reason": "same_wikidata",
+      "name": "Հնաբերդ"
+    },
+    {
+      "id": "way/368805147",
+      "reason": "same_wikidata",
+      "name": "Կանաչուտ"
+    },
+    {
+      "id": "way/368805148",
+      "reason": "same_wikidata",
+      "name": "Բերդիկ"
+    },
+    {
+      "id": "way/368805149",
+      "reason": "same_wikidata",
+      "name": "Այգեստան"
+    },
+    {
+      "id": "way/368805150",
+      "reason": "same_wikidata",
+      "name": "Վերին Արտաշատ"
+    },
+    {
+      "id": "way/368821136",
+      "reason": "same_wikidata",
+      "name": "Լիչք"
+    },
+    {
+      "id": "way/368821137",
+      "reason": "same_wikidata",
+      "name": "Տաշտուն"
+    },
+    {
+      "id": "way/368821138",
+      "reason": "same_wikidata",
+      "name": "Դեղձուտ"
+    },
+    {
+      "id": "way/368824737",
+      "reason": "same_wikidata",
+      "name": "Թխկուտ"
+    },
+    {
+      "id": "way/368825655",
+      "reason": "same_wikidata",
+      "name": "Կուրիս"
+    },
+    {
+      "id": "way/368825657",
+      "reason": "same_wikidata",
+      "name": "Կարճևան"
+    },
+    {
+      "id": "way/368826725",
+      "reason": "same_wikidata",
+      "name": "Վարդանիձոր"
+    },
+    {
+      "id": "way/368826728",
+      "reason": "same_wikidata",
+      "name": "Լեհվազ"
+    },
+    {
+      "id": "way/368826729",
+      "reason": "same_wikidata",
+      "name": "Այգեձոր"
+    },
+    {
+      "id": "way/368828038",
+      "reason": "same_wikidata",
+      "name": "Շվանիձոր"
+    },
+    {
+      "id": "way/368828039",
+      "reason": "same_wikidata",
+      "name": "Ալվանք"
+    },
+    {
+      "id": "way/368830927",
+      "reason": "same_wikidata",
+      "name": "Նռնաձոր"
+    },
+    {
+      "id": "way/368880622",
+      "reason": "same_wikidata",
+      "name": "Վերիշեն"
+    },
+    {
+      "id": "way/368880623",
+      "reason": "same_wikidata",
+      "name": "Ակներ"
+    },
+    {
+      "id": "way/368883840",
+      "reason": "same_wikidata",
+      "name": "Լծեն"
+    },
+    {
+      "id": "way/368883849",
+      "reason": "same_wikidata",
+      "name": "Սվարանց"
+    },
+    {
+      "id": "way/369036487",
+      "reason": "same_wikidata",
+      "name": "Գոմարան"
+    },
+    {
+      "id": "way/369036490",
+      "reason": "same_wikidata",
+      "name": "Շիկահող"
+    },
+    {
+      "id": "way/369036491",
+      "reason": "same_wikidata",
+      "name": "Ճակատեն"
+    },
+    {
+      "id": "way/369036492",
+      "reason": "same_wikidata",
+      "name": "Գեղանուշ"
+    },
+    {
+      "id": "way/369826962",
+      "reason": "same_wikidata",
+      "name": "Եղեգնուտ"
+    },
+    {
+      "id": "way/369826963",
+      "reason": "same_wikidata",
+      "name": "Վահագնաձոր"
+    },
+    {
+      "id": "way/369907242",
+      "reason": "same_wikidata",
+      "name": "Ծաղկունք"
+    },
+    {
+      "id": "way/369907276",
+      "reason": "same_wikidata",
+      "name": "Վարսեր"
+    },
+    {
+      "id": "way/369907280",
+      "reason": "same_wikidata",
+      "name": "Սեմյոնովկա"
+    },
+    {
+      "id": "way/369907283",
+      "reason": "same_wikidata",
+      "name": "Գեղամավան"
+    },
+    {
+      "id": "way/371573380",
+      "reason": "same_wikidata",
+      "name": "Ամաղու"
+    },
+    {
+      "id": "way/373865124",
+      "reason": "same_wikidata",
+      "name": "Ավան"
+    },
+    {
+      "id": "way/374525347",
+      "reason": "same_wikidata",
+      "name": "Արտավազ"
+    },
+    {
+      "id": "way/374525348",
+      "reason": "same_wikidata",
+      "name": "Փյունիկ"
+    },
+    {
+      "id": "way/374525349",
+      "reason": "same_wikidata",
+      "name": "Մեղրաձոր"
+    },
+    {
+      "id": "way/376370231",
+      "reason": "same_wikidata",
+      "name": "Ձորաշեն"
+    },
+    {
+      "id": "way/376443184",
+      "reason": "same_wikidata",
+      "name": "Սարապատ"
+    },
+    {
+      "id": "way/376484541",
+      "reason": "same_wikidata",
+      "name": "Կաքավասար"
+    },
+    {
+      "id": "way/376484542",
+      "reason": "same_wikidata",
+      "name": "Փոքր Սարիար"
+    },
+    {
+      "id": "way/376484586",
+      "reason": "same_wikidata",
+      "name": "Բաշգյուղ"
+    },
+    {
+      "id": "way/376484624",
+      "reason": "same_wikidata",
+      "name": "Սալուտ"
+    },
+    {
+      "id": "way/378655959",
+      "reason": "same_wikidata",
+      "name": "Իծաքար"
+    },
+    {
+      "id": "way/389022166",
+      "reason": "same_wikidata",
+      "name": "Ռինդ"
+    },
+    {
+      "id": "way/389599063",
+      "reason": "same_wikidata",
+      "name": "Երնջատափ"
+    },
+    {
+      "id": "way/389605959",
+      "reason": "same_wikidata",
+      "name": "Քարաշամբ"
+    },
+    {
+      "id": "way/389605961",
+      "reason": "same_wikidata",
+      "name": "Թեղենիք"
+    },
+    {
+      "id": "way/391079743",
+      "reason": "same_wikidata",
+      "name": "Հատիս"
+    },
+    {
+      "id": "way/393119164",
+      "reason": "same_wikidata",
+      "name": "Սարալանջ"
+    },
+    {
+      "id": "way/393477746",
+      "reason": "same_wikidata",
+      "name": "Իշխանասար"
+    },
+    {
+      "id": "way/409426835",
+      "reason": "same_wikidata",
+      "name": "Ախտա"
+    },
+    {
+      "id": "way/416720906",
+      "reason": "same_wikidata",
+      "name": "Կողես"
+    },
+    {
+      "id": "way/416737452",
+      "reason": "same_wikidata",
+      "name": "Յաղդան"
+    },
+    {
+      "id": "way/422095919",
+      "reason": "same_wikidata",
+      "name": "Արդվի"
+    },
+    {
+      "id": "way/422099491",
+      "reason": "same_wikidata",
+      "name": "Լուսահովիտ"
+    },
+    {
+      "id": "way/422099492",
+      "reason": "same_wikidata",
+      "name": "Խաշթառակ"
+    },
+    {
+      "id": "way/422645009",
+      "reason": "same_wikidata",
+      "name": "Լերմոնտովո"
+    },
+    {
+      "id": "way/423305106",
+      "reason": "same_wikidata",
+      "name": "Ծախկաշատ"
+    },
+    {
+      "id": "way/427966629",
+      "reason": "same_wikidata",
+      "name": "Լոր"
+    },
+    {
+      "id": "way/427966630",
+      "reason": "same_wikidata",
+      "name": "Գետաթաղ"
+    },
+    {
+      "id": "way/427966631",
+      "reason": "same_wikidata",
+      "name": "Շենաթաղ"
+    },
+    {
+      "id": "way/427966883",
+      "reason": "same_wikidata",
+      "name": "Դարբաս"
+    },
+    {
+      "id": "way/427968085",
+      "reason": "same_wikidata",
+      "name": "Շամբ"
+    },
+    {
+      "id": "way/427968823",
+      "reason": "same_wikidata",
+      "name": "Որոտնավան"
+    },
+    {
+      "id": "way/427968824",
+      "reason": "same_wikidata",
+      "name": "Նորավան"
+    },
+    {
+      "id": "way/427969958",
+      "reason": "same_wikidata",
+      "name": "Աղիտու"
+    },
+    {
+      "id": "way/427969963",
+      "reason": "same_wikidata",
+      "name": "Վաղատին"
+    },
+    {
+      "id": "way/427970589",
+      "reason": "same_wikidata",
+      "name": "Ույծ"
+    },
+    {
+      "id": "way/427974647",
+      "reason": "same_wikidata",
+      "name": "Տոլորս"
+    },
+    {
+      "id": "way/427974648",
+      "reason": "same_wikidata",
+      "name": "Աշոտավան"
+    },
+    {
+      "id": "way/427974895",
+      "reason": "same_wikidata",
+      "name": "Ախլաթյան"
+    },
+    {
+      "id": "way/430050457",
+      "reason": "same_wikidata",
+      "name": "Գեղադիր"
+    },
+    {
+      "id": "way/430050458",
+      "reason": "same_wikidata",
+      "name": "Ողջաբերդ"
+    },
+    {
+      "id": "way/436143878",
+      "reason": "same_wikidata",
+      "name": "Չինչին"
+    },
+    {
+      "id": "way/448131958",
+      "reason": "same_wikidata",
+      "name": "Առինջ"
+    },
+    {
+      "id": "way/448138915",
+      "reason": "same_wikidata",
+      "name": "Փարաքար"
+    },
+    {
+      "id": "way/448140323",
+      "reason": "same_wikidata",
+      "name": "Մուսալեռ"
+    },
+    {
+      "id": "way/449335224",
+      "reason": "same_wikidata",
+      "name": "Պտղունք"
+    },
+    {
+      "id": "way/449336559",
+      "reason": "same_wikidata",
+      "name": "Ձորաղբյուր"
+    },
+    {
+      "id": "way/449358662",
+      "reason": "same_wikidata",
+      "name": "Վերին Պտղնի"
+    },
+    {
+      "id": "way/449359980",
+      "reason": "same_wikidata",
+      "name": "Պտղնի"
+    },
+    {
+      "id": "way/449370381",
+      "reason": "same_wikidata",
+      "name": "Գետամեջ"
+    },
+    {
+      "id": "way/449379397",
+      "reason": "same_wikidata",
+      "name": "Արամուս"
+    },
+    {
+      "id": "way/449379613",
+      "reason": "same_wikidata",
+      "name": "Նոր Գյուղ"
+    },
+    {
+      "id": "way/449380434",
+      "reason": "same_wikidata",
+      "name": "Արևաշատ"
+    },
+    {
+      "id": "way/450611500",
+      "reason": "same_wikidata",
+      "name": "Մալիշկա"
+    },
+    {
+      "id": "way/451411561",
+      "reason": "same_wikidata",
+      "name": "Արփի"
+    },
+    {
+      "id": "way/451595716",
+      "reason": "same_wikidata",
+      "name": "Գորայք"
+    },
+    {
+      "id": "way/451595717",
+      "reason": "same_wikidata",
+      "name": "Ծղուկ"
+    },
+    {
+      "id": "way/451595718",
+      "reason": "same_wikidata",
+      "name": "Սառնակունք"
+    },
+    {
+      "id": "way/451595719",
+      "reason": "same_wikidata",
+      "name": "Սպանդարյան"
+    },
+    {
+      "id": "way/451595720",
+      "reason": "same_wikidata",
+      "name": "Շաքի"
+    },
+    {
+      "id": "way/455659023",
+      "reason": "same_wikidata",
+      "name": "Չիվա"
+    },
+    {
+      "id": "way/455660532",
+      "reason": "same_wikidata",
+      "name": "Արենի"
+    },
+    {
+      "id": "way/455661915",
+      "reason": "same_wikidata",
+      "name": "Զանգակատուն"
+    },
+    {
+      "id": "way/458128280",
+      "reason": "same_wikidata",
+      "name": "Ագարակաձոր"
+    },
+    {
+      "id": "way/467803326",
+      "reason": "same_wikidata",
+      "name": "Բարձրաշեն"
+    },
+    {
+      "id": "way/475719307",
+      "reason": "same_wikidata",
+      "name": "Կաղնուտ"
+    },
+    {
+      "id": "way/480055763",
+      "reason": "same_wikidata",
+      "name": "Կարճաղբյուր"
+    },
+    {
+      "id": "way/480055767",
+      "reason": "same_wikidata",
+      "name": "Ազատ"
+    },
+    {
+      "id": "way/480055768",
+      "reason": "same_wikidata",
+      "name": "Կութ"
+    },
+    {
+      "id": "way/480055769",
+      "reason": "same_wikidata",
+      "name": "Տրետուք"
+    },
+    {
+      "id": "way/480055770",
+      "reason": "same_wikidata",
+      "name": "Զարիվեր"
+    },
+    {
+      "id": "way/480155562",
+      "reason": "same_wikidata",
+      "name": "Նորաբակ"
+    },
+    {
+      "id": "way/481373561",
+      "reason": "same_wikidata",
+      "name": "Թեղուտ"
+    },
+    {
+      "id": "way/481376924",
+      "reason": "same_wikidata",
+      "name": "Շնող"
+    },
+    {
+      "id": "way/481395028",
+      "reason": "same_wikidata",
+      "name": "Լճկաձոր"
+    },
+    {
+      "id": "way/481395033",
+      "reason": "same_wikidata",
+      "name": "Արճիս"
+    },
+    {
+      "id": "way/481395034",
+      "reason": "same_wikidata",
+      "name": "Հովք"
+    },
+    {
+      "id": "way/481399394",
+      "reason": "same_wikidata",
+      "name": "Կողբ"
+    },
+    {
+      "id": "way/481400378",
+      "reason": "same_wikidata",
+      "name": "Բերդավան"
+    },
+    {
+      "id": "way/481400805",
+      "reason": "same_wikidata",
+      "name": "Հաղթանակ"
+    },
+    {
+      "id": "way/481400806",
+      "reason": "same_wikidata",
+      "name": "Զորական"
+    },
+    {
+      "id": "way/481401348",
+      "reason": "same_wikidata",
+      "name": "Ծաղկավան"
+    },
+    {
+      "id": "way/481401349",
+      "reason": "same_wikidata",
+      "name": "Աճարկուտ"
+    },
+    {
+      "id": "way/481401940",
+      "reason": "same_wikidata",
+      "name": "Սարիգյուղ"
+    },
+    {
+      "id": "way/481661849",
+      "reason": "same_wikidata",
+      "name": "Մոզրով"
+    },
+    {
+      "id": "way/481661854",
+      "reason": "same_wikidata",
+      "name": "Գնիշիկ"
+    },
+    {
+      "id": "way/481674614",
+      "reason": "same_wikidata",
+      "name": "Խաչիկ"
+    },
+    {
+      "id": "way/481832150",
+      "reason": "same_wikidata",
+      "name": "Խնուսիկ"
+    },
+    {
+      "id": "way/482598386",
+      "reason": "same_wikidata",
+      "name": "Բազում"
+    },
+    {
+      "id": "way/482598387",
+      "reason": "same_wikidata",
+      "name": "Ազնվաձոր"
+    },
+    {
+      "id": "way/482691999",
+      "reason": "same_wikidata",
+      "name": "Գուշար"
+    },
+    {
+      "id": "way/498080294",
+      "reason": "same_wikidata",
+      "name": "Մարտունի"
+    },
+    {
+      "id": "way/498080295",
+      "reason": "same_wikidata",
+      "name": "Գետիկ"
+    },
+    {
+      "id": "way/498080297",
+      "reason": "same_wikidata",
+      "name": "Վահան"
+    },
+    {
+      "id": "way/498080298",
+      "reason": "same_wikidata",
+      "name": "Արտանիշ"
+    },
+    {
+      "id": "way/498080299",
+      "reason": "same_wikidata",
+      "name": "Աղբերք"
+    },
+    {
+      "id": "way/498080300",
+      "reason": "same_wikidata",
+      "name": "Շողակաթ"
+    },
+    {
+      "id": "way/498080723",
+      "reason": "same_wikidata",
+      "name": "Դրախտիկ"
+    },
+    {
+      "id": "way/498080724",
+      "reason": "same_wikidata",
+      "name": "Թթուջուր"
+    },
+    {
+      "id": "way/498207824",
+      "reason": "same_wikidata",
+      "name": "Վերին Շորժա"
+    },
+    {
+      "id": "way/498207829",
+      "reason": "same_wikidata",
+      "name": "Այրք"
+    },
+    {
+      "id": "way/498207834",
+      "reason": "same_wikidata",
+      "name": "Գեղաքար"
+    },
+    {
+      "id": "way/498207838",
+      "reason": "same_wikidata",
+      "name": "Սոթք"
+    },
+    {
+      "id": "way/498207843",
+      "reason": "same_wikidata",
+      "name": "Ծովակ"
+    },
+    {
+      "id": "way/498207849",
+      "reason": "same_wikidata",
+      "name": "Մաքենիս"
+    },
+    {
+      "id": "way/498221998",
+      "reason": "same_wikidata",
+      "name": "Արավուս"
+    },
+    {
+      "id": "way/498222010",
+      "reason": "same_wikidata",
+      "name": "Վաղատուր"
+    },
+    {
+      "id": "way/506268731",
+      "reason": "same_wikidata",
+      "name": "Ափնագյուղ"
+    },
+    {
+      "id": "way/507629750",
+      "reason": "same_wikidata",
+      "name": "Աշնակ"
+    },
+    {
+      "id": "way/507629771",
+      "reason": "same_wikidata",
+      "name": "Իրինդ"
+    },
+    {
+      "id": "way/507629772",
+      "reason": "same_wikidata",
+      "name": "Եղնիկ"
+    },
+    {
+      "id": "way/507629773",
+      "reason": "same_wikidata",
+      "name": "Շղարշիկ"
+    },
+    {
+      "id": "way/507629774",
+      "reason": "same_wikidata",
+      "name": "Գառնահովիտ"
+    },
+    {
+      "id": "way/507629775",
+      "reason": "same_wikidata",
+      "name": "Ակունք"
+    },
+    {
+      "id": "way/507629776",
+      "reason": "same_wikidata",
+      "name": "Ոսկեթաս"
+    },
+    {
+      "id": "way/507629777",
+      "reason": "same_wikidata",
+      "name": "Կարմրաշեն"
+    },
+    {
+      "id": "way/507629778",
+      "reason": "same_wikidata",
+      "name": "Ձորագյուղ"
+    },
+    {
+      "id": "way/507629779",
+      "reason": "same_wikidata",
+      "name": "Ծաղկասար"
+    },
+    {
+      "id": "way/507629780",
+      "reason": "same_wikidata",
+      "name": "Զովասար"
+    },
+    {
+      "id": "way/507629805",
+      "reason": "same_wikidata",
+      "name": "Ձորակապ"
+    },
+    {
+      "id": "way/507629815",
+      "reason": "same_wikidata",
+      "name": "Լեռնակերտ"
+    },
+    {
+      "id": "way/507630018",
+      "reason": "same_wikidata",
+      "name": "Դավթաշեն"
+    },
+    {
+      "id": "way/507630019",
+      "reason": "same_wikidata",
+      "name": "Կաթնաղբյուր"
+    },
+    {
+      "id": "way/507630214",
+      "reason": "same_wikidata",
+      "name": "Տուֆաշեն"
+    },
+    {
+      "id": "way/507630215",
+      "reason": "same_wikidata",
+      "name": "Հայկասար"
+    },
+    {
+      "id": "way/508505417",
+      "reason": "same_wikidata",
+      "name": "Լուսաձոր"
+    },
+    {
+      "id": "way/508508429",
+      "reason": "same_wikidata",
+      "name": "Ակնաղբյուր"
+    },
+    {
+      "id": "way/508509029",
+      "reason": "same_wikidata",
+      "name": "Աչաջուր"
+    },
+    {
+      "id": "way/508509661",
+      "reason": "same_wikidata",
+      "name": "Այգեհովիտ"
+    },
+    {
+      "id": "way/514531964",
+      "reason": "same_wikidata",
+      "name": "Հայկավան"
+    },
+    {
+      "id": "way/514539281",
+      "reason": "same_wikidata",
+      "name": "Անգեղակոթ"
+    },
+    {
+      "id": "way/514539299",
+      "reason": "same_wikidata",
+      "name": "Շաղատ"
+    },
+    {
+      "id": "way/514539308",
+      "reason": "same_wikidata",
+      "name": "Բալաք"
+    },
+    {
+      "id": "way/514540816",
+      "reason": "same_wikidata",
+      "name": "Բնունիս"
+    },
+    {
+      "id": "way/514540817",
+      "reason": "same_wikidata",
+      "name": "Թանահատ"
+    },
+    {
+      "id": "way/514540818",
+      "reason": "same_wikidata",
+      "name": "Արևիս"
+    },
+    {
+      "id": "way/514540819",
+      "reason": "same_wikidata",
+      "name": "Թասիկ"
+    },
+    {
+      "id": "way/514540832",
+      "reason": "same_wikidata",
+      "name": "Սալվարդ"
+    },
+    {
+      "id": "way/514540849",
+      "reason": "same_wikidata",
+      "name": "Հացավան"
+    },
+    {
+      "id": "way/514540850",
+      "reason": "same_wikidata",
+      "name": "Բռնակոթ"
+    },
+    {
+      "id": "way/514542431",
+      "reason": "same_wikidata",
+      "name": "Տորունիք"
+    },
+    {
+      "id": "way/514542446",
+      "reason": "same_wikidata",
+      "name": "Դաստակերտ"
+    },
+    {
+      "id": "way/514542455",
+      "reason": "same_wikidata",
+      "name": "Նժդեհ"
+    },
+    {
+      "id": "way/514542456",
+      "reason": "same_wikidata",
+      "name": "Ցղունի"
+    },
+    {
+      "id": "way/514571266",
+      "reason": "same_wikidata",
+      "name": "Մուցք"
+    },
+    {
+      "id": "way/514728993",
+      "reason": "same_wikidata",
+      "name": "Զարինջա"
+    },
+    {
+      "id": "way/514734989",
+      "reason": "same_wikidata",
+      "name": "Լանջիկ"
+    },
+    {
+      "id": "way/521066777",
+      "reason": "same_wikidata",
+      "name": "Բենդիկ"
+    },
+    {
+      "id": "way/526632630",
+      "reason": "same_wikidata",
+      "name": "Գեղանիստ"
+    },
+    {
+      "id": "way/526632631",
+      "reason": "same_wikidata",
+      "name": "Մեծ Մանթաշ"
+    },
+    {
+      "id": "way/526632632",
+      "reason": "same_wikidata",
+      "name": "Գետափ"
+    },
+    {
+      "id": "way/539272227",
+      "reason": "same_wikidata",
+      "name": "Անտառամեջ"
+    },
+    {
+      "id": "way/539272228",
+      "reason": "same_wikidata",
+      "name": "Բարեպատ"
+    },
+    {
+      "id": "way/539272229",
+      "reason": "same_wikidata",
+      "name": "Կալավան"
+    },
+    {
+      "id": "way/539273993",
+      "reason": "same_wikidata",
+      "name": "Խաչարձան"
+    },
+    {
+      "id": "way/539273994",
+      "reason": "same_wikidata",
+      "name": "Աղավնավանք"
+    },
+    {
+      "id": "way/539273995",
+      "reason": "same_wikidata",
+      "name": "Ձորավանք"
+    },
+    {
+      "id": "way/539273996",
+      "reason": "same_wikidata",
+      "name": "Դպրաբակ"
+    },
+    {
+      "id": "way/539277929",
+      "reason": "same_wikidata",
+      "name": "Գոշ"
+    },
+    {
+      "id": "way/539705543",
+      "reason": "same_wikidata",
+      "name": "Հաղարծին"
+    },
+    {
+      "id": "way/541326721",
+      "reason": "same_wikidata",
+      "name": "Զեդեա"
+    },
+    {
+      "id": "way/542378749",
+      "reason": "same_wikidata",
+      "name": "Առաջաձոր"
+    },
+    {
+      "id": "way/542402840",
+      "reason": "same_wikidata",
+      "name": "Վանեք"
+    },
+    {
+      "id": "way/542402856",
+      "reason": "same_wikidata",
+      "name": "Օխտար"
+    },
+    {
+      "id": "way/542402875",
+      "reason": "same_wikidata",
+      "name": "Ներքին Խոտանան"
+    },
+    {
+      "id": "way/542402902",
+      "reason": "same_wikidata",
+      "name": "Նորաշենիկ"
+    },
+    {
+      "id": "way/542409146",
+      "reason": "same_wikidata",
+      "name": "Աճանան"
+    },
+    {
+      "id": "way/542720922",
+      "reason": "same_wikidata",
+      "name": "Մուղնի"
+    },
+    {
+      "id": "way/544307372",
+      "reason": "same_wikidata",
+      "name": "Հովնաձոր"
+    },
+    {
+      "id": "way/548198732",
+      "reason": "same_wikidata",
+      "name": "Գագարին"
+    },
+    {
+      "id": "way/550207073",
+      "reason": "same_wikidata",
+      "name": "Սիս"
+    },
+    {
+      "id": "way/550240520",
+      "reason": "same_wikidata",
+      "name": "Շահումյան"
+    },
+    {
+      "id": "way/550286525",
+      "reason": "same_wikidata",
+      "name": "Դիտակ"
+    },
+    {
+      "id": "way/550888350",
+      "reason": "same_wikidata",
+      "name": "Այգուտ"
+    },
+    {
+      "id": "way/551653392",
+      "reason": "same_wikidata",
+      "name": "Փոքր Այրում"
+    },
+    {
+      "id": "way/551653417",
+      "reason": "same_wikidata",
+      "name": "Մեծ Այրում"
+    },
+    {
+      "id": "way/551763231",
+      "reason": "same_wikidata",
+      "name": "Վահրավար"
+    },
+    {
+      "id": "way/551763412",
+      "reason": "same_wikidata",
+      "name": "Գուդեմնիս"
+    },
+    {
+      "id": "way/552357188",
+      "reason": "same_wikidata",
+      "name": "Գետափ"
+    },
+    {
+      "id": "way/552360123",
+      "reason": "same_wikidata",
+      "name": "Արին"
+    },
+    {
+      "id": "way/552362287",
+      "reason": "same_wikidata",
+      "name": "Նոր Ազնաբերդ"
+    },
+    {
+      "id": "way/552362288",
+      "reason": "same_wikidata",
+      "name": "Սերս"
+    },
+    {
+      "id": "way/552362289",
+      "reason": "same_wikidata",
+      "name": "Խնձորուտ"
+    },
+    {
+      "id": "way/552366328",
+      "reason": "same_wikidata",
+      "name": "Զառիթափ"
+    },
+    {
+      "id": "way/552366340",
+      "reason": "same_wikidata",
+      "name": "Փոռ"
+    },
+    {
+      "id": "way/552366349",
+      "reason": "same_wikidata",
+      "name": "Ազատեկ"
+    },
+    {
+      "id": "way/552370383",
+      "reason": "same_wikidata",
+      "name": "Արտավան"
+    },
+    {
+      "id": "way/552373821",
+      "reason": "same_wikidata",
+      "name": "Կապույտ"
+    },
+    {
+      "id": "way/552373827",
+      "reason": "same_wikidata",
+      "name": "Գոմք"
+    },
+    {
+      "id": "way/552473900",
+      "reason": "same_wikidata",
+      "name": "Լեռնաձոր"
+    },
+    {
+      "id": "way/553237069",
+      "reason": "same_wikidata",
+      "name": "Աքորի"
+    },
+    {
+      "id": "way/553255882",
+      "reason": "same_wikidata",
+      "name": "Կաճաճկուտ"
+    },
+    {
+      "id": "way/559861036",
+      "reason": "same_wikidata",
+      "name": "Երասխ"
+    },
+    {
+      "id": "way/561008431",
+      "reason": "same_wikidata",
+      "name": "Բալահովիտ"
+    },
+    {
+      "id": "way/562975842",
+      "reason": "same_wikidata",
+      "name": "Գեղաշեն"
+    },
+    {
+      "id": "way/569449691",
+      "reason": "same_wikidata",
+      "name": "Նոր Գեղի"
+    },
+    {
+      "id": "way/583894720",
+      "reason": "same_wikidata",
+      "name": "Տարոնիկ"
+    },
+    {
+      "id": "way/584841743",
+      "reason": "same_wikidata",
+      "name": "Մայիսյան"
+    },
+    {
+      "id": "way/584847158",
+      "reason": "same_wikidata",
+      "name": "Ակնալիճ"
+    },
+    {
+      "id": "way/584874143",
+      "reason": "same_wikidata",
+      "name": "Արշալույս"
+    },
+    {
+      "id": "way/584874146",
+      "reason": "same_wikidata",
+      "name": "Ֆերիկ"
+    },
+    {
+      "id": "way/584874157",
+      "reason": "same_wikidata",
+      "name": "Հայթաղ"
+    },
+    {
+      "id": "way/584874158",
+      "reason": "same_wikidata",
+      "name": "Գեղակերտ"
+    },
+    {
+      "id": "way/584874159",
+      "reason": "same_wikidata",
+      "name": "Հովտամեջ"
+    },
+    {
+      "id": "way/584874160",
+      "reason": "same_wikidata",
+      "name": "Ծիածան"
+    },
+    {
+      "id": "way/587443962",
+      "reason": "same_wikidata",
+      "name": "Արտիմետ"
+    },
+    {
+      "id": "way/592662598",
+      "reason": "same_wikidata",
+      "name": "Ներքին Գետաշեն"
+    },
+    {
+      "id": "way/594442849",
+      "reason": "same_wikidata",
+      "name": "Ուշի"
+    },
+    {
+      "id": "way/594442851",
+      "reason": "same_wikidata",
+      "name": "Օհանավան"
+    },
+    {
+      "id": "way/595825791",
+      "reason": "same_wikidata",
+      "name": "Քաջարանց"
+    },
+    {
+      "id": "way/601208161",
+      "reason": "same_wikidata",
+      "name": "Բյուրավան"
+    },
+    {
+      "id": "way/601219006",
+      "reason": "same_wikidata",
+      "name": "Վանեվան"
+    },
+    {
+      "id": "way/601227379",
+      "reason": "same_wikidata",
+      "name": "Խաչաղբյուր"
+    },
+    {
+      "id": "way/601229298",
+      "reason": "same_wikidata",
+      "name": "Բասեն"
+    },
+    {
+      "id": "way/601230873",
+      "reason": "same_wikidata",
+      "name": "Ոսկեհասկ"
+    },
+    {
+      "id": "way/601647619",
+      "reason": "same_wikidata",
+      "name": "Ուրցաձոր"
+    },
+    {
+      "id": "way/602944871",
+      "reason": "same_wikidata",
+      "name": "Ազատավան"
+    },
+    {
+      "id": "way/602944876",
+      "reason": "same_wikidata",
+      "name": "Բաղրամյան"
+    },
+    {
+      "id": "way/602958559",
+      "reason": "same_wikidata",
+      "name": "Նշավան"
+    },
+    {
+      "id": "way/602958570",
+      "reason": "same_wikidata",
+      "name": "Արևշատ"
+    },
+    {
+      "id": "way/602958571",
+      "reason": "same_wikidata",
+      "name": "Աբովյան"
+    },
+    {
+      "id": "way/602967054",
+      "reason": "same_wikidata",
+      "name": "Մրգանուշ"
+    },
+    {
+      "id": "way/602967056",
+      "reason": "same_wikidata",
+      "name": "Գետազատ"
+    },
+    {
+      "id": "way/602967059",
+      "reason": "same_wikidata",
+      "name": "Վարդաշեն"
+    },
+    {
+      "id": "way/602967066",
+      "reason": "same_wikidata",
+      "name": "Դվին"
+    },
+    {
+      "id": "way/602967070",
+      "reason": "same_wikidata",
+      "name": "Վերին Դվին"
+    },
+    {
+      "id": "way/603434289",
+      "reason": "same_wikidata",
+      "name": "Շենավան"
+    },
+    {
+      "id": "way/607698889",
+      "reason": "same_wikidata",
+      "name": "Վաղաշեն"
+    },
+    {
+      "id": "way/607861664",
+      "reason": "same_wikidata",
+      "name": "Նոր Կեսարիա"
+    },
+    {
+      "id": "way/607871895",
+      "reason": "same_wikidata",
+      "name": "Հուշակերտ"
+    },
+    {
+      "id": "way/608003834",
+      "reason": "same_wikidata",
+      "name": "Զովաբեր"
+    },
+    {
+      "id": "way/608006076",
+      "reason": "same_wikidata",
+      "name": "Քաղսի"
+    },
+    {
+      "id": "way/608007860",
+      "reason": "same_wikidata",
+      "name": "Ջրաբեր"
+    },
+    {
+      "id": "way/608010210",
+      "reason": "same_wikidata",
+      "name": "Արզնի"
+    },
+    {
+      "id": "way/608027929",
+      "reason": "same_wikidata",
+      "name": "Հարթավան"
+    },
+    {
+      "id": "way/608027930",
+      "reason": "same_wikidata",
+      "name": "Շենավան"
+    },
+    {
+      "id": "way/608045874",
+      "reason": "same_wikidata",
+      "name": "Խորոնք"
+    },
+    {
+      "id": "way/608045876",
+      "reason": "same_wikidata",
+      "name": "Առատաշեն"
+    },
+    {
+      "id": "way/608429990",
+      "reason": "same_wikidata",
+      "name": "Ոսկեհատ"
+    },
+    {
+      "id": "way/608945096",
+      "reason": "same_wikidata",
+      "name": "Գանձակ"
+    },
+    {
+      "id": "way/608945098",
+      "reason": "nearby_duplicate",
+      "name": "Հացառատ",
+      "preferred": "node/11854228141"
+    },
+    {
+      "id": "way/608945099",
+      "reason": "same_wikidata",
+      "name": "Կարմիրգյուղ"
+    },
+    {
+      "id": "way/610194545",
+      "reason": "same_wikidata",
+      "name": "Ղազարավան"
+    },
+    {
+      "id": "way/610194546",
+      "reason": "same_wikidata",
+      "name": "Բազմաղբյուր"
+    },
+    {
+      "id": "way/612662710",
+      "reason": "same_wikidata",
+      "name": "Աղին"
+    },
+    {
+      "id": "way/613315008",
+      "reason": "same_wikidata",
+      "name": "Նոր Եդեսիա"
+    },
+    {
+      "id": "way/614022153",
+      "reason": "same_wikidata",
+      "name": "Սիփանիկ"
+    },
+    {
+      "id": "way/614022154",
+      "reason": "same_wikidata",
+      "name": "Հովտաշատ"
+    },
+    {
+      "id": "way/615468583",
+      "reason": "same_wikidata",
+      "name": "Բուրաստան"
+    },
+    {
+      "id": "way/615470653",
+      "reason": "same_wikidata",
+      "name": "Մասիս"
+    },
+    {
+      "id": "way/616083882",
+      "reason": "same_wikidata",
+      "name": "Արզական"
+    },
+    {
+      "id": "way/616089773",
+      "reason": "same_wikidata",
+      "name": "Բջնի"
+    },
+    {
+      "id": "way/616887148",
+      "reason": "same_wikidata",
+      "name": "Կողբավան"
+    },
+    {
+      "id": "way/627614619",
+      "reason": "same_wikidata",
+      "name": "Նոր Արմավիր"
+    },
+    {
+      "id": "way/627614622",
+      "reason": "same_wikidata",
+      "name": "Ջրաշեն"
+    },
+    {
+      "id": "way/627615241",
+      "reason": "same_wikidata",
+      "name": "Ջրաշեն"
+    },
+    {
+      "id": "way/627615242",
+      "reason": "same_wikidata",
+      "name": "Լեռնավան"
+    },
+    {
+      "id": "way/628629515",
+      "reason": "same_wikidata",
+      "name": "Աջաբաջ"
+    },
+    {
+      "id": "way/628632649",
+      "reason": "same_wikidata",
+      "name": "Սոլակ"
+    },
+    {
+      "id": "way/628868149",
+      "reason": "same_wikidata",
+      "name": "Շրվենանց"
+    },
+    {
+      "id": "way/628868150",
+      "reason": "same_wikidata",
+      "name": "Ձորաստան"
+    },
+    {
+      "id": "way/628868151",
+      "reason": "same_wikidata",
+      "name": "Սևաքար"
+    },
+    {
+      "id": "way/628969604",
+      "reason": "same_wikidata",
+      "name": "Շամլուղ"
+    },
+    {
+      "id": "way/628969607",
+      "reason": "same_wikidata",
+      "name": "Ազատաշեն"
+    },
+    {
+      "id": "way/628969611",
+      "reason": "same_wikidata",
+      "name": "Արբաթ"
+    },
+    {
+      "id": "way/628969616",
+      "reason": "same_wikidata",
+      "name": "Վերին Ախթալա"
+    },
+    {
+      "id": "way/628969620",
+      "reason": "same_wikidata",
+      "name": "Օթևան"
+    },
+    {
+      "id": "way/628969624",
+      "reason": "same_wikidata",
+      "name": "Մեծաձոր"
+    },
+    {
+      "id": "way/628971024",
+      "reason": "same_wikidata",
+      "name": "Մեծ Պարնի"
+    },
+    {
+      "id": "way/628971025",
+      "reason": "same_wikidata",
+      "name": "Ծաղկաբեր"
+    },
+    {
+      "id": "way/628972315",
+      "reason": "same_wikidata",
+      "name": "Լուսաղբյուր"
+    },
+    {
+      "id": "way/628972319",
+      "reason": "same_wikidata",
+      "name": "Հարթագյուղ"
+    },
+    {
+      "id": "way/628972322",
+      "reason": "same_wikidata",
+      "name": "Խնկոյան"
+    },
+    {
+      "id": "way/628976388",
+      "reason": "same_wikidata",
+      "name": "Կրաշեն"
+    },
+    {
+      "id": "way/628976389",
+      "reason": "same_wikidata",
+      "name": "Մեծ Սարիար"
+    },
+    {
+      "id": "way/628976390",
+      "reason": "same_wikidata",
+      "name": "Ջաջուռավան"
+    },
+    {
+      "id": "way/628976391",
+      "reason": "same_wikidata",
+      "name": "Լեռնուտ"
+    },
+    {
+      "id": "way/628976392",
+      "reason": "same_wikidata",
+      "name": "Կարմրաքար"
+    },
+    {
+      "id": "way/628977967",
+      "reason": "same_wikidata",
+      "name": "Գառնառիճ"
+    },
+    {
+      "id": "way/628977970",
+      "reason": "same_wikidata",
+      "name": "Շաղիկ"
+    },
+    {
+      "id": "way/628977971",
+      "reason": "same_wikidata",
+      "name": "Հարթաշեն"
+    },
+    {
+      "id": "way/628977972",
+      "reason": "same_wikidata",
+      "name": "Մուսայելյան"
+    },
+    {
+      "id": "way/629005036",
+      "reason": "same_wikidata",
+      "name": "Նոր Կյուրին"
+    },
+    {
+      "id": "way/629103671",
+      "reason": "same_wikidata",
+      "name": "Դովեղ"
+    },
+    {
+      "id": "way/629103672",
+      "reason": "same_wikidata",
+      "name": "Բերքաբեր"
+    },
+    {
+      "id": "way/629103674",
+      "reason": "same_wikidata",
+      "name": "Մրգաստան"
+    },
+    {
+      "id": "way/629103675",
+      "reason": "same_wikidata",
+      "name": "Ծաղկալանջ"
+    },
+    {
+      "id": "way/629103676",
+      "reason": "same_wikidata",
+      "name": "Արագած"
+    },
+    {
+      "id": "way/629103677",
+      "reason": "same_wikidata",
+      "name": "Աղավնատուն"
+    },
+    {
+      "id": "way/629103678",
+      "reason": "same_wikidata",
+      "name": "Դողս"
+    },
+    {
+      "id": "way/629160089",
+      "reason": "same_wikidata",
+      "name": "Երիզակ"
+    },
+    {
+      "id": "way/629160092",
+      "reason": "same_wikidata",
+      "name": "Զարիշատ"
+    },
+    {
+      "id": "way/629386514",
+      "reason": "same_wikidata",
+      "name": "Գողթ"
+    },
+    {
+      "id": "way/629390633",
+      "reason": "same_wikidata",
+      "name": "Գետարգել"
+    },
+    {
+      "id": "way/629391293",
+      "reason": "same_wikidata",
+      "name": "Ակունք"
+    },
+    {
+      "id": "way/629391788",
+      "reason": "same_wikidata",
+      "name": "Նորապատ"
+    },
+    {
+      "id": "way/629780820",
+      "reason": "same_wikidata",
+      "name": "Եղնաջուր"
+    },
+    {
+      "id": "way/629794704",
+      "reason": "same_wikidata",
+      "name": "Արաքս"
+    },
+    {
+      "id": "way/636025750",
+      "reason": "same_wikidata",
+      "name": "Լանջազատ"
+    },
+    {
+      "id": "way/638472875",
+      "reason": "same_wikidata",
+      "name": "Լճավան"
+    },
+    {
+      "id": "way/638473357",
+      "reason": "same_wikidata",
+      "name": "Ախպրաձոր"
+    },
+    {
+      "id": "way/638513608",
+      "reason": "same_wikidata",
+      "name": "Արգել"
+    },
+    {
+      "id": "way/639981329",
+      "reason": "same_wikidata",
+      "name": "Հայանիստ"
+    },
+    {
+      "id": "way/639981330",
+      "reason": "same_wikidata",
+      "name": "Խաչփառ"
+    },
+    {
+      "id": "way/639981331",
+      "reason": "same_wikidata",
+      "name": "Ղուկասավան"
+    },
+    {
+      "id": "way/649553823",
+      "reason": "same_wikidata",
+      "name": "Մերձավան"
+    },
+    {
+      "id": "way/658397993",
+      "reason": "same_wikidata",
+      "name": "Դաշտաքար"
+    },
+    {
+      "id": "way/666633735",
+      "reason": "same_wikidata",
+      "name": "Չինարի"
+    },
+    {
+      "id": "way/672153736",
+      "reason": "same_wikidata",
+      "name": "Արարատ"
+    },
+    {
+      "id": "way/674283713",
+      "reason": "same_wikidata",
+      "name": "Արգինա"
+    },
+    {
+      "id": "way/674607495",
+      "reason": "same_wikidata",
+      "name": "Տանձավեր"
+    },
+    {
+      "id": "way/674613410",
+      "reason": "same_wikidata",
+      "name": "Ագարակ"
+    },
+    {
+      "id": "way/677149365",
+      "reason": "same_wikidata",
+      "name": "Վերին Խոտանան"
+    },
+    {
+      "id": "way/681860121",
+      "reason": "same_wikidata",
+      "name": "Ջրառատ"
+    },
+    {
+      "id": "way/686973605",
+      "reason": "same_wikidata",
+      "name": "Դաշտավան"
+    },
+    {
+      "id": "way/686973606",
+      "reason": "same_wikidata",
+      "name": "Զորակ"
+    },
+    {
+      "id": "way/727009865",
+      "reason": "same_wikidata",
+      "name": "Քաշունի"
+    },
+    {
+      "id": "way/727019999",
+      "reason": "same_wikidata",
+      "name": "Ամասիա"
+    },
+    {
+      "id": "way/733169745",
+      "reason": "same_wikidata",
+      "name": "Բերդաշեն"
+    },
+    {
+      "id": "way/733169751",
+      "reason": "same_wikidata",
+      "name": "Պաղակն"
+    },
+    {
+      "id": "way/733473821",
+      "reason": "same_wikidata",
+      "name": "Զարթոնք"
+    },
+    {
+      "id": "way/733492992",
+      "reason": "same_wikidata",
+      "name": "Գեղանիստ"
+    },
+    {
+      "id": "way/737891891",
+      "reason": "same_wikidata",
+      "name": "Մարտիրոս"
+    },
+    {
+      "id": "way/743191821",
+      "reason": "same_wikidata",
+      "name": "Փշատավան"
+    },
+    {
+      "id": "way/750737188",
+      "reason": "same_wikidata",
+      "name": "Գոռգոչ"
+    },
+    {
+      "id": "way/751789804",
+      "reason": "same_wikidata",
+      "name": "Մրգաշատ"
+    },
+    {
+      "id": "way/760912847",
+      "reason": "same_wikidata",
+      "name": "Բարեկամավան"
+    },
+    {
+      "id": "way/760915645",
+      "reason": "same_wikidata",
+      "name": "Կոթի"
+    },
+    {
+      "id": "way/760916368",
+      "reason": "same_wikidata",
+      "name": "Ոսկեվան"
+    },
+    {
+      "id": "way/764157236",
+      "reason": "same_wikidata",
+      "name": "Վարդանաշեն"
+    },
+    {
+      "id": "way/765728346",
+      "reason": "same_wikidata",
+      "name": "Հովտաշեն"
+    },
+    {
+      "id": "way/767889591",
+      "reason": "same_wikidata",
+      "name": "Մարմաշեն"
+    },
+    {
+      "id": "way/777986105",
+      "reason": "same_wikidata",
+      "name": "Ջրառատ"
+    },
+    {
+      "id": "way/777990595",
+      "reason": "same_wikidata",
+      "name": "Դալարիկ"
+    },
+    {
+      "id": "way/778814033",
+      "reason": "same_wikidata",
+      "name": "Լանջանիստ"
+    },
+    {
+      "id": "way/779034813",
+      "reason": "same_wikidata",
+      "name": "Ջրարբի"
+    },
+    {
+      "id": "way/779034821",
+      "reason": "same_wikidata",
+      "name": "Ապագա"
+    },
+    {
+      "id": "way/779034822",
+      "reason": "same_wikidata",
+      "name": "Լուսագյուղ"
+    },
+    {
+      "id": "way/779034823",
+      "reason": "same_wikidata",
+      "name": "Ակնաշեն"
+    },
+    {
+      "id": "way/779526311",
+      "reason": "same_wikidata",
+      "name": "Գեղատափ"
+    },
+    {
+      "id": "way/781309691",
+      "reason": "same_wikidata",
+      "name": "Կայան"
+    },
+    {
+      "id": "way/781309693",
+      "reason": "same_wikidata",
+      "name": "Բաղանիս"
+    },
+    {
+      "id": "way/782344348",
+      "reason": "same_wikidata",
+      "name": "Հացիկ"
+    },
+    {
+      "id": "way/782344349",
+      "reason": "same_wikidata",
+      "name": "Քարակերտ"
+    },
+    {
+      "id": "way/782623050",
+      "reason": "same_wikidata",
+      "name": "Ռանչպար"
+    },
+    {
+      "id": "way/782993770",
+      "reason": "same_wikidata",
+      "name": "Գետաշեն"
+    },
+    {
+      "id": "way/783002695",
+      "reason": "same_wikidata",
+      "name": "Այգեշատ"
+    },
+    {
+      "id": "way/783002697",
+      "reason": "same_wikidata",
+      "name": "Արմավիր"
+    },
+    {
+      "id": "way/783002698",
+      "reason": "same_wikidata",
+      "name": "Հայկավան"
+    },
+    {
+      "id": "way/783002699",
+      "reason": "same_wikidata",
+      "name": "Տանձուտ"
+    },
+    {
+      "id": "way/783002700",
+      "reason": "same_wikidata",
+      "name": "Արգավանդ"
+    },
+    {
+      "id": "way/783002701",
+      "reason": "same_wikidata",
+      "name": "Արազափ"
+    },
+    {
+      "id": "way/783020397",
+      "reason": "same_wikidata",
+      "name": "Արևիկ"
+    },
+    {
+      "id": "way/783020398",
+      "reason": "same_wikidata",
+      "name": "Արտաշար"
+    },
+    {
+      "id": "way/785277660",
+      "reason": "same_wikidata",
+      "name": "Արփենի"
+    },
+    {
+      "id": "way/785291046",
+      "reason": "same_wikidata",
+      "name": "Երասխահուն"
+    },
+    {
+      "id": "way/785291049",
+      "reason": "same_wikidata",
+      "name": "Բամբակաշատ"
+    },
+    {
+      "id": "way/786124397",
+      "reason": "same_wikidata",
+      "name": "Աստղաձոր"
+    },
+    {
+      "id": "way/786124398",
+      "reason": "same_wikidata",
+      "name": "Զոլաքար"
+    },
+    {
+      "id": "way/786127773",
+      "reason": "nearby_duplicate",
+      "name": "Արծվաքար",
+      "preferred": "node/11854228165"
+    },
+    {
+      "id": "way/787067900",
+      "reason": "same_wikidata",
+      "name": "Փոքր Մասրիկ"
+    },
+    {
+      "id": "way/787067901",
+      "reason": "same_wikidata",
+      "name": "Նորակերտ"
+    },
+    {
+      "id": "way/787067902",
+      "reason": "same_wikidata",
+      "name": "Գեղամասար"
+    },
+    {
+      "id": "way/787123228",
+      "reason": "same_wikidata",
+      "name": "Բաղրամյան"
+    },
+    {
+      "id": "way/787127709",
+      "reason": "same_wikidata",
+      "name": "Մյասնիկյան"
+    },
+    {
+      "id": "way/787129058",
+      "reason": "same_wikidata",
+      "name": "Արևադաշտ"
+    },
+    {
+      "id": "way/788451592",
+      "reason": "same_wikidata",
+      "name": "Տալվորիկ"
+    },
+    {
+      "id": "way/840211368",
+      "reason": "same_wikidata",
+      "name": "Պարտիզակ"
+    },
+    {
+      "id": "way/842778601",
+      "reason": "same_wikidata",
+      "name": "Բերքանուշ"
+    },
+    {
+      "id": "way/842778602",
+      "reason": "same_wikidata",
+      "name": "Դալար"
+    },
+    {
+      "id": "way/842778603",
+      "reason": "same_wikidata",
+      "name": "Մրգավան"
+    },
+    {
+      "id": "way/846964101",
+      "reason": "same_wikidata",
+      "name": "Չկալովկա"
+    },
+    {
+      "id": "way/848501282",
+      "reason": "same_wikidata",
+      "name": "Կռուգլայա շիշկա"
+    },
+    {
+      "id": "way/848503538",
+      "reason": "same_wikidata",
+      "name": "Հաղպատ"
+    },
+    {
+      "id": "way/848503929",
+      "reason": "same_wikidata",
+      "name": "Քոբայր"
+    },
+    {
+      "id": "way/848506764",
+      "reason": "same_wikidata",
+      "name": "Քարինջ"
+    },
+    {
+      "id": "way/848889689",
+      "reason": "same_wikidata",
+      "name": "Ձորագետ"
+    },
+    {
+      "id": "way/848889690",
+      "reason": "same_wikidata",
+      "name": "Դեբետ"
+    },
+    {
+      "id": "way/848889691",
+      "reason": "same_wikidata",
+      "name": "Չկալով"
+    },
+    {
+      "id": "way/848914677",
+      "reason": "same_wikidata",
+      "name": "Լոռի Բերդ"
+    },
+    {
+      "id": "way/852890746",
+      "reason": "same_wikidata",
+      "name": "Ճապկուտ"
+    },
+    {
+      "id": "way/866260442",
+      "reason": "same_wikidata",
+      "name": "Արաքսավան"
+    },
+    {
+      "id": "way/870645438",
+      "reason": "same_wikidata",
+      "name": "Մադինա"
+    },
+    {
+      "id": "way/870645439",
+      "reason": "same_wikidata",
+      "name": "Լեռնակերտ"
+    },
+    {
+      "id": "way/870651229",
+      "reason": "same_wikidata",
+      "name": "Արաքս"
+    },
+    {
+      "id": "way/874160686",
+      "reason": "same_wikidata",
+      "name": "Ամասիա"
+    },
+    {
+      "id": "way/874167618",
+      "reason": "same_wikidata",
+      "name": "Բերքաշատ"
+    },
+    {
+      "id": "way/876100608",
+      "reason": "same_wikidata",
+      "name": "Լուսաշող"
+    },
+    {
+      "id": "way/876555839",
+      "reason": "same_wikidata",
+      "name": "Դպրեվանք"
+    },
+    {
+      "id": "way/876592156",
+      "reason": "same_wikidata",
+      "name": "Ցողամարգ"
+    },
+    {
+      "id": "way/876592157",
+      "reason": "same_wikidata",
+      "name": "Վարդաղբյուր"
+    },
+    {
+      "id": "way/885858569",
+      "reason": "same_wikidata",
+      "name": "Տավրուս"
+    },
+    {
+      "id": "way/886165973",
+      "reason": "same_wikidata",
+      "name": "Անտառաշատ"
+    },
+    {
+      "id": "way/888607927",
+      "reason": "same_wikidata",
+      "name": "Դարբնիկ"
+    },
+    {
+      "id": "way/888875802",
+      "reason": "same_wikidata",
+      "name": "Գրիբոյեդով"
+    },
+    {
+      "id": "way/888979782",
+      "reason": "same_wikidata",
+      "name": "Մեծամոր"
+    },
+    {
+      "id": "way/888979783",
+      "reason": "same_wikidata",
+      "name": "Գայ"
+    },
+    {
+      "id": "way/888979784",
+      "reason": "same_wikidata",
+      "name": "Հայկաշեն"
+    },
+    {
+      "id": "way/891315283",
+      "reason": "same_wikidata",
+      "name": "Գեղի"
+    },
+    {
+      "id": "way/891316049",
+      "reason": "same_wikidata",
+      "name": "Ներքին Հանդ"
+    },
+    {
+      "id": "way/891317010",
+      "reason": "same_wikidata",
+      "name": "Եղվարդ"
+    },
+    {
+      "id": "way/891317011",
+      "reason": "same_wikidata",
+      "name": "Ուժանիս"
+    },
+    {
+      "id": "way/891317012",
+      "reason": "same_wikidata",
+      "name": "Վարդավանք"
+    },
+    {
+      "id": "way/891317013",
+      "reason": "same_wikidata",
+      "name": "Արծվանիկ"
+    },
+    {
+      "id": "way/891317014",
+      "reason": "same_wikidata",
+      "name": "Դավիթ Բեկ"
+    },
+    {
+      "id": "way/891318852",
+      "reason": "same_wikidata",
+      "name": "Բարգուշատ"
+    },
+    {
+      "id": "way/893301215",
+      "reason": "same_wikidata",
+      "name": "Ալաշկերտ"
+    },
+    {
+      "id": "way/893302469",
+      "reason": "same_wikidata",
+      "name": "Եղեգնուտ"
+    },
+    {
+      "id": "way/893698123",
+      "reason": "same_wikidata",
+      "name": "Ավազան"
+    },
+    {
+      "id": "way/893698124",
+      "reason": "same_wikidata",
+      "name": "Կախակն"
+    },
+    {
+      "id": "way/893894614",
+      "reason": "same_wikidata",
+      "name": "Արտամետ"
+    },
+    {
+      "id": "way/894211253",
+      "reason": "same_wikidata",
+      "name": "Շենիկ"
+    },
+    {
+      "id": "way/894495858",
+      "reason": "same_wikidata",
+      "name": "Դաշտ"
+    },
+    {
+      "id": "way/894495859",
+      "reason": "same_wikidata",
+      "name": "Այգեշատ"
+    },
+    {
+      "id": "way/894495860",
+      "reason": "same_wikidata",
+      "name": "Լեռնամերձ"
+    },
+    {
+      "id": "way/894495861",
+      "reason": "same_wikidata",
+      "name": "Ամբերդ"
+    },
+    {
+      "id": "way/895566300",
+      "reason": "same_wikidata",
+      "name": "Մարմարիկ"
+    },
+    {
+      "id": "way/895805587",
+      "reason": "same_wikidata",
+      "name": "Շաղափ"
+    },
+    {
+      "id": "way/896145247",
+      "reason": "same_wikidata",
+      "name": "Գետափնյա"
+    },
+    {
+      "id": "way/896145252",
+      "reason": "same_wikidata",
+      "name": "Ներքին Շորժա"
+    },
+    {
+      "id": "way/897938481",
+      "reason": "same_wikidata",
+      "name": "Քարահունջ"
+    },
+    {
+      "id": "way/898032902",
+      "reason": "same_wikidata",
+      "name": "Նավուր"
+    },
+    {
+      "id": "way/898032903",
+      "reason": "same_wikidata",
+      "name": "Տավուշ"
+    },
+    {
+      "id": "way/898530884",
+      "reason": "same_wikidata",
+      "name": "Կարենիս"
+    },
+    {
+      "id": "way/902042819",
+      "reason": "same_wikidata",
+      "name": "Վերին Սասունիկ"
+    },
+    {
+      "id": "way/902042824",
+      "reason": "same_wikidata",
+      "name": "Աղձք"
+    },
+    {
+      "id": "way/902695084",
+      "reason": "same_wikidata",
+      "name": "Լեռնագոգ"
+    },
+    {
+      "id": "way/902695085",
+      "reason": "same_wikidata",
+      "name": "Խանջյան"
+    },
+    {
+      "id": "way/902695086",
+      "reason": "same_wikidata",
+      "name": "Լուկաշին"
+    },
+    {
+      "id": "way/902695087",
+      "reason": "same_wikidata",
+      "name": "Նորավան"
+    },
+    {
+      "id": "way/902731006",
+      "reason": "same_wikidata",
+      "name": "Գետափ"
+    },
+    {
+      "id": "way/903043117",
+      "reason": "same_wikidata",
+      "name": "Նոր Ամանոս"
+    },
+    {
+      "id": "way/914958098",
+      "reason": "same_wikidata",
+      "name": "Այգեվան"
+    },
+    {
+      "id": "way/914958104",
+      "reason": "same_wikidata",
+      "name": "Լենուղի"
+    },
+    {
+      "id": "way/917759467",
+      "reason": "same_wikidata",
+      "name": "Մարգահովիտ"
+    },
+    {
+      "id": "way/917759468",
+      "reason": "same_wikidata",
+      "name": "Անտառաշեն"
+    },
+    {
+      "id": "way/918321245",
+      "reason": "same_wikidata",
+      "name": "Այգեկ"
+    },
+    {
+      "id": "way/918321246",
+      "reason": "same_wikidata",
+      "name": "Բաղրամյան"
+    },
+    {
+      "id": "way/918321247",
+      "reason": "same_wikidata",
+      "name": "Նորակերտ"
+    },
+    {
+      "id": "way/918335722",
+      "reason": "same_wikidata",
+      "name": "Արտաշավան"
+    },
+    {
+      "id": "way/918335723",
+      "reason": "same_wikidata",
+      "name": "Սաղմոսավան"
+    },
+    {
+      "id": "way/919655080",
+      "reason": "same_wikidata",
+      "name": "Երվանդաշատ"
+    },
+    {
+      "id": "way/919689501",
+      "reason": "same_wikidata",
+      "name": "Լեռնանիստ"
+    },
+    {
+      "id": "way/919689507",
+      "reason": "same_wikidata",
+      "name": "Աղավնաձոր"
+    },
+    {
+      "id": "way/920161918",
+      "reason": "same_wikidata",
+      "name": "Կոտայք"
+    },
+    {
+      "id": "way/921980253",
+      "reason": "same_wikidata",
+      "name": "Կավճուտ"
+    },
+    {
+      "id": "way/921980254",
+      "reason": "same_wikidata",
+      "name": "Անդոկավան"
+    },
+    {
+      "id": "way/921980255",
+      "reason": "same_wikidata",
+      "name": "Սզնակ"
+    },
+    {
+      "id": "way/921980256",
+      "reason": "same_wikidata",
+      "name": "Սյունիք"
+    },
+    {
+      "id": "way/921980260",
+      "reason": "same_wikidata",
+      "name": "Եղեգ"
+    },
+    {
+      "id": "way/921980261",
+      "reason": "same_wikidata",
+      "name": "Ըրկենանց"
+    },
+    {
+      "id": "way/921980262",
+      "reason": "same_wikidata",
+      "name": "Չափնի"
+    },
+    {
+      "id": "way/926158414",
+      "reason": "same_wikidata",
+      "name": "Նոր Երզնկա"
+    },
+    {
+      "id": "way/926158423",
+      "reason": "same_wikidata",
+      "name": "Սայաթ Նովա"
+    },
+    {
+      "id": "way/931948852",
+      "reason": "same_wikidata",
+      "name": "Սարամեջ"
+    },
+    {
+      "id": "way/937281220",
+      "reason": "same_wikidata",
+      "name": "Օշական"
+    },
+    {
+      "id": "way/937281221",
+      "reason": "same_wikidata",
+      "name": "Ոսկեվազ"
+    },
+    {
+      "id": "way/937281226",
+      "reason": "same_wikidata",
+      "name": "Ոսկեհատ"
+    },
+    {
+      "id": "way/940039997",
+      "reason": "same_wikidata",
+      "name": "Վարդաբլուր"
+    },
+    {
+      "id": "way/941819146",
+      "reason": "same_wikidata",
+      "name": "Ագարակ"
+    },
+    {
+      "id": "way/943533899",
+      "reason": "same_wikidata",
+      "name": "Շամիրամ"
+    },
+    {
+      "id": "way/943533915",
+      "reason": "same_wikidata",
+      "name": "Արուճ"
+    },
+    {
+      "id": "way/966705765",
+      "reason": "same_wikidata",
+      "name": "Հովտուն"
+    },
+    {
+      "id": "way/966705771",
+      "reason": "same_wikidata",
+      "name": "Բանդիվան"
+    },
+    {
+      "id": "way/971993273",
+      "reason": "same_wikidata",
+      "name": "Երազգավորս"
+    },
+    {
+      "id": "way/971993274",
+      "reason": "same_wikidata",
+      "name": "Բայանդուր"
+    },
+    {
+      "id": "way/972619010",
+      "reason": "same_wikidata",
+      "name": "Կայք"
+    },
+    {
+      "id": "way/978733708",
+      "reason": "same_wikidata",
+      "name": "Վարդենուտ"
+    },
+    {
+      "id": "way/978736819",
+      "reason": "same_wikidata",
+      "name": "Ջրամբար"
+    },
+    {
+      "id": "way/979673225",
+      "reason": "same_wikidata",
+      "name": "Ախուրիկ"
+    },
+    {
+      "id": "way/984872976",
+      "reason": "same_wikidata",
+      "name": "Լուսաղբյուր"
+    },
+    {
+      "id": "way/1006373788",
+      "reason": "same_wikidata",
+      "name": "Լուսակերտ"
+    },
+    {
+      "id": "way/1006373789",
+      "reason": "same_wikidata",
+      "name": "Սարատակ"
+    },
+    {
+      "id": "way/1006373790",
+      "reason": "same_wikidata",
+      "name": "Բենիամին"
+    },
+    {
+      "id": "way/1008570370",
+      "reason": "same_wikidata",
+      "name": "Ազատան"
+    },
+    {
+      "id": "way/1010958780",
+      "reason": "same_wikidata",
+      "name": "Նիգատուն"
+    },
+    {
+      "id": "way/1012086601",
+      "reason": "same_wikidata",
+      "name": "Հառիճ"
+    },
+    {
+      "id": "way/1012086602",
+      "reason": "same_wikidata",
+      "name": "Նահապետավան"
+    },
+    {
+      "id": "way/1012086603",
+      "reason": "same_wikidata",
+      "name": "Սարալանջ"
+    },
+    {
+      "id": "way/1012086605",
+      "reason": "same_wikidata",
+      "name": "Նոր Կյանք"
+    },
+    {
+      "id": "way/1012086606",
+      "reason": "same_wikidata",
+      "name": "Վարդաքար"
+    },
+    {
+      "id": "way/1012086607",
+      "reason": "same_wikidata",
+      "name": "Հովտաշեն"
+    },
+    {
+      "id": "way/1012086608",
+      "reason": "same_wikidata",
+      "name": "Հոռոմ"
+    },
+    {
+      "id": "way/1012086620",
+      "reason": "same_wikidata",
+      "name": "Գուսանագյուղ"
+    },
+    {
+      "id": "way/1028288869",
+      "reason": "same_wikidata",
+      "name": "Նուռնուս"
+    },
+    {
+      "id": "way/1030860077",
+      "reason": "same_wikidata",
+      "name": "Գառնի"
+    },
+    {
+      "id": "way/1031910053",
+      "reason": "same_wikidata",
+      "name": "Ախուրյան"
+    },
+    {
+      "id": "way/1046482900",
+      "reason": "same_wikidata",
+      "name": "Լեռնագյուղ"
+    },
+    {
+      "id": "way/1047081465",
+      "reason": "same_wikidata",
+      "name": "Արդենիս"
+    },
+    {
+      "id": "way/1047088484",
+      "reason": "same_wikidata",
+      "name": "Թավշուտ"
+    },
+    {
+      "id": "way/1047818143",
+      "reason": "same_wikidata",
+      "name": "Զույգաղբյուր"
+    },
+    {
+      "id": "way/1085065503",
+      "reason": "same_wikidata",
+      "name": "Մարմարաշեն"
+    },
+    {
+      "id": "way/1085071123",
+      "reason": "same_wikidata",
+      "name": "Այնթապ"
+    },
+    {
+      "id": "way/1085775087",
+      "reason": "same_wikidata",
+      "name": "Մոնթեավան"
+    },
+    {
+      "id": "way/1110291976",
+      "reason": "same_wikidata",
+      "name": "Բարձրունի"
+    },
+    {
+      "id": "way/1122614207",
+      "reason": "same_wikidata",
+      "name": "Արեգնադեմ"
+    },
+    {
+      "id": "way/1122614234",
+      "reason": "same_wikidata",
+      "name": "Դարիկ"
+    },
+    {
+      "id": "way/1122730249",
+      "reason": "same_wikidata",
+      "name": "Բյուրակն"
+    },
+    {
+      "id": "way/1122730257",
+      "reason": "same_wikidata",
+      "name": "Գտաշեն"
+    },
+    {
+      "id": "way/1122730273",
+      "reason": "same_wikidata",
+      "name": "Կամխուտ"
+    },
+    {
+      "id": "way/1122730275",
+      "reason": "same_wikidata",
+      "name": "Ողջի"
+    },
+    {
+      "id": "way/1122730276",
+      "reason": "same_wikidata",
+      "name": "Մեղրաշատ"
+    },
+    {
+      "id": "way/1122730283",
+      "reason": "same_wikidata",
+      "name": "Ջրաձոր"
+    },
+    {
+      "id": "way/1123033264",
+      "reason": "same_wikidata",
+      "name": "Հողմիկ"
+    },
+    {
+      "id": "way/1123033272",
+      "reason": "same_wikidata",
+      "name": "Գոգհովիտ"
+    },
+    {
+      "id": "way/1123033274",
+      "reason": "same_wikidata",
+      "name": "Թորոսգյուղ"
+    },
+    {
+      "id": "way/1123033286",
+      "reason": "same_wikidata",
+      "name": "Ծաղկուտ"
+    },
+    {
+      "id": "way/1136334156",
+      "reason": "same_wikidata",
+      "name": "Սպանդարյան"
+    },
+    {
+      "id": "way/1136334157",
+      "reason": "same_wikidata",
+      "name": "Արևշատ"
+    },
+    {
+      "id": "way/1136334158",
+      "reason": "same_wikidata",
+      "name": "Փոքր Մանթաշ"
+    },
+    {
+      "id": "way/1137709079",
+      "reason": "same_wikidata",
+      "name": "Դդմասար"
+    },
+    {
+      "id": "way/1137709080",
+      "reason": "same_wikidata",
+      "name": "Արևուտ"
+    },
+    {
+      "id": "way/1137716851",
+      "reason": "same_wikidata",
+      "name": "Լուսակն"
+    },
+    {
+      "id": "way/1137724462",
+      "reason": "same_wikidata",
+      "name": "Արայի"
+    },
+    {
+      "id": "way/1138161876",
+      "reason": "same_wikidata",
+      "name": "Պաղաղբյուր"
+    },
+    {
+      "id": "way/1140266603",
+      "reason": "same_wikidata",
+      "name": "Փոքրաշեն"
+    },
+    {
+      "id": "way/1140266604",
+      "reason": "same_wikidata",
+      "name": "Քեթի"
+    },
+    {
+      "id": "way/1140266605",
+      "reason": "same_wikidata",
+      "name": "Կապս"
+    },
+    {
+      "id": "way/1140266606",
+      "reason": "same_wikidata",
+      "name": "Հովունի"
+    },
+    {
+      "id": "way/1142845070",
+      "reason": "same_wikidata",
+      "name": "Միրաք"
+    },
+    {
+      "id": "way/1147000322",
+      "reason": "same_wikidata",
+      "name": "Չորաթան"
+    },
+    {
+      "id": "way/1147000323",
+      "reason": "same_wikidata",
+      "name": "Արծվաբերդ"
+    },
+    {
+      "id": "way/1147000324",
+      "reason": "same_wikidata",
+      "name": "Այգեձոր"
+    },
+    {
+      "id": "way/1147021533",
+      "reason": "same_wikidata",
+      "name": "Շիրակամուտ"
+    },
+    {
+      "id": "way/1147021534",
+      "reason": "same_wikidata",
+      "name": "Սարալանջ"
+    },
+    {
+      "id": "way/1147097193",
+      "reason": "same_wikidata",
+      "name": "Ժամատուն"
+    },
+    {
+      "id": "way/1147097194",
+      "reason": "same_wikidata",
+      "name": "Ծաղկոց"
+    },
+    {
+      "id": "way/1147226428",
+      "reason": "same_wikidata",
+      "name": "Բարձրաշեն"
+    },
+    {
+      "id": "way/1147229989",
+      "reason": "same_wikidata",
+      "name": "Կառնուտ"
+    },
+    {
+      "id": "way/1147229990",
+      "reason": "same_wikidata",
+      "name": "Կամո"
+    },
+    {
+      "id": "way/1147229991",
+      "reason": "same_wikidata",
+      "name": "Շիրակ"
+    },
+    {
+      "id": "way/1147229992",
+      "reason": "same_wikidata",
+      "name": "Ջաջուռ"
+    },
+    {
+      "id": "way/1147230776",
+      "reason": "same_wikidata",
+      "name": "Առափի"
+    },
+    {
+      "id": "way/1147230777",
+      "reason": "same_wikidata",
+      "name": "Մայիսյան"
+    },
+    {
+      "id": "way/1147230778",
+      "reason": "same_wikidata",
+      "name": "Հացիկ"
+    },
+    {
+      "id": "way/1147232509",
+      "reason": "same_wikidata",
+      "name": "Այգաբաց"
+    },
+    {
+      "id": "way/1147470456",
+      "reason": "same_wikidata",
+      "name": "Հացիկավան"
+    },
+    {
+      "id": "way/1148687470",
+      "reason": "same_wikidata",
+      "name": "Գետիշեն"
+    },
+    {
+      "id": "way/1148687471",
+      "reason": "same_wikidata",
+      "name": "Նոր Աստղաբերդ"
+    },
+    {
+      "id": "way/1148687472",
+      "reason": "same_wikidata",
+      "name": "Ոչեթի"
+    },
+    {
+      "id": "way/1148693447",
+      "reason": "same_wikidata",
+      "name": "Փուխրուտ"
+    },
+    {
+      "id": "way/1148693448",
+      "reason": "same_wikidata",
+      "name": "Կաթնառատ"
+    },
+    {
+      "id": "way/1148693449",
+      "reason": "same_wikidata",
+      "name": "Վերին Գիրաթաղ"
+    },
+    {
+      "id": "way/1148693450",
+      "reason": "same_wikidata",
+      "name": "Ներքին Գիրաթաղ"
+    },
+    {
+      "id": "way/1148693451",
+      "reason": "same_wikidata",
+      "name": "Քարուտ"
+    },
+    {
+      "id": "way/1148693452",
+      "reason": "same_wikidata",
+      "name": "Կիցք"
+    },
+    {
+      "id": "way/1148693453",
+      "reason": "same_wikidata",
+      "name": "Կարդ"
+    },
+    {
+      "id": "way/1148693454",
+      "reason": "same_wikidata",
+      "name": "Գեղավանք"
+    },
+    {
+      "id": "way/1148696291",
+      "reason": "same_wikidata",
+      "name": "Խդրանց"
+    },
+    {
+      "id": "way/1148696292",
+      "reason": "same_wikidata",
+      "name": "Դիցմայրի"
+    },
+    {
+      "id": "way/1148999539",
+      "reason": "same_wikidata",
+      "name": "Խորձոր"
+    },
+    {
+      "id": "way/1149009721",
+      "reason": "same_wikidata",
+      "name": "Բաբիկավան"
+    },
+    {
+      "id": "way/1149009722",
+      "reason": "same_wikidata",
+      "name": "Ձագիկավան"
+    },
+    {
+      "id": "way/1149009729",
+      "reason": "same_wikidata",
+      "name": "Գեղավանք"
+    },
+    {
+      "id": "way/1149150244",
+      "reason": "same_wikidata",
+      "name": "Հերմոն"
+    },
+    {
+      "id": "relation/1693795",
+      "reason": "same_wikidata",
+      "name": "Հացաշեն"
+    },
+    {
+      "id": "relation/7857352",
+      "reason": "same_wikidata",
+      "name": "Գառնի"
+    },
+    {
+      "id": "relation/8755088",
+      "reason": "same_wikidata",
+      "name": "Կարին"
+    },
+    {
+      "id": "relation/8755201",
+      "reason": "same_wikidata",
+      "name": "Ծավ"
+    },
+    {
+      "id": "relation/12651408",
+      "reason": "same_wikidata",
+      "name": "Ձորագյուղ"
+    },
+    {
+      "id": "relation/15514039",
+      "reason": "same_wikidata",
+      "name": "Տեղեր"
+    },
+    {
+      "id": "relation/15941671",
+      "reason": "same_wikidata",
+      "name": "Օրգով"
+    },
+    {
+      "id": "relation/16213367",
+      "reason": "same_wikidata",
+      "name": "Բագարան"
+    },
+    {
+      "id": "relation/16659024",
+      "reason": "same_wikidata",
+      "name": "Այգեզարդ"
+    },
+    {
+      "id": "relation/17074731",
+      "reason": "same_wikidata",
+      "name": "Հանքավան"
+    },
+    {
+      "id": "relation/17819127",
+      "reason": "same_wikidata",
+      "name": "Գլաձոր"
+    },
+    {
+      "id": "way/212666424",
+      "reason": "nearby_duplicate",
+      "name": "Ագրիչայ",
+      "preferred": "node/12120437412"
+    },
+    {
+      "id": "way/213881663",
+      "reason": "nearby_duplicate",
+      "name": "Սառնաղբյուր",
+      "preferred": "node/5937396859"
+    },
+    {
+      "id": "way/213881680",
+      "reason": "nearby_duplicate",
+      "name": "Քարաձի",
+      "preferred": "node/5937403080"
+    },
+    {
+      "id": "way/213904302",
+      "reason": "nearby_duplicate",
+      "name": "Կոփոյ Վար",
+      "preferred": "node/8261997383"
+    },
+    {
+      "id": "way/213904307",
+      "reason": "nearby_duplicate",
+      "name": "Կորդոն",
+      "preferred": "node/8261997407"
+    },
+    {
+      "id": "way/267094399",
+      "reason": "nearby_duplicate",
+      "name": "Մեծ Այրիջա",
+      "preferred": "node/5937412336"
+    },
+    {
+      "id": "way/274232552",
+      "reason": "nearby_duplicate",
+      "name": "Գոմարանց",
+      "preferred": "node/11622416319"
+    },
+    {
+      "id": "way/290666266",
+      "reason": "nearby_duplicate",
+      "name": "Կոջաքար",
+      "preferred": "node/11505557988"
+    },
+    {
+      "id": "way/293776168",
+      "reason": "nearby_duplicate",
+      "name": "Ցամաքաբերդ",
+      "preferred": "node/11234019216"
+    },
+    {
+      "id": "way/356858022",
+      "reason": "nearby_duplicate",
+      "name": "Ծաղկաշեն",
+      "preferred": "node/1438261424"
+    },
+    {
+      "id": "way/356860517",
+      "reason": "nearby_duplicate",
+      "name": "Արագած",
+      "preferred": "node/1438261414"
+    },
+    {
+      "id": "way/360233415",
+      "reason": "nearby_duplicate",
+      "name": "Վարդավան",
+      "preferred": "node/2235177591"
+    },
+    {
+      "id": "way/360233469",
+      "reason": "nearby_duplicate",
+      "name": "Իջևանատուն",
+      "preferred": "node/8064908903"
+    },
+    {
+      "id": "way/368824736",
+      "reason": "nearby_duplicate",
+      "name": "Կալեր",
+      "preferred": "node/3726675318"
+    },
+    {
+      "id": "way/368883844",
+      "reason": "nearby_duplicate",
+      "name": "Տաթև",
+      "preferred": "node/505744365"
+    },
+    {
+      "id": "way/369163989",
+      "reason": "nearby_duplicate",
+      "name": "Վանք",
+      "preferred": "node/928517004"
+    },
+    {
+      "id": "way/395088963",
+      "reason": "nearby_duplicate",
+      "name": "Շրամսկ",
+      "preferred": "node/3979732260"
+    },
+    {
+      "id": "way/448793044",
+      "reason": "manual_review",
+      "name": "Հորբատեղ"
+    },
+    {
+      "id": "way/449114961",
+      "reason": "nearby_duplicate",
+      "name": "Շողերավան",
+      "preferred": "node/8012071589"
+    },
+    {
+      "id": "way/449371599",
+      "reason": "nearby_duplicate",
+      "name": "Մայակովսկի",
+      "preferred": "node/1242489586"
+    },
+    {
+      "id": "way/481401942",
+      "reason": "nearby_duplicate",
+      "name": "Սևքար",
+      "preferred": "node/467024322"
+    },
+    {
+      "id": "way/552362290",
+      "reason": "manual_review",
+      "name": "Խաչիկ"
+    },
+    {
+      "id": "way/584841744",
+      "reason": "nearby_duplicate",
+      "name": "Կոմսոմոլի տարածք",
+      "preferred": "node/10911047065"
+    },
+    {
+      "id": "way/594442848",
+      "reason": "nearby_duplicate",
+      "name": "Կարբի",
+      "preferred": "node/1438271740"
+    },
+    {
+      "id": "way/616098196",
+      "reason": "nearby_duplicate",
+      "name": "Ալափարս",
+      "preferred": "node/1516720427"
+    },
+    {
+      "id": "way/629103673",
+      "reason": "nearby_duplicate",
+      "name": "Արալանջ",
+      "preferred": "node/10964922523"
+    },
+    {
+      "id": "way/772421419",
+      "reason": "nearby_duplicate",
+      "name": "Կոլլուղշլաղ",
+      "preferred": "node/7211646547"
+    },
+    {
+      "id": "way/825816875",
+      "reason": "nearby_duplicate",
+      "name": "Նորաշեն",
+      "preferred": "node/2617652736"
+    },
+    {
+      "id": "way/888670419",
+      "reason": "nearby_duplicate",
+      "name": "Լուսաձոր",
+      "preferred": "node/8261997406"
+    },
+    {
+      "id": "way/889575302",
+      "reason": "nearby_duplicate",
+      "name": "Կաբախլու",
+      "preferred": "node/7993236942"
+    },
+    {
+      "id": "way/898032901",
+      "reason": "nearby_duplicate",
+      "name": "Գանձաքար",
+      "preferred": "node/467024323"
+    },
+    {
+      "id": "way/916316970",
+      "reason": "nearby_duplicate",
+      "name": "Ուրծ",
+      "preferred": "node/8768679402"
+    },
+    {
+      "id": "way/921980258",
+      "reason": "nearby_duplicate",
+      "name": "Ձորակ",
+      "preferred": "node/9047137847"
+    },
+    {
+      "id": "way/943195248",
+      "reason": "nearby_duplicate",
+      "name": "Գոմշավար",
+      "preferred": "node/8733536939"
+    },
+    {
+      "id": "way/971989967",
+      "reason": "nearby_duplicate",
+      "name": "Նորաբեր",
+      "preferred": "node/11053348693"
+    },
+    {
+      "id": "way/1001510381",
+      "reason": "nearby_duplicate",
+      "name": "Բյուրաշատ",
+      "preferred": "node/9244027490"
+    },
+    {
+      "id": "way/1012777963",
+      "reason": "nearby_duplicate",
+      "name": "Գանձակ",
+      "preferred": "node/5476191362"
+    },
+    {
+      "id": "way/1094104632",
+      "reason": "nearby_duplicate",
+      "name": "Նոր Ախուրյան",
+      "preferred": "node/11048334564"
+    },
+    {
+      "id": "way/1147021532",
+      "reason": "nearby_duplicate",
+      "name": "Գեղասար",
+      "preferred": "node/1891257754"
+    },
+    {
+      "id": "way/1241349623",
+      "reason": "nearby_duplicate",
+      "name": "Արաքսաշեն",
+      "preferred": "node/11533863470"
+    },
+    {
+      "id": "way/1259366978",
+      "reason": "nearby_duplicate",
+      "name": "Խանդախաչ",
+      "preferred": "node/8380792407"
+    },
+    {
+      "id": "way/1329033032",
+      "reason": "nearby_duplicate",
+      "name": "Գոմաձոր",
+      "preferred": "node/12278257228"
+    },
+    {
+      "id": "way/1473356370",
+      "reason": "nearby_duplicate",
+      "name": "Սահյանաձոր",
+      "preferred": "node/13516846282"
+    },
+    {
+      "id": "relation/1693797",
+      "reason": "nearby_duplicate",
+      "name": "Նոր Արթիկ",
+      "preferred": "node/1307541211"
+    },
+    {
+      "id": "relation/1693798",
+      "reason": "nearby_duplicate",
+      "name": "Թաթուլ",
+      "preferred": "node/1307539168"
+    },
+    {
+      "id": "relation/1693799",
+      "reason": "nearby_duplicate",
+      "name": "Սուսեր",
+      "preferred": "node/1307540554"
+    },
+    {
+      "id": "relation/1693800",
+      "reason": "nearby_duplicate",
+      "name": "Ցամաքասար",
+      "preferred": "node/1307539635"
+    },
+    {
+      "id": "relation/1693801",
+      "reason": "nearby_duplicate",
+      "name": "Արտենի",
+      "preferred": "node/1307541882"
+    },
+    {
+      "id": "relation/1693852",
+      "reason": "nearby_duplicate",
+      "name": "Դաշտադեմ",
+      "preferred": "node/1307551671"
+    },
+    {
+      "id": "relation/2400216",
+      "reason": "nearby_duplicate",
+      "name": "Մղարթ",
+      "preferred": "node/2226166591"
+    },
+    {
+      "id": "relation/2401618",
+      "reason": "nearby_duplicate",
+      "name": "Ագարակ",
+      "preferred": "node/2719389787"
+    },
+    {
+      "id": "relation/8755089",
+      "reason": "nearby_duplicate",
+      "name": "Սասունիկ",
+      "preferred": "node/2556686649"
+    },
+    {
+      "id": "relation/12650580",
+      "reason": "nearby_duplicate",
+      "name": "Արևածագ",
+      "preferred": "node/6285480178"
+    },
+    {
+      "id": "relation/12651525",
+      "reason": "nearby_duplicate",
+      "name": "Դսեղ",
+      "preferred": "node/1560783742"
+    },
+    {
+      "id": "relation/14286541",
+      "reason": "nearby_duplicate",
+      "name": "Թաիրով",
+      "preferred": "node/4466056120"
+    },
+    {
+      "id": "relation/14542319",
+      "reason": "nearby_duplicate",
+      "name": "Շահումյան",
+      "preferred": "node/1379096908"
+    },
+    {
+      "id": "relation/14919724",
+      "reason": "nearby_duplicate",
+      "name": "Նորամարգ",
+      "preferred": "node/2431023382"
+    }
+  ],
+  "unmatched": [
+    {
+      "name": "Բագրատաշեն",
+      "coordinates": [
+        44.819818,
+        41.245956
+      ]
+    },
+    {
+      "name": "Պտղավան",
+      "coordinates": [
+        44.856034,
+        41.229672
+      ]
+    },
+    {
+      "name": "Գոգավան",
+      "coordinates": [
+        44.316309,
+        41.20489
+      ]
+    },
+    {
+      "name": "Ներքին Խնձորեսկ",
+      "coordinates": [
+        46.503364,
+        39.49428
+      ]
+    },
+    {
+      "name": "Պարույր Սևակ",
+      "coordinates": [
+        44.915516,
+        39.769306
+      ]
+    },
+    {
+      "name": "Որոտան",
+      "coordinates": [
+        46.373639,
+        39.42459
+      ]
+    },
+    {
+      "name": "Խնածախ",
+      "coordinates": [
+        46.392059,
+        39.605287
+      ]
+    },
+    {
+      "name": "Ագարակ",
+      "coordinates": [
+        46.200491,
+        38.862857
+      ]
+    },
+    {
+      "name": "Կուտական",
+      "coordinates": [
+        45.835808,
+        40.26714
+      ]
+    },
+    {
+      "name": "Խոզնավար",
+      "coordinates": [
+        46.355964,
+        39.623045
+      ]
+    },
+    {
+      "name": "Դիտավան",
+      "coordinates": [
+        45.207093,
+        40.97488
+      ]
+    },
+    {
+      "name": "Ազատամուտ",
+      "coordinates": [
+        45.197555,
+        40.984936
+      ]
+    },
+    {
+      "name": "Կոռնիձոր",
+      "coordinates": [
+        46.530382,
+        39.547091
+      ]
+    },
+    {
+      "name": "Շուռնուխ",
+      "coordinates": [
+        46.395959,
+        39.381438
+      ]
+    }
+  ],
+  "skipped": 28,
+  "notes": "OpenStreetMap extract reviewed for duplicates; not certified against a complete official settlement register."
+}
