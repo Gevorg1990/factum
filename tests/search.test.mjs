@@ -12,8 +12,9 @@ const monumentsUrl=url("export const personMonuments=[]")
 const geographyPlacesUrl=url(read('data/geography/places.ts'))
 const geographyRecordsUrl=url(read('data/geography/records.ts'))
 const armeniaRegionsUrl=url(read('data/geography/armeniaRegions.ts'))
+const libraryCatalogUrl=url(read('data/library/catalog.ts'))
 const highlightUrl=url(read('utils/searchHighlight.ts').replace("from './searchTerms'",`from '${termsUrl}'`))
-const dbUrl=url('export const databaseEnabled=()=>false;export const db={}')
+const dbUrl=url('export const databaseEnabled=()=>Boolean(globalThis.__searchTest.databaseEnabled);export const db={$queryRaw:(...args)=>globalThis.__searchTest.queryRaw(...args)}')
 const subjectUrl=url(read('utils/searchSubjects.ts').replace("from '../data/content'",`from '${contentUrl}'`))
 const {getSearchSubject}=await import(subjectUrl)
 const {searchRecords}=await import(recordsUrl)
@@ -21,7 +22,7 @@ const {getSearchTerms}=await import(termsUrl)
 const {highlightedParts}=await import(highlightUrl)
 globalThis.__searchTest={defineEventHandler:fn=>fn,getQuery:event=>event,useRuntimeConfig:()=>({public:{directusUrl:''}}),$fetch:()=>{throw new Error('unexpected external request')}}
 let source='const {defineEventHandler,getQuery,useRuntimeConfig,$fetch}=globalThis.__searchTest;'+read('server/api/search.get.ts')
-for(const [path,module] of [['~/utils/searchSubjects',subjectUrl],['~/utils/searchTerms',termsUrl],['~/utils/searchRecords',recordsUrl],['~/data/content',contentUrl],['~/data/atomArticle',atomUrl],['~/data/bible',bibleUrl],['~/data/personMonuments',monumentsUrl],['~/data/geography/places',geographyPlacesUrl],['~/data/geography/records',geographyRecordsUrl],['~/data/geography/armeniaRegions',armeniaRegionsUrl]])source=source.replace(`from '${path}'`,`from '${module}'`)
+for(const [path,module] of [['~/utils/searchSubjects',subjectUrl],['~/utils/searchTerms',termsUrl],['~/utils/searchRecords',recordsUrl],['~/data/content',contentUrl],['~/data/library/catalog',libraryCatalogUrl],['~/data/atomArticle',atomUrl],['~/data/bible',bibleUrl],['~/data/personMonuments',monumentsUrl],['~/data/geography/places',geographyPlacesUrl],['~/data/geography/records',geographyRecordsUrl],['~/data/geography/armeniaRegions',armeniaRegionsUrl]])source=source.replace(`from '${path}'`,`from '${module}'`)
 source=source.replace("import('../utils/db')",`import('${dbUrl}')`)
 const handler=(await import(url(source))).default
 
@@ -34,6 +35,31 @@ test('temperature finds the solution article through its detailed explanation',a
   assert.deepEqual(solution.subject,{name:'Քիմիա',url:'/subjects/chemistry'})
   assert.ok(!('content' in solution))
  }
+})
+
+test('book search links to the exact shelf book',async()=>{
+ const result=await handler({q:'Գիքոր'})
+ const book=result.items.find(item=>item.kind==='Գիրք')
+ assert.equal(book?.url,'/library?book=gikor')
+ assert.deepEqual(book?.subject,{name:'Գրադարան',url:'/library'})
+ const removed=await handler({q:'Փոքրիկ իշխանը'})
+ assert.ok(!removed.items.some(item=>item.kind==='Գիրք'),'old placeholder books must not appear without a shelf copy')
+})
+
+test('published CMS books are searchable by title without transferring their full text',async()=>{
+ globalThis.__searchTest.databaseEnabled=true
+ const sql=[]
+ globalThis.__searchTest.queryRaw=async(strings)=>{
+  const query=strings.join('?');sql.push(query)
+  return query.includes("->>'title'")?[{key:'cms-book',title:'Գիքորի շարունակությունը',author:'Հեղինակ'}]:[]
+ }
+ try{
+  const result=await handler({q:'Գիքոր'})
+  assert.equal(result.items.find(item=>item.kind==='Գիրք')?.url,'/library?book=cms-book')
+  assert.ok(!result.items.some(item=>item.url==='/library?book=gikor'),'CMS catalogue is authoritative when configured')
+  assert.ok(sql.some(query=>query.includes("->>'title'")&&query.includes("->>'author'")))
+  assert.ok(sql.some(query=>query.includes("kind = 'BOOK'")))
+ }finally{globalThis.__searchTest.databaseEnabled=false;delete globalThis.__searchTest.queryRaw}
 })
 
 test('body-only terms and extended atom article sections are searchable',async()=>{
