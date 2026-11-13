@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import {gunzipSync} from 'node:zlib'
 import {geographyAreaSchema} from '../../../shared/geographyCms'
 import { fieldLabels } from '../../../shared/cmsEditor'
 import { parseContent, kindSchema } from '../../../shared/cms'
@@ -9,7 +10,7 @@ export default defineEventHandler(async event => {
   const user = await requireUser(event, ['ADMIN','EDITOR'])
   const query = getQuery(event)
   if (event.method === 'GET') {
-    if (query.id) return db.content.findUniqueOrThrow({ where: { id: String(query.id) } })
+    if (query.id){const record=await db.content.findUniqueOrThrow({ where: { id: String(query.id) } });return record.kind==='BOOK'?{...record,publishedData:undefined}:record}
     const kind = kindSchema.parse(query.kind || 'ARTICLE')
     const page = Math.max(1, Math.min(100000, Number(query.page) || 1))
     const q = String(query.q || '').slice(0,160)
@@ -50,7 +51,16 @@ export default defineEventHandler(async event => {
   }
   if (!['POST','PUT'].includes(event.method)) throw createError({statusCode:405})
   let input
-  try { input = parseContent(await readBody(event)) } catch(error) {
+  try {
+    let body:unknown
+    if(getHeader(event,'x-factum-payload')==='gzip-json'){
+      const compressed=await readRawBody(event,false)
+      if(!compressed||compressed.length>4_000_000)throw createError({statusCode:413,statusMessage:'Սեղմված գրքի տվյալները չափազանց մեծ են։'})
+      body=JSON.parse(gunzipSync(compressed,{maxOutputLength:8_000_000}).toString('utf8'))
+    }else body=await readBody(event)
+    input = parseContent(body)
+  } catch(error) {
+    if(error&&typeof error==='object'&&'statusCode' in error&&error.statusCode===413)throw error
     const fields=error instanceof z.ZodError?error.issues.slice(0,12).map(issue=>({path:issue.path.join('.'),label:issue.path.map(part=>typeof part==='number'?String(part+1):fieldLabels[String(part)]||'Բովանդակություն').join(' → '),message:'Ստուգիր այս դաշտը․ այն բացակայում է կամ սխալ է լրացված։'})):[]
     throw createError({statusCode:400,statusMessage:'Որոշ դաշտեր լրացված չեն կամ սխալ են։ Ստուգիր ստորև նշված դաշտերը։',data:{fields}})
   }
@@ -84,7 +94,7 @@ export default defineEventHandler(async event => {
         record = await tx.content.findUniqueOrThrow({where:{id}})
       }
       await tx.auditLog.create({data:{userId:user.id,action,target:record.id}})
-      return record
+      return record.kind==='BOOK'?{...record,publishedData:undefined}:record
     })
   } catch(error:any) {
     if(error.code === 'P2002') throw createError({statusCode:409,statusMessage:'Այդ հասցեով նյութ արդեն կա։ Գտիր այն ցանկում և խմբագրիր գործող նյութը։'})

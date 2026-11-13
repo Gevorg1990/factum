@@ -1,10 +1,16 @@
 import * as T from 'three'
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js'
 import {libraryBooks,libraryTopics} from '../../data/library/catalog'
-import {libraryShelfEntries} from './shelfCatalog'
+import {libraryShelfEntries,type ShelfPlacements} from './shelfCatalog'
 import {shelfPoint,shelfAngle} from './navigation'
 export type BookObject={id:string;mesh:T.Mesh;rest:T.Vector3;normal:T.Vector3}
-export function createLibraryRoom(scene:T.Scene,mobile:boolean,books:readonly typeof libraryBooks[number][]=libraryBooks){
+export function shelfBookMatrix(entry:Pick<ReturnType<typeof libraryShelfEntries>[number],'bay'|'level'|'row'|'lateral'>){
+ const a=-Math.PI/2+entry.bay*Math.PI/4,rot=-a-Math.PI/2
+ const normal=new T.Vector3(-Math.cos(a),0,-Math.sin(a)),tangent=new T.Vector3(Math.cos(rot),0,-Math.sin(rot))
+ const p=new T.Vector3(Math.cos(a)*18.4,.25+entry.level*3.25+.2+entry.row*.9,Math.sin(a)*18.4).addScaledVector(tangent,entry.lateral).addScaledVector(normal,.72)
+ return new T.Matrix4().compose(new T.Vector3(p.x,p.y+.75/2,p.z),new T.Quaternion().setFromEuler(new T.Euler(0,rot,0)),new T.Vector3(.25,.75,.55))
+}
+export function createLibraryRoom(scene:T.Scene,mobile:boolean,books:readonly typeof libraryBooks[number][]=libraryBooks,placements:ShelfPlacements={}){
  const batches=new Map<T.Material,T.BufferGeometry[]>(),textures:T.Texture[]=[],materials:T.Material[]=[],selectable:BookObject[]=[],stackMeshes:T.InstancedMesh[]=[],colliders:{x:number;z:number;r:number}[]=[]
  const mat=(color:string,metalness=0,roughness=.8)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness});materials.push(m);return m}
  function texture(draw:(ctx:CanvasRenderingContext2D,size:number)=>void,size=512){const c=document.createElement('canvas');c.width=c.height=size;draw(c.getContext('2d')!,size);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;textures.push(t);return t}
@@ -113,17 +119,14 @@ export function createLibraryRoom(scene:T.Scene,mobile:boolean,books:readonly ty
   c.fillStyle='#e8d8b4';c.fillText(book.author,0,92,820);c.restore()
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=mobile?4:8;textures.push(texture);spineCache.set(book.id,texture);return texture
  }
- const dummy=new T.Object3D()
- for(const entry of libraryShelfEntries(books)){
-  const book=entry.book,bay=entry.bay
+ for(const entry of libraryShelfEntries(books,placements)){
+  const book=entry.book
   const cover=mat('#ffffff',0,.88);cover.map=coverTexture(book)
   const spine=mat('#ffffff',0,.92);spine.map=spineTexture(book)
   const back=mat(book.color,.06,.7),paper=mat('#dfd0ad')
   const copies=new T.InstancedMesh(new T.BoxGeometry(1,1,1),[cover,back,paper,paper,spine,spine],1)
   copies.userData.bookId=book.id;copies.userData.topic=book.topic
-  const a=-Math.PI/2+bay*Math.PI/4,rot=-a-Math.PI/2,normal=new T.Vector3(-Math.cos(a),0,-Math.sin(a)),tangent=new T.Vector3(Math.cos(rot),0,-Math.sin(rot))
-  const height=.75,p=new T.Vector3(Math.cos(a)*18.4,.25+entry.level*3.25+.2+entry.row*.9,Math.sin(a)*18.4).addScaledVector(tangent,entry.lateral).addScaledVector(normal,.72)
-  dummy.position.set(p.x,p.y+height/2,p.z);dummy.rotation.set(0,rot,0);dummy.scale.set(.25,height,.55);dummy.updateMatrix();copies.setMatrixAt(0,dummy.matrix)
+  copies.setMatrixAt(0,shelfBookMatrix(entry))
   copies.instanceMatrix.needsUpdate=true;copies.computeBoundingSphere();scene.add(copies);stackMeshes.push(copies)
  }
  function titleTexture(title:string,author:string,color:string,portrait=false){
