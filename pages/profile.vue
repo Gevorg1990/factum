@@ -53,7 +53,7 @@ async function removeEntry(id: string, event: Event) {
   removeSaved(id)
   removing.value = new Set([...removing.value].filter(item => item !== id))
   if (disposed) return
-  removalMessage.value = 'Նյութը հեռացվեց Իմ FACTUM-ից։'
+  removalMessage.value = 'Նյութը հեռացվեց Իմ COGNITIO-ից։'
   await nextTick()
   const target = nextButton?.isConnected ? nextButton : document.querySelector<HTMLButtonElement>('.profile-categories button')
   target?.focus({ preventScroll: true })

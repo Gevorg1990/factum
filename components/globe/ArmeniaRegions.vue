@@ -25,7 +25,7 @@ function next(direction:number){choose(armeniaRegions[(index.value+direction+arm
 </script>
 <template>
  <section id="armenia-regions" class="armenia-explorer" aria-labelledby="armenia-title" :style="{'--region-color':current.color}">
-  <header class="armenia-heading"><div><p class="armenia-eyebrow"><span class="armenia-flag" aria-hidden="true"/>FACTUM · ՄԵՐ ՀԱՅԱՍՏԱՆԸ</p><h2 id="armenia-title">Մի երկիր, <em>բազում աշխարհներ</em></h2><p>Բացահայտիր Հայաստանի մարզերը՝ քարտեզի վրա մեկ հպումով։</p></div><div class="armenia-summary"><span><strong>10</strong>մարզ</span><i/><span><strong>1</strong>մայրաքաղաք</span></div></header>
+  <header class="armenia-heading"><div><p class="armenia-eyebrow"><span class="armenia-flag" aria-hidden="true"/>COGNITIO · ՄԵՐ ՀԱՅԱՍՏԱՆԸ</p><h2 id="armenia-title">Մի երկիր, <em>բազում աշխարհներ</em></h2><p>Բացահայտիր Հայաստանի մարզերը՝ քարտեզի վրա մեկ հպումով։</p></div><div class="armenia-summary"><span><strong>10</strong>մարզ</span><i/><span><strong>1</strong>մայրաքաղաք</span></div></header>
   <div class="armenia-stage">
    <div class="armenia-map-panel"><div class="map-panel-label"><span><Compass :size="15"/>ՀԱՅԱՍՏԱՆԻ ՔԱՐՏԵԶԸ</span><button v-if="current.kind==='capital'" type="button" class="map-return-button" @click="returnToArmenia"><ArrowLeft :size="14"/>Հետ՝ Հայաստանի քարտեզին</button></div>
     <LazyGlobeYerevanDistricts v-if="current.kind==='capital'"/>

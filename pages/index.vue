@@ -129,7 +129,7 @@ const tiles = computed(() => subjectOrder.value.map(slug => homeSubjects.find(su
   label: ('shortName' in subject && typeof subject.shortName==='string' ? subject.shortName : undefined) || subject.name,
   accent: cardTheme(subject.slug).color,
 })))
-const games=[{id:'million',name:'FACTUM Million',desc:'15 հարց՝ 5 հեշտ ու հումորային, 5 միջին և 5 շատ բարդ։',button:'Խաղալ',tone:'gold'},{id:'genius',name:'FACTUM Genius',desc:'Հեշտ, միջին և դժվար մակարդակներ․ հաջորդը բացվում է հաջող ավարտից հետո։',button:'Խաղալ',tone:'blue'},{id:'logic',name:'FACTUM Logic',desc:'Երեք բարդության մակարդակ՝ նոր գլուխկոտրուկներով ու հաջորդական բացմամբ։',button:'Խաղալ',tone:'purple'}]
+const games=[{id:'million',name:'COGNITIO Million',desc:'15 հարց՝ 5 հեշտ ու հումորային, 5 միջին և 5 շատ բարդ։',button:'Խաղալ',tone:'gold'},{id:'genius',name:'COGNITIO Genius',desc:'Հեշտ, միջին և դժվար մակարդակներ․ հաջորդը բացվում է հաջող ավարտից հետո։',button:'Խաղալ',tone:'blue'},{id:'logic',name:'COGNITIO Logic',desc:'Երեք բարդության մակարդակ՝ նոր գլուխկոտրուկներով ու հաջորդական բացմամբ։',button:'Խաղալ',tone:'purple'}]
 function goSearch(){if(search.value.trim())navigateTo('/search?q='+encodeURIComponent(search.value.trim()))}
 let personRequest = 0
 let requestedPersonIndex = 0
@@ -159,7 +159,7 @@ async function nextPerson(direction: number) {
   <article v-if="featuredFact" class="discovery-card fact-highlight">
     <img src="/images/Earth_floating_with_digital_netw…_f11676c3.jpg" alt="Երկիր մոլորակը՝ թվային ցանցի կապերով" width="1376" height="768" decoding="async" />
     <div class="discovery-copy">
-      <span class="fact-eyebrow">FACTUM · Գիտե՞ս, որ...</span>
+      <span class="fact-eyebrow">COGNITIO · Գիտե՞ս, որ...</span>
       <h3>{{ featuredFact.title }}</h3>
       <p :title="featuredFact.text">{{ featuredFact.text }}</p>
     </div>

@@ -18,7 +18,7 @@ onBeforeUnmount(()=>controller.abort())
     </g>
    </svg>
    <div class="district-selection" aria-live="polite"><i/><strong>{{hovered||selected}}</strong><span>վարչական շրջան</span></div>
-   <footer>Քարտեզ՝ <a :href="data.source" target="_blank" rel="noopener noreferrer">{{data.credit}}</a> · <a :href="data.licenseUrl" target="_blank" rel="noopener noreferrer">{{data.license}}</a> · {{data.boundaryYear}}<br>Գույներն ու նշումները հարմարեցված են FACTUM-ին։</footer>
+   <footer>Քարտեզ՝ <a :href="data.source" target="_blank" rel="noopener noreferrer">{{data.credit}}</a> · <a :href="data.licenseUrl" target="_blank" rel="noopener noreferrer">{{data.license}}</a> · {{data.boundaryYear}}<br>Գույներն ու նշումները հարմարեցված են COGNITIO-ին։</footer>
   </template>
   <p v-else-if="error" role="alert">Քարտեզը չհաջողվեց բեռնել։ <button type="button" @click="load">Կրկին փորձել</button></p>
   <div v-else class="district-loading" role="status">Բեռնվում է Երևանի քարտեզը…</div>

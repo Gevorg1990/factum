@@ -2,7 +2,7 @@
 import { BookOpen, ArrowRight, ArrowUpRight, Search, ScrollText, Sparkles, Leaf, Mountain, Sun, Check, Bookmark, Clock3, ChevronLeft, ChevronRight, ChevronDown, Library, Undo2 } from 'lucide-vue-next'
 import { bibleBooks, bibleCommandments, bibleTimeline, bibleReadingPaths, testamentNames, bibleProgressKey, bibleIntroduction, bibleVersionUrl, etchmiadzinUrl, clampBibleChapter, type Testament } from '~/data/bible'
 
-useHead({ title: 'Աստվածաշունչ — Հին և Նոր Կտակարան · FACTUM', meta: [{ name: 'description', content: 'Բացահայտիր Հին և Նոր Կտակարանների գրքերը, ընտրիր ընթերցման ճանապարհ և ուսումնասիրիր աստվածաշնչյան ժամանակագիծը։' }] })
+useHead({ title: 'Աստվածաշունչ — Հին և Նոր Կտակարան · COGNITIO', meta: [{ name: 'description', content: 'Բացահայտիր Հին և Նոր Կտակարանների գրքերը, ընտրիր ընթերցման ճանապարհ և ուսումնասիրիր աստվածաշնչյան ժամանակագիծը։' }] })
 const { read, saved, markRead, removeRead, toggleSaved } = useProgress()
 const route = useRoute()
 const linkedBook = bibleBooks.find(book => book.id === route.query.book)
@@ -117,7 +117,7 @@ useSavedScroll(
         <p class="bible-hero-description">Բացահայտիր Հին և Նոր Կտակարանների պատմությունները, գտիր քո ընթերցման սկիզբը և հետևիր իրադարձությունների ընթացքին։</p>
         <div class="bible-hero-actions"><a href="#bible-library" class="btn" @click.prevent="scrollTo('bible-library')"><BookOpen :size="17" /> Բացել գրքերը</a><a href="#bible-commandments" class="bible-hero-timeline" @click.prevent="scrollTo('bible-commandments')"><ScrollText :size="17" /> Տասը պատվիրանները</a><a href="#bible-timeline" class="bible-hero-timeline" @click.prevent="scrollTo('bible-timeline')"><Clock3 :size="17" /> Տեսնել ժամանակագիծը</a></div>
       </div>
-      <div class="bible-hero-foot"><span>ԵՐԿՈՒ ԿՏԱԿԱՐԱՆ · ՄԵԿ ՀՈԳԵՎՈՐ ՃԱՆԱՊԱՐՀ</span><span>FACTUM / ՍՈՒՐԲ ԳԻՐՔ</span></div>
+      <div class="bible-hero-foot"><span>ԵՐԿՈՒ ԿՏԱԿԱՐԱՆ · ՄԵԿ ՀՈԳԵՎՈՐ ՃԱՆԱՊԱՐՀ</span><span>COGNITIO / ՍՈՒՐԲ ԳԻՐՔ</span></div>
     </section>
 
     <section class="bible-testaments" aria-label="Ընտրիր Կտակարանը">
@@ -182,7 +182,7 @@ useSavedScroll(
             <div class="bible-chapters" role="group" :aria-label="`${selected.name}՝ գլուխներ`"><button v-for="n in selected.chapters" :key="n" :aria-label="`Գլուխ ${n}${read.includes(bibleProgressKey(selected,n)) ? '․ ընթերցված' : ''}${savedKeys.has(bibleProgressKey(selected,n)) ? '․ պահպանված' : ''}`" :aria-pressed="chapter === n" :class="{'is-active':chapter === n,'is-read':read.includes(bibleProgressKey(selected,n)),'is-saved':savedKeys.has(bibleProgressKey(selected,n))}" @click="chapter=n">{{n}}<Bookmark v-if="savedKeys.has(bibleProgressKey(selected,n))" class="bible-chapter-bookmark" :size="10" fill="currentColor" aria-hidden="true" /><Check v-if="read.includes(bibleProgressKey(selected,n))" :size="9" /></button></div>
             <div id="bible-current-chapter" class="bible-chapter-current saved-destination" tabindex="-1"><span><ScrollText :size="17" /> {{selected.name}} · Գլուխ {{chapter}}</span><div><button :disabled="chapter === 1" aria-label="Նախորդ գլուխ" @click="chapter--"><ChevronLeft :size="17" /></button><button :disabled="chapter === selected.chapters" aria-label="Հաջորդ գլուխ" @click="chapter++"><ChevronRight :size="17" /></button></div></div>
             <BibleChapterReader :book="selected" :chapter="chapter" @previous="changeReadingChapter(-1)" @completed="markRead(progressKey)" @next="changeReadingChapter(1)" />
-            <div class="bible-reader-actions"><button :aria-pressed="isRead" @click="toggleRead"><Check :size="16" /> {{isRead ? 'Ընթերցված է' : 'Նշել ընթերցված'}}</button><button :aria-pressed="isSaved" @click="toggleSaved(progressKey, $event)"><Bookmark :size="16" :fill="isSaved ? 'currentColor' : 'none'" /> {{isSaved ? 'Պահպանված է' : 'Պահպանել Իմ FACTUM-ում'}}</button></div>
+            <div class="bible-reader-actions"><button :aria-pressed="isRead" @click="toggleRead"><Check :size="16" /> {{isRead ? 'Ընթերցված է' : 'Նշել ընթերցված'}}</button><button :aria-pressed="isSaved" @click="toggleSaved(progressKey, $event)"><Bookmark :size="16" :fill="isSaved ? 'currentColor' : 'none'" /> {{isSaved ? 'Պահպանված է' : 'Պահպանել Իմ COGNITIO-ում'}}</button></div>
           </div>
         </article>
       </div>

@@ -134,7 +134,7 @@ onMounted(() => {
   <main v-else class="shell genius-game">
     <GameLoading v-if="roundLoading" game="genius" /><div v-else-if="roundError" class="panel" role="alert">{{roundError}} <button class="gold" @click="newRound">Կրկնել</button><button @click="returnToLevels">Վերադառնալ</button></div><template v-else>
     <p class="gold text-sm font-semibold">ՃԻՇՏ ԿԱՄ ՍԽԱԼ</p>
-    <h1 class="heading mt-3">FACTUM Genius</h1>
+    <h1 class="heading mt-3">COGNITIO Genius</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
     <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · 10 պատահական պնդում։ {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխանով կանցնես այս փուլը։</p>
     <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" />

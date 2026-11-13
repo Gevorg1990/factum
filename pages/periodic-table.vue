@@ -3,7 +3,7 @@ import type { CSSProperties } from 'vue'
 import { Atom, ArrowLeft, Search, X, Mic } from 'lucide-vue-next'
 import { elementFamilies, periodicElements, periodicSource, type ElementFamily, type PeriodicElement } from '~/data/periodicTable'
 
-useHead({ title: 'Մենդելեևի պարբերական աղյուսակ — FACTUM', meta: [{ name: 'description', content: 'Բացահայտիր բոլոր 118 քիմիական տարրերը․ հայերեն անուններ, ատոմային զանգված, էլեկտրոնային կառուցվածք և ինտերակտիվ քարտեր։' }] })
+useHead({ title: 'Մենդելեևի պարբերական աղյուսակ — COGNITIO', meta: [{ name: 'description', content: 'Բացահայտիր բոլոր 118 քիմիական տարրերը․ հայերեն անուններ, ատոմային զանգված, էլեկտրոնային կառուցվածք և ինտերակտիվ քարտեր։' }] })
 const query = ref('')
 const family = ref<ElementFamily | ''>('')
 const selected = ref(periodicElements[0]!)
@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
   <main class="shell page-with-back periodic-page">
     <NuxtLink to="/subjects" class="gold periodic-back"><ArrowLeft :size="16" /> Հանրագիտարան</NuxtLink>
     <header class="periodic-heading">
-      <p class="encyclopedia-eyebrow">FACTUM · ՔԻՄԻԱ</p>
+      <p class="encyclopedia-eyebrow">COGNITIO · ՔԻՄԻԱ</p>
       <h1><Atom :size="32" aria-hidden="true" /> Մենդելեևի աղյուսակ</h1>
       <p class="muted">118 տարր, մի ամբողջ աշխարհ։ Պահիր ցուցիչը տարրի վրա կամ սեղմիր՝ դրա հատկությունները բացահայտելու համար։</p>
       <a v-if="labTab === 'table'" href="#element-quiz-title" class="btn-secondary periodic-game-link"><Mic :size="17" /> Փորձիր ձայնային խաղը</a>

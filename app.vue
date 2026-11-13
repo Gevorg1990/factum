@@ -10,10 +10,10 @@ const socialImage = publicOrigin ? new URL('/images/social/factum-og.png', publi
 
 useSeoMeta({
   ogType: 'website',
-  ogSiteName: 'FACTUM',
+  ogSiteName: 'COGNITIO',
   ogLocale: 'hy_AM',
   ogImage: socialImage,
-  ogImageAlt: 'FACTUM — Գիտելիքի աշխարհ',
+  ogImageAlt: 'COGNITIO — Գիտելիքի աշխարհ',
   twitterCard: 'summary_large_image',
 })
 useHead(() => ({
@@ -25,4 +25,4 @@ useHead(() => ({
 }))
 </script>
 
-<template><div class="min-h-screen factum-app"><ShootingStars/><SiteHeader/><NuxtPage/><footer class="border-t border-slate-800/70 mt-16 py-9 text-center muted text-sm">{{siteSettings[0]?.text || 'FACTUM · Գիտելիքը բոլորի համար · Զարգացման տարբերակ'}}</footer></div></template>
+<template><div class="min-h-screen factum-app"><ShootingStars/><SiteHeader/><NuxtPage/><footer class="border-t border-slate-800/70 mt-16 py-9 text-center muted text-sm">{{siteSettings[0]?.text || 'COGNITIO · Գիտելիքը բոլորի համար · Զարգացման տարբերակ'}}</footer></div></template>

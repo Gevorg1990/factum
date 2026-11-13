@@ -87,7 +87,7 @@ function toggleQuestion(id: string) {
     <div class="encyclopedia-subject-hero mt-5">
       <img :src="customSubjectImage || subjectImages[slug] || '/images/space-art.jpg'" :alt="subject?.name || 'Առարկա'">
       <div class="encyclopedia-subject-hero-content">
-        <p class="encyclopedia-eyebrow">FACTUM · ՀԱՆՐԱԳԻՏԱՐԱՆ</p>
+        <p class="encyclopedia-eyebrow">COGNITIO · ՀԱՆՐԱԳԻՏԱՐԱՆ</p>
         <h1 class="heading">{{ subject?.name || 'Առարկա' }}</h1>
         <p>Ընթերցված՝ {{ readCount }} / {{ items.length }}</p>
       </div>

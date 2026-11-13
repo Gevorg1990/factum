@@ -62,7 +62,7 @@ const visibleFacts = computed(() => filteredFacts.value.slice(0, limit.value))
 watch([search, category], () => { limit.value = pageSize }, { flush: 'sync' })
 function resetFilters() { search.value = ''; category.value = 'all' }
 const linkedFact = () => ignoreInitialFact.value ? undefined : facts.find(item => item.id === route.query.fact)
-useHead({ title: 'Հետաքրքիր փաստեր — FACTUM', meta: [{ name: 'description', content: 'Բացահայտիր հետաքրքիր փաստեր՝ գիտության, բնության, պատմության և մշակույթի մասին։ Որոնիր և ընտրիր քեզ հետաքրքրող թեման։' }] })
+useHead({ title: 'Հետաքրքիր փաստեր — COGNITIO', meta: [{ name: 'description', content: 'Բացահայտիր հետաքրքիր փաստեր՝ գիտության, բնության, պատմության և մշակույթի մասին։ Որոնիր և ընտրիր քեզ հետաքրքրող թեման։' }] })
 useSavedScroll(
   () => linkedFact() ? `fact-${linkedFact()!.id}` : undefined,
   () => {
@@ -81,7 +81,7 @@ useSavedScroll(
 <template>
   <main class="shell py-10 facts-page" @click="clearFactHighlight" @input="clearFactHighlight" @keydown="clearFactHighlight">
     <header class="facts-intro">
-      <p class="gold facts-eyebrow">FACTUM · ԱՄԵՆ ՕՐ ՄԻ ՆՈՐ ԲԱՑԱՀԱՅՏՈՒՄ</p>
+      <p class="gold facts-eyebrow">COGNITIO · ԱՄԵՆ ՕՐ ՄԻ ՆՈՐ ԲԱՑԱՀԱՅՏՈՒՄ</p>
       <h1 class="heading"><Sparkles :size="30" aria-hidden="true" /> Հետաքրքիր փաստեր</h1>
       <p class="muted">{{ facts.length }} փաստ · {{ factCategories.length }} թեմա։ Ընտրիր քեզ հետաքրքրող աշխարհը։</p>
     </header>

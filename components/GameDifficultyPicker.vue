@@ -13,9 +13,9 @@ const emit = defineEmits<{
 }>()
 
 const gameTitles = {
-  genius: 'FACTUM Genius',
-  logic: 'FACTUM Logic',
-  million: 'FACTUM Million',
+  genius: 'COGNITIO Genius',
+  logic: 'COGNITIO Logic',
+  million: 'COGNITIO Million',
 }
 </script>
 

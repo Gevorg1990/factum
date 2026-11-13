@@ -1,7 +1,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   // Production builds must not replace a running dev server's generated aliases.
-  $production: { buildDir: '.nuxt-build' },
+  $production: { buildDir: process.env.VERCEL ? '.nuxt' : '.nuxt-build' },
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
   // Production build files must not invalidate the live reader in Vite dev.
   vite: { server: { watch: { ignored: ['**/.nuxt-build/**', '**/.output/**'] } } },
@@ -38,6 +38,6 @@ export default defineNuxtConfig({
     { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
     { rel: 'preload', href: '/fonts/noto-sans-armenian-armenian-v47.woff2', as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
     { rel: 'preload', href: '/fonts/noto-sans-armenian-latin-v47.woff2', as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
-  ], title: 'FACTUM — Գիտելիքի աշխարհ', meta: [{ name: 'theme-color', content: '#081326' }, { name: 'application-name', content: 'FACTUM' }, { name: 'description', content: 'Հայկական կրթական հարթակ՝ հանրագիտարան, խաղեր և պատմություն' }] } },
+  ], title: 'COGNITIO — Գիտելիքի աշխարհ', meta: [{ name: 'theme-color', content: '#081326' }, { name: 'application-name', content: 'COGNITIO' }, { name: 'description', content: 'Հայկական կրթական հարթակ՝ հանրագիտարան, խաղեր և պատմություն' }] } },
   runtimeConfig: { geographySearchUrl: 'https://photon.komoot.io', azureSpeechKey: '', azureSpeechRegion: '', directusToken: process.env.DIRECTUS_SERVER_TOKEN || '', openaiApiKey: '', public: { siteUrl: process.env.NUXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : ''), directusUrl: process.env.NUXT_PUBLIC_DIRECTUS_URL || '' } }
 })

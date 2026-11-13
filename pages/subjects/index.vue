@@ -46,7 +46,7 @@ function imageForSubject(slug: string): string {
 <template>
   <main class="shell encyclopedia-page py-10">
     <header class="encyclopedia-heading">
-      <p class="encyclopedia-eyebrow">FACTUM · ԳԻՏԵԼԻՔԻ ԱՇԽԱՐՀ</p>
+      <p class="encyclopedia-eyebrow">COGNITIO · ԳԻՏԵԼԻՔԻ ԱՇԽԱՐՀ</p>
       <h1 class="heading">Հանրագիտարան</h1>
       <p class="muted">{{ subjects.length }} բաժին · {{ articleTotal }} նյութ։ Ընտրիր քեզ հետաքրքրող բնագավառը և բացահայտիր նոր գիտելիքներ։</p>
     </header>

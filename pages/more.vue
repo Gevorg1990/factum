@@ -1,10 +1,10 @@
 <script setup lang="ts">
 const cards = [
   { to: '/periodic-table', name: '⚛ Մենդելեևի աղյուսակ', description: 'Բացահայտիր բոլոր 118 քիմիական տարրերի հատկությունները' },
-  { to: '/about', name: 'ℹ️ Մեր մասին', description: 'FACTUM-ի մասին տեղեկություններ (պատրաստման փուլում)' },
+  { to: '/about', name: 'ℹ️ Մեր մասին', description: 'COGNITIO-ի մասին տեղեկություններ (պատրաստման փուլում)' },
   { to: '/facts', name: '✨ Հետաքրքիր փաստեր', description: 'Հետաքրքիր փաստեր և բացահայտումներ' },
   { to: '/videos', name: '🎬 Տեսանյութեր', description: 'Կրթական տեսանյութերի բաժին' },
-  { to: '/support', name: '❤️ Աջակցիր FACTUM-ին', description: 'Կամավոր աջակցություն' },
+  { to: '/support', name: '❤️ Աջակցիր COGNITIO-ին', description: 'Կամավոր աջակցություն' },
   { to: '/library', name: '📚 Գրադարան', description: 'Պահպանիր սիրելի գրքերը' },
 ]
 </script>

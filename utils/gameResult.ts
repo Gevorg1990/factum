@@ -6,9 +6,9 @@ export function parseResultLevel(value: unknown): ResultLevel | null {
 }
 
 export const shareableGames = {
-  million: { title: 'FACTUM Million', total: 15, step: 1, playPath: '/games/million', image: '/images/million-art.jpg' },
-  genius: { title: 'FACTUM Genius', total: 10, step: 1, playPath: '/games/genius', image: '/images/genius-art.jpg' },
-  logic: { title: 'FACTUM Logic', total: 10, step: 1, playPath: '/games/logic', image: '/images/logic-art.jpg' },
+  million: { title: 'COGNITIO Million', total: 15, step: 1, playPath: '/games/million', image: '/images/million-art.jpg' },
+  genius: { title: 'COGNITIO Genius', total: 10, step: 1, playPath: '/games/genius', image: '/images/genius-art.jpg' },
+  logic: { title: 'COGNITIO Logic', total: 10, step: 1, playPath: '/games/logic', image: '/images/logic-art.jpg' },
   geography: { title: 'Երկիր և մայրաքաղաք', total: 1000, step: 100, playPath: '/globe#capital-quiz-title', image: '/images/geography-art.jpg' },
   chemistry: { title: 'Քիմիական տարրեր', total: 1000, step: 100, playPath: '/periodic-table#element-quiz-title', image: '/images/chemistry-art.jpg' },
 } as const
