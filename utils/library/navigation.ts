@@ -1,7 +1,8 @@
 export const ROOM_RADIUS=17
 export const MAX_WALK_RADIUS=13.8
 export const EYE_HEIGHT=2.40
-export const shelfAngle=(index:number)=>-Math.PI/2+([0,2,4,6,1,3,5,7,6][index]??index)*Math.PI/4
+// Several literary subjects share a bay; existing shelf numbers keep their positions.
+export const shelfAngle=(index:number)=>-Math.PI/2+([0,2,4,6,1,3,5,7,6,5,6,2,7][index]??index)*Math.PI/4
 export function shelfPoint(index:number,radius=14.7){const angle=shelfAngle(index);return {x:Math.cos(angle)*radius,z:Math.sin(angle)*radius}}
 export function constrainPosition(x:number,z:number){
  const radius=Math.hypot(x,z),max=MAX_WALK_RADIUS

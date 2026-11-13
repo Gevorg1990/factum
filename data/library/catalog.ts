@@ -8,6 +8,10 @@ export const libraryTopics = [
  {id:'science',title:'Գիտություն',short:'Գիտություն',shelf:6,color:'#7ca7b4'},
  {id:'biography',title:'Կենսագրություններ',short:'Կենսագրություններ',shelf:7,color:'#90a878'},
  {id:'detective',title:'Դետեկտիվ',short:'Դետեկտիվ',shelf:8,color:'#a88d78'},
+ {id:'psychology',title:'Հոգեբանություն',short:'Հոգեբանություն',shelf:9,color:'#9ab2a5'},
+ {id:'science-fiction',title:'Գիտաֆանտաստիկա',short:'Գիտաֆանտաստիկա',shelf:10,color:'#799dc6'},
+ {id:'fantasy',title:'Ֆենթեզի',short:'Ֆենթեզի',shelf:11,color:'#b297c4'},
+ {id:'philosophy',title:'Փիլիսոփայություն',short:'Փիլիսոփայություն',shelf:12,color:'#b8a583'},
 ] as const
 export interface LibraryBook {
  id:string;title:string;originalTitle:string;author:string;topic:string;shelf:number;color:string;language:'Հայերեն';description:string;file:string;source:string;cover:string;coverSource:string;coverCredit:string;coverLicense:string;edition:string;textLicense:string

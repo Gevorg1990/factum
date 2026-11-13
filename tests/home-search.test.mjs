@@ -9,6 +9,8 @@ const url=source=>'data:text/javascript;base64,'+Buffer.from(ts.transpileModule(
 const vueUrl=new URL('file://'+require.resolve('vue')).href
 const {reactive,nextTick}=await import(vueUrl)
 
+const termsUrl=url(read('utils/searchTerms.ts'))
+const highlightUrl=url(read('utils/searchHighlight.ts').replace("from './searchTerms'",`from '${termsUrl}'`))
 const subjectUrl=url(read('utils/searchSubjects.ts').replace("from '../data/content'",`from '${contentUrl}'`))
 const settle=async()=>{await nextTick();await nextTick()}
 
@@ -24,11 +26,11 @@ test('quick search debounces requests, ignores stale responses, and supports key
  t.after(()=>{unmounted.forEach(fn=>fn());globalThis.document=originalDocument;delete globalThis.__homeSearchTest})
  const {descriptor}=parse(read('components/HomeSearch.vue'))
  assert.deepEqual(compileTemplate({source:descriptor.template.content,filename:'HomeSearch.vue',id:'home-search-test'}).errors,[])
- assert.doesNotMatch(descriptor.template.content.match(/<form[\s\S]*?<\/form>/)[0],/<button\b/)
+ assert.match(descriptor.template.content.match(/<form[\s\S]*?<\/form>/)[0],/<button[^>]*type="button"/)
  let code=compileScript(descriptor,{id:'home-search-test'}).content
   .replaceAll("from 'vue'",`from '${vueUrl}'`)
   .replaceAll("from 'lucide-vue-next'",`from '${new URL('file://'+require.resolve('lucide-vue-next')).href}'`)
-  .replace("from '~/utils/searchSubjects'",`from '${subjectUrl}'`)
+    .replace("from '~/utils/searchHighlight'",`from '${highlightUrl}'`)
  code=`import {ref,shallowRef,computed,watch,nextTick} from '${vueUrl}';const onMounted=()=>{};const onBeforeUnmount=fn=>globalThis.__homeSearchTest.unmounted.push(fn);const setTimeout=fn=>globalThis.__homeSearchTest.setTimer(fn);const clearTimeout=id=>globalThis.__homeSearchTest.clearTimer(id);const $fetch=(...args)=>globalThis.__homeSearchTest.fetch(...args);const navigateTo=url=>globalThis.__homeSearchTest.navigated.push(url);`+code
  const props=reactive({modelValue:''})
  const search=(await import(url(code))).default.setup(props,{expose(){},emit:(...args)=>emitted.push(args)})
@@ -42,7 +44,7 @@ test('quick search debounces requests, ignores stale responses, and supports key
  runTimers();assert.equal(requests.length,2)
  requests[0].resolve({items:[{title:'Old result',url:'/old'}]});await settle()
  assert.equal(search.items.value.length,0);assert.equal(search.pending.value,true)
- const items=Array.from({length:6},(_,index)=>({title:'Ատոմ '+index,description:'Կարճ բացատրություն',url:index===0?'/articles/c1':'/articles/p'+index,kind:'Հոդված',score:1}))
+ const items=Array.from({length:6},(_,index)=>({title:'Ատոմ '+index,description:'Կարճ բացատրություն',url:index===0?'/articles/c1':'/articles/p'+index,kind:'Հոդված',score:1,...(index===0?{subject:{name:'Քիմիա',url:'/subjects/chemistry'}}:{})}))
  requests[1].resolve({items});await settle()
  assert.equal(search.items.value.length,5);assert.equal(search.items.value[0].subject.name,'Քիմիա')
  await search.move(-1);assert.equal(search.active.value,4)

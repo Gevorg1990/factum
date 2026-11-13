@@ -98,6 +98,7 @@ export function createLibraryRoom(scene:T.Scene,mobile:boolean,books:readonly ty
   const canvas=document.createElement('canvas');canvas.width=mobile?128:256;canvas.height=mobile?768:1024;const c=canvas.getContext('2d')!
   c.scale(canvas.width/256,canvas.height/1024)
   c.fillStyle=book.color;c.fillRect(0,0,256,1024)
+  c.fillStyle='#061421aa';c.fillRect(0,0,256,1024)
   const shading=c.createLinearGradient(0,0,256,0);shading.addColorStop(0,'#00000040');shading.addColorStop(.18,'#ffffff10');shading.addColorStop(.8,'#00000000');shading.addColorStop(1,'#00000035');c.fillStyle=shading;c.fillRect(0,0,256,1024)
   c.strokeStyle='#e8ce98';c.lineWidth=2
   for(const y of [48,64,960,976]){c.beginPath();c.moveTo(18,y);c.lineTo(238,y);c.stroke()}
@@ -111,18 +112,18 @@ export function createLibraryRoom(scene:T.Scene,mobile:boolean,books:readonly ty
   do{c.font=`700 ${size}px "Noto Sans Armenian",sans-serif`;titleLines=wrap(book.title,820);if(titleLines.length<=2||size<=28)break;size-=4}while(size>=28)
   if(titleLines.length===3&&size>48){size=48;c.font=`700 ${size}px "Noto Sans Armenian",sans-serif`;titleLines=wrap(book.title,820)}
   const leading=Math.min(76,size*1.08)
-  c.fillStyle='#fff4d9';c.shadowColor='#07101f';c.shadowBlur=2;c.shadowOffsetY=1
-  titleLines.forEach((line,index)=>c.fillText(line,0,-25+(index-(titleLines.length-1)/2)*leading,820))
+  c.fillStyle='#ffffff';c.strokeStyle='#061421';c.lineWidth=5;c.lineJoin='round';c.shadowColor='#07101f';c.shadowBlur=2;c.shadowOffsetY=1
+  titleLines.forEach((line,index)=>{const y=-25+(index-(titleLines.length-1)/2)*leading;c.strokeText(line,0,y,820);c.fillText(line,0,y,820)})
   c.shadowBlur=0;c.shadowOffsetY=0
   let authorSize=32;c.font=`500 ${authorSize}px "Noto Sans Armenian",sans-serif`
   while(c.measureText(book.author).width>820&&authorSize>20){authorSize-=2;c.font=`500 ${authorSize}px "Noto Sans Armenian",sans-serif`}
-  c.fillStyle='#e8d8b4';c.fillText(book.author,0,92,820);c.restore()
+  c.fillStyle='#f4e6c9';c.strokeText(book.author,0,92,820);c.fillText(book.author,0,92,820);c.restore()
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=mobile?4:8;textures.push(texture);spineCache.set(book.id,texture);return texture
  }
  for(const entry of libraryShelfEntries(books,placements)){
   const book=entry.book
   const cover=mat('#ffffff',0,.88);cover.map=coverTexture(book)
-  const spine=mat('#ffffff',0,.92);spine.map=spineTexture(book)
+  const spine=new T.MeshBasicMaterial({color:'#ffffff',map:spineTexture(book),toneMapped:false});materials.push(spine)
   const back=mat(book.color,.06,.7),paper=mat('#dfd0ad')
   const copies=new T.InstancedMesh(new T.BoxGeometry(1,1,1),[cover,back,paper,paper,spine,spine],1)
   copies.userData.bookId=book.id;copies.userData.topic=book.topic
@@ -135,13 +136,18 @@ export function createLibraryRoom(scene:T.Scene,mobile:boolean,books:readonly ty
   if(portrait){c.font='18px sans-serif';c.fillText('COGNITIO · LIBRARY',w/2,78);c.font='35px "Noto Sans Armenian",sans-serif';const words=title.split(' ');let line='',lines:string[]=[];for(const word of words){if(c.measureText(line+' '+word).width>w-70){lines.push(line);line=word}else line+=(line?' ':'')+word}if(line)lines.push(line);lines.forEach((text,i)=>c.fillText(text,w/2,250+i*55));c.font='21px "Noto Sans Armenian",sans-serif';c.fillText(author,w/2,560,w-65);c.font='55px serif';c.fillText('✦',w/2,640)}else{c.font='600 76px "Noto Sans Armenian",sans-serif';c.textBaseline='middle';c.fillText(title,w/2,h/2,w-90)}
   const t=new T.CanvasTexture(canvas);t.colorSpace=T.SRGBColorSpace;textures.push(t);return t
  }
+ const lecternBays=new Set<number>()
  for(const topic of libraryTopics){
   const angle=shelfAngle(topic.shelf),rot=-angle-Math.PI/2
   const material=new T.MeshBasicMaterial({map:titleTexture(topic.title,'','#102033'),toneMapped:false});materials.push(material)
   const siblings=libraryTopics.filter(item=>shelfAngle(item.shelf)===angle),slot=siblings.findIndex(item=>item.id===topic.id)
-  const offset=(slot-(siblings.length-1)/2)*4.4
-  const sign=new T.Mesh(new T.PlaneGeometry(siblings.length>1?4.1:8.5,1.15),material);sign.position.set(Math.cos(angle)*17.05+Math.cos(rot)*offset,10.45,Math.sin(angle)*17.05-Math.sin(rot)*offset);sign.rotation.y=rot;scene.add(sign)
-  const lectern=shelfPoint(topic.shelf,13.7);box(2.1,.15,1.2,wood,lectern.x,1.1,lectern.z,rot);box(.22,1,.22,gold,lectern.x,.5,lectern.z)
+  const sectionWidth=10.8/siblings.length,offset=(slot-(siblings.length-1)/2)*sectionWidth
+  const sign=new T.Mesh(new T.PlaneGeometry(siblings.length===1?8.5:sectionWidth-.25,1.15),material);sign.position.set(Math.cos(angle)*17.05+Math.cos(rot)*offset,10.45,Math.sin(angle)*17.05-Math.sin(rot)*offset);sign.rotation.y=rot;scene.add(sign)
+  const bay=Math.round((angle+Math.PI/2)/(Math.PI/4))
+  if(!lecternBays.has(bay)){
+   lecternBays.add(bay)
+   const lectern=shelfPoint(topic.shelf,13.7);box(2.1,.15,1.2,wood,lectern.x,1.1,lectern.z,rot);box(.22,1,.22,gold,lectern.x,.5,lectern.z)
+  }
  }
  // Central circular desk, radial reading tables, brass lamps and chairs.
  cylinder(2.2,.92,wood,0,.46,0);cylinder(2.35,.12,gold,0,.96,0)

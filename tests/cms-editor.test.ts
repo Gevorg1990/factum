@@ -74,7 +74,9 @@ test('article section images survive editing, validation and publishing without 
 
 test('Armenian library books save without publication metadata and still validate content',()=>{
  const form=newContent('BOOK');form.title='Փորձնական գիրք'
- Object.assign(form.data,{author:'Փորձնական հեղինակ',description:'Հայերեն պատմություն',cover:'/images/library/gikor-hy.webp',text:'Հայերեն ամբողջական տեքստ։ '.repeat(20)})
+ assert.equal(form.data.topic,'')
+ Object.assign(form.data,{topic:'prose',author:'Փորձնական հեղինակ',description:'Հայերեն պատմություն',cover:'/images/library/gikor-hy.webp',text:'Հայերեն ամբողջական տեքստ։ '.repeat(20)})
  const result=parseContent(prepareContent(form));assert.equal(result.data.id,form.key);assert.equal(result.data.title,form.title);for(const key of ['source','textLicense','coverCredit','coverSource','coverLicense','edition','rightsConfirmed'])assert.equal(Object.hasOwn(form.data,key),false);assert.equal(result.data.text,form.data.text.trim())
+ for(const topic of ['psychology','science-fiction','fantasy','philosophy'])assert.equal(parseContent(prepareContent({...form,data:{...form.data,topic}})).data.topic,topic)
  for(const patch of [{topic:'missing'},{text:'English only '.repeat(20)},{cover:'javascript:alert(1)'}])assert.throws(()=>parseContent(prepareContent({...form,data:{...form.data,...patch}})))
 })

@@ -1,66 +1,28 @@
 <script setup lang="ts">
-import { getSearchTerms } from '~/utils/searchTerms'
+import { highlightedParts } from '~/utils/searchHighlight'
 import { getSearchSubject } from '~/utils/searchSubjects'
 import type { SearchResult } from '~/utils/searchRecords'
 
-interface HighlightPart {
-  text: string
-  matched: boolean
-}
-
 const route = useRoute()
 const term = ref(String(route.query.q || ''))
-const query = ref(String(route.query.q || ''))
+const query = computed(() => String(route.query.q || ''))
+const page = computed(() => Math.max(1, Number.parseInt(String(route.query.page || '1'), 10) || 1))
 
-const { data, pending, error } = await useFetch<{ items: SearchResult[] }>(
+const { data, pending, error } = await useFetch<{ items: SearchResult[]; total: number }>(
   '/api/search',
-  { key: 'factum-search-results-v2', query: { q: query }, watch: [query] },
+  { key: 'factum-search-results-v3', query: { q: query, offset: computed(() => (page.value - 1) * 20), limit: 20 }, watch: [query, page] },
 )
 
 const results = computed(() => (data.value?.items ?? []).map(item => ({
   ...item, subject: item.subject ?? getSearchSubject(item.url),
 })))
 
-/**
- * Splits text into safe Vue text nodes and highlighted matches.
- * We intentionally avoid v-html so search results are never treated as HTML.
- */
-function highlightedParts(text: string): HighlightPart[] {
-  const value = String(text || '')
-  const terms = getSearchTerms(query.value)
-  if (!terms.length) return [{ text: value, matched: false }]
-
-  // Escape regex metacharacters supplied by the user.
-  const escaped = terms
-    .sort((a, b) => b.length - a.length)
-    .map(word => [...word].map(char => '\\^$.*+?()[]{}|'.includes(char) ? `\\${char}` : char).join(''))
-  const matcher = new RegExp(`(${escaped.join('|')})`, 'giu')
-  const parts: HighlightPart[] = []
-  let cursor = 0
-
-  for (const match of value.matchAll(matcher)) {
-    const index = match.index ?? 0
-    if (index > cursor) {
-      parts.push({ text: value.slice(cursor, index), matched: false })
-    }
-    parts.push({ text: match[0], matched: true })
-    cursor = index + match[0].length
-  }
-
-  if (cursor < value.length) {
-    parts.push({ text: value.slice(cursor), matched: false })
-  }
-  return parts.length ? parts : [{ text: value, matched: false }]
-}
-
 function submit() {
-  query.value = term.value.trim()
-  navigateTo({ path: '/search', query: { q: query.value } })
+  navigateTo({ path: '/search', query: { q: term.value.trim() } })
 }
 
 watch(() => route.query.q, value => {
-  query.value = String(value || '')
-  term.value = query.value
+  term.value = String(value || '')
 })
 </script>
 
@@ -107,7 +69,7 @@ watch(() => route.query.q, value => {
           :to="item.url"
           class="block text-lg font-bold hover:text-amber-300 mt-1"
         >
-          <template v-for="(part, partIndex) in highlightedParts(item.title)" :key="partIndex">
+          <template v-for="(part, partIndex) in highlightedParts(item.title, query)" :key="partIndex">
             <mark v-if="part.matched" class="search-match">{{ part.text }}</mark>
             <template v-else>{{ part.text }}</template>
           </template>
@@ -115,12 +77,18 @@ watch(() => route.query.q, value => {
         </NuxtLink>
 
         <p class="muted text-sm mt-2">
-          <template v-for="(part, partIndex) in highlightedParts(item.description)" :key="partIndex">
+          <template v-for="(part, partIndex) in highlightedParts(item.description, query)" :key="partIndex">
             <mark v-if="part.matched" class="search-match">{{ part.text }}</mark>
             <template v-else>{{ part.text }}</template>
           </template>
         </p>
       </div>
+
+      <nav v-if="data?.total && data.total > 20" class="search-pagination" aria-label="Որոնման էջեր">
+        <NuxtLink v-if="page > 1" :to="{path:'/search',query:{q:query,page:page-1}}">← Նախորդը</NuxtLink>
+        <span>Էջ {{ page }} / {{ Math.ceil(data.total / 20) }} · {{ data.total }} արդյունք</span>
+        <NuxtLink v-if="page * 20 < data.total" :to="{path:'/search',query:{q:query,page:page+1}}">Հաջորդը →</NuxtLink>
+      </nav>
 
       <div v-if="query.trim() && !data?.items?.length" class="panel p-6">
         <p>COGNITIO-ի նյութերում այս հարցմամբ պատասխան չգտնվեց։ Փորձիր այլ բառերով որոնել։</p>
@@ -128,3 +96,9 @@ watch(() => route.query.q, value => {
     </template>
   </main>
 </template>
+
+<style scoped>
+.search-pagination { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin:24px 0; font-size:13px; color:#a9bbd4; }
+.search-pagination a { color:#f4c46c; border:1px solid #f4c46c88; border-radius:10px; padding:9px 13px; }
+.search-pagination a:hover,.search-pagination a:focus-visible { border-color:#f4c46c; outline:none; }
+</style>
