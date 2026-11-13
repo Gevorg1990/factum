@@ -5,7 +5,8 @@ import {Expand,Move,Heart,RotateCcw,ArrowUp,ArrowDown,ArrowLeft,ArrowRight,Landm
 import {libraryTopics,type LibraryBook} from '~/data/library/catalog'
 import type {BookObject} from '~/utils/library/createRoom'
 import {createBookPullout} from '~/utils/library/bookPullout'
-import {createLibraryRoom} from '~/utils/library/createRoom'
+import {createLibraryRoom,shelfBookMatrix} from '~/utils/library/createRoom'
+import {libraryShelfEntries,shelfSlot,type ShelfPlacements,SLOTS_PER_TOPIC} from '~/utils/library/shelfCatalog'
 import {constrainPosition,EYE_HEIGHT,shelfPoint,isWalkablePoint,findWalkPath,smoothJourneyProgress} from '~/utils/library/navigation'
 const {library,toggleBook}=useProgress()
 const props=defineProps<{paused?:boolean;books:readonly LibraryBook[]}>()
@@ -28,6 +29,8 @@ let journey:{points:THREE.Vector3[];lengths:number[];total:number;started:number
 const walkVelocity=new THREE.Vector2()
 let hoverMesh:THREE.Object3D|undefined
 let bookObjects:BookObject[]=[],pickableBooks:THREE.Object3D[]=[],hoverPoint:THREE.Vector2|undefined,lastHover=0
+const placements=ref<ShelfPlacements>({})
+let shelfDrag:{mesh:THREE.InstancedMesh;id:string;topic:string;original:THREE.Matrix4;markers?:THREE.InstancedMesh;slots:number[];target:number|null;travel:number}|undefined
 let colliders:{x:number;z:number;r:number}[]=[],down:{x:number;y:number;id:number;travel:number;dragging:boolean}|undefined,joyId:number|undefined,joyOrigin={x:0,y:0},cleanup:(()=>void)[]=[]
 function enter(){walking.value=true;targetHeight=EYE_HEIGHT;host.value?.focus({preventScroll:true})}
 function reset(){closeBook();keys.clear();journey=undefined;walkVelocity.set(0,0);touring.value=false;walking.value=false;targetHeight=EYE_HEIGHT;camera?.position.set(initialView.x,EYE_HEIGHT,initialView.z);yaw=0;pitch=initialView.pitch;lookAt=undefined;joystick.value={x:0,y:0};document.exitPointerLock?.()}
@@ -61,12 +64,69 @@ function focusBook(id:string){
 }
 watch(()=>props.paused,value=>{if(value){clearInput();renderer?.setAnimationLoop(null)}else if(renderFrame&&!disposed){last=performance.now();renderer?.setAnimationLoop(renderFrame)}})
 function keyUp(e:KeyboardEvent){keys.delete(e.code)}
-function clearInput(){journey=undefined;touring.value=false;hovered.value=null;hoverPoint=undefined;walkVelocity.set(0,0);keys.clear();joystick.value={x:0,y:0};joyId=undefined;down=undefined}
-function pointerDown(e:PointerEvent){if(e.button!==0)return;host.value?.focus({preventScroll:true});down={x:e.clientX,y:e.clientY,id:e.pointerId,travel:0,dragging:false};renderer?.domElement.setPointerCapture(e.pointerId)}
+function clearInput(){cancelShelfDrag();journey=undefined;touring.value=false;hovered.value=null;hoverPoint=undefined;walkVelocity.set(0,0);keys.clear();joystick.value={x:0,y:0};joyId=undefined;down=undefined}
+function clearShelfDrag(){
+ if(!shelfDrag)return
+ if(shelfDrag.markers){scene.remove(shelfDrag.markers);shelfDrag.markers.geometry.dispose();const material=shelfDrag.markers.material as THREE.MeshBasicMaterial;material.map?.dispose();material.dispose()}
+ shelfDrag=undefined
+}
+function cancelShelfDrag(){
+ if(shelfDrag){shelfDrag.mesh.setMatrixAt(0,shelfDrag.original);shelfDrag.mesh.instanceMatrix.needsUpdate=true;shelfDrag.mesh.computeBoundingSphere();clearShelfDrag()}
+}
+function showShelfTargets(){
+ if(!shelfDrag||shelfDrag.markers)return
+ const entries=libraryShelfEntries(props.books,placements.value),used=new Set(entries.filter(item=>item.book.topic===shelfDrag!.topic).map(item=>item.slot))
+ const slots:number[]=[],matrices:THREE.Matrix4[]=[]
+ for(let index=0;index<SLOTS_PER_TOPIC;index++){
+  const slot=shelfSlot(shelfDrag.topic,index);if(!slot||used.has(index))continue
+  slots.push(index);matrices.push(shelfBookMatrix(slot))
+ }
+ if(!slots.length)return
+ const canvas=document.createElement('canvas');canvas.width=128;canvas.height=256
+ const ctx=canvas.getContext('2d')!
+ const glow=ctx.createLinearGradient(0,0,128,256);glow.addColorStop(0,'#f6d89533');glow.addColorStop(.5,'#d6a65016');glow.addColorStop(1,'#a56b2d44')
+ ctx.fillStyle=glow;ctx.fillRect(8,7,112,242)
+ ctx.strokeStyle='#ffe5a8';ctx.lineWidth=4;ctx.strokeRect(9,8,110,240)
+ ctx.strokeStyle='#a97736';ctx.lineWidth=2;ctx.strokeRect(16,16,96,224)
+ ctx.fillStyle='#ffe5a8';ctx.beginPath();ctx.moveTo(64,22);ctx.lineTo(71,32);ctx.lineTo(64,42);ctx.lineTo(57,32);ctx.closePath();ctx.fill()
+ ctx.fillRect(45,226,38,2)
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4
+ const markers=new THREE.InstancedMesh(new THREE.PlaneGeometry(.28,.78),new THREE.MeshBasicMaterial({map:texture,transparent:true,side:THREE.DoubleSide,depthWrite:false,toneMapped:false}),slots.length)
+ matrices.forEach((matrix,index)=>{const p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();matrix.decompose(p,q,s);p.addScaledVector(new THREE.Vector3(0,0,1).applyQuaternion(q),.34);markers.setMatrixAt(index,new THREE.Matrix4().compose(p,q,new THREE.Vector3(1,1,1)))})
+ markers.instanceMatrix.needsUpdate=true;markers.computeBoundingSphere();markers.userData.shelfTargets=true;scene.add(markers)
+ shelfDrag.slots=slots;shelfDrag.markers=markers
+}
+function pointerDown(e:PointerEvent){
+ if(e.button!==0)return
+ host.value?.focus({preventScroll:true});down={x:e.clientX,y:e.clientY,id:e.pointerId,travel:0,dragging:false};renderer?.domElement.setPointerCapture(e.pointerId)
+ const hit=pickBook(e.clientX,e.clientY),mesh=hit?.object
+ if(!(mesh instanceof THREE.InstancedMesh))return
+ const book=props.books.find(item=>item.id===mesh.userData.bookId);if(!book)return
+ for(const [key,animation] of pullouts){if(animation.mesh===mesh){animation.restore();pullouts.delete(key)}}
+ if(selectedBook.value?.id===book.id){selectedBook.value=null;selectedCopy=undefined}
+ const original=new THREE.Matrix4();mesh.getMatrixAt(0,original)
+ shelfDrag={mesh,id:book.id,topic:book.topic,original,slots:[],target:null,travel:0}
+}
 function pointerMove(e:PointerEvent){
  if(renderer){const rect=renderer.domElement.getBoundingClientRect();hoverPoint=locked.value?new THREE.Vector2(0,0):new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);hoverPosition.value={x:Math.max(12,Math.min(e.clientX-rect.left+18,rect.width-285)),y:Math.max(14,Math.min(e.clientY-rect.top+18,rect.height-170))}}
  if(!locked.value&&(!down||down.id!==e.pointerId))return
  const dx=locked.value?e.movementX:e.clientX-down!.x,dy=locked.value?e.movementY:e.clientY-down!.y
+ if(shelfDrag&&down){
+  shelfDrag.travel+=Math.hypot(dx,dy);down.x=e.clientX;down.y=e.clientY
+  if(shelfDrag.travel>=6&&renderer){
+   clearTimeout(clickTimer);journey=undefined;touring.value=false
+   showShelfTargets()
+   const rect=renderer.domElement.getBoundingClientRect(),point=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1)
+   camera.updateMatrixWorld();scene.updateMatrixWorld();raycaster.setFromCamera(point,camera)
+   const target=shelfDrag.markers?raycaster.intersectObject(shelfDrag.markers,false)[0]:undefined
+   shelfDrag.target=target?.instanceId===undefined?null:shelfDrag.slots[target.instanceId]??null
+   const matrix=shelfDrag.target===null?shelfDrag.original:shelfBookMatrix(shelfSlot(shelfDrag.topic,shelfDrag.target)!)
+   if(shelfDrag.target!==null){const p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();matrix.decompose(p,q,s);p.addScaledVector(new THREE.Vector3(0,0,1).applyQuaternion(q),.42);matrix.compose(p,q,s)}
+   shelfDrag.mesh.setMatrixAt(0,matrix);shelfDrag.mesh.instanceMatrix.needsUpdate=true;shelfDrag.mesh.computeBoundingSphere()
+   renderer.domElement.style.cursor=shelfDrag.target===null?'grabbing':'copy'
+  }
+  return
+ }
  if(down){
   down.travel+=Math.hypot(dx,dy);down.x=e.clientX;down.y=e.clientY
   if(!down.dragging){if(down.travel<6)return;down.dragging=true;journey=undefined;touring.value=false;walkVelocity.set(0,0)}
@@ -74,6 +134,20 @@ function pointerMove(e:PointerEvent){
  yaw-=dx*.003;pitch=THREE.MathUtils.clamp(pitch-dy*.0025,-1.15,1.4);lookAt=undefined
 }
 function pointerUp(event:PointerEvent){
+ if(shelfDrag){
+  const drag=shelfDrag
+  if(drag.travel>=6){
+   const target=drag.target
+   if(target!==null){
+    drag.mesh.setMatrixAt(0,shelfBookMatrix(shelfSlot(drag.topic,target)!));placements.value={...placements.value,[drag.id]:target}
+    try{window.localStorage.setItem('factum-library-placements',JSON.stringify(placements.value))}catch{}
+    tip.value='Գիրքը տեղափոխվեց ազատ դարակ։'
+   }else{drag.mesh.setMatrixAt(0,drag.original);tip.value='Գիրքը դիր ոսկեգույն ազատ տեղում։'}
+   drag.mesh.instanceMatrix.needsUpdate=true;drag.mesh.computeBoundingSphere()
+   clearShelfDrag();down=undefined;return
+  }
+  clearShelfDrag()
+ }
  const click=down&&down.id===event.pointerId&&down.travel<6&&event.button===0
  down=undefined
  if(click){
@@ -148,6 +222,7 @@ function safeMove(dx:number,dz:number){
 }
 onMounted(async()=>{
  mobile.value=window.matchMedia('(pointer: coarse)').matches
+ try{const stored=JSON.parse(window.localStorage.getItem('factum-library-placements')||'{}');if(stored&&typeof stored==='object'&&!Array.isArray(stored))placements.value=Object.fromEntries(Object.entries(stored).filter(([id,slot])=>typeof id==='string'&&Number.isInteger(slot)&&Number(slot)>=0&&Number(slot)<SLOTS_PER_TOPIC)) as ShelfPlacements}catch{}
  try{
   // A slow font must not prevent the 3D room from opening.
   await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1500))]);if(disposed||!canvasHost.value)return
@@ -158,7 +233,7 @@ onMounted(async()=>{
   const environment=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer)
   try{environmentTarget=pmrem.fromScene(environment,.06,.1,100,{size:256});scene.environment=environmentTarget.texture;scene.environmentIntensity=.38}finally{environment.dispose();pmrem.dispose()}
   camera=new THREE.PerspectiveCamera(70,1,.12,80);camera.position.set(initialView.x,EYE_HEIGHT,initialView.z);camera.rotation.order='YXZ'
-  const room=createLibraryRoom(scene,mobile.value,props.books);for(const texture of room.textures)texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),mobile.value?4:8);colliders=room.colliders;bookObjects=room.selectable;pickableBooks=[...room.selectable.map(book=>book.mesh),...room.stackMeshes]
+  const room=createLibraryRoom(scene,mobile.value,props.books,placements.value);for(const texture of room.textures)texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),mobile.value?4:8);colliders=room.colliders;bookObjects=room.selectable;pickableBooks=[...room.selectable.map(book=>book.mesh),...room.stackMeshes]
   destinationMarker=new THREE.Mesh(new THREE.RingGeometry(.28,.4,32),new THREE.MeshBasicMaterial({color:'#ffe0a0',transparent:true,opacity:.8,depthWrite:false,side:THREE.DoubleSide}))
   destinationMarker.rotation.x=-Math.PI/2;destinationMarker.visible=false;scene.add(destinationMarker)
   const resize=()=>{if(!canvasHost.value||!renderer)return;const {width,height}=canvasHost.value.getBoundingClientRect();if(!width||!height)return;const ratio=Math.min(devicePixelRatio||1,mobile.value?1.6:2,Math.sqrt((mobile.value?1_250_000:4_000_000)/(width*height)));if(Math.abs(renderer.getPixelRatio()-ratio)>.01)renderer.setPixelRatio(ratio);renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix()};observer=new ResizeObserver(resize);observer.observe(canvasHost.value);resize()
@@ -167,7 +242,7 @@ onMounted(async()=>{
   listen(window,'keydown',keyDown as EventListener);listen(window,'keyup',keyUp as EventListener);listen(window,'blur',clearInput)
   listen(document,'visibilitychange',()=>{if(document.hidden)clearInput()})
   listen(document,'pointerlockchange',()=>{locked.value=document.pointerLockElement===renderer?.domElement;if(!locked.value)clearInput()})
-  listen(renderer.domElement,'pointerdown',pointerDown as EventListener);listen(renderer.domElement,'pointermove',pointerMove as EventListener);listen(renderer.domElement,'pointerup',pointerUp as EventListener);listen(renderer.domElement,'pointercancel',()=>{down=undefined});listen(renderer.domElement,'lostpointercapture',()=>{down=undefined});listen(renderer.domElement,'pointerleave',()=>{hovered.value=null;hoverPoint=undefined})
+  listen(renderer.domElement,'pointerdown',pointerDown as EventListener);listen(renderer.domElement,'pointermove',pointerMove as EventListener);listen(renderer.domElement,'pointerup',pointerUp as EventListener);listen(renderer.domElement,'pointercancel',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'lostpointercapture',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'pointerleave',()=>{hovered.value=null;hoverPoint=undefined})
   listen(renderer.domElement,'dblclick',((event:MouseEvent)=>{event.preventDefault();clearTimeout(clickTimer);approachPoint(event.clientX,event.clientY)}) as EventListener)
   listen(renderer.domElement,'webglcontextlost',e=>{e.preventDefault();failed.value=true;clearInput();emit('error')})
   renderFrame=time=>{
@@ -193,7 +268,7 @@ onMounted(async()=>{
     lastHover=time;raycaster.setFromCamera(hoverPoint,camera)
     const hit=raycaster.intersectObjects(pickableBooks,false)[0]
     const book=hit?props.books.find(book=>book.id===hit.object.userData.bookId):undefined
-    hoverMesh=hit?.object;hovered.value=book||null;if(renderer)renderer.domElement.style.cursor=book?'pointer':'grab'
+    hoverMesh=hit?.object;hovered.value=book||null;if(renderer)renderer.domElement.style.cursor='grab'
    }
    for(const book of bookObjects){if(pullouts.has(book.mesh.uuid+':single'))continue;const active=book.mesh===hoverMesh&&book.id===hovered.value?.id;book.mesh.position.lerp(book.rest.clone().addScaledVector(book.normal,active?.3:0),1-Math.exp(-dt*10))}
    for(const [key,animation] of pullouts){if(!animation.update(dt))pullouts.delete(key)}
@@ -204,7 +279,7 @@ onMounted(async()=>{
  }catch(error){console.error('Library room initialization failed',error);failed.value=true;loading.value=false;emit('error')}
 })
 onUnmounted(()=>{
- disposed=true;clearTimeout(clickTimer);pullouts.forEach(animation=>animation.restore());pullouts.clear();clearInput();if(document.pointerLockElement===renderer?.domElement)document.exitPointerLock();cleanup.forEach(fn=>fn());observer?.disconnect();intersection?.disconnect();renderer?.setAnimationLoop(null)
+ disposed=true;clearTimeout(clickTimer);clearShelfDrag();pullouts.forEach(animation=>animation.restore());pullouts.clear();clearInput();if(document.pointerLockElement===renderer?.domElement)document.exitPointerLock();cleanup.forEach(fn=>fn());observer?.disconnect();intersection?.disconnect();renderer?.setAnimationLoop(null)
  const geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>(),textures=new Set<THREE.Texture>()
  scene?.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material]){materials.add(material);for(const value of Object.values(material))if(value instanceof THREE.Texture)textures.add(value)}}})
  geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());environmentTarget?.dispose();renderer?.dispose();renderer?.domElement.remove()

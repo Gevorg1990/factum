@@ -2,8 +2,8 @@ import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import * as THREE from 'three'
 import {libraryBooks,libraryTopics} from '../data/library/catalog'
-import {libraryShelfEntries} from '../utils/library/shelfCatalog'
-import {createLibraryRoom} from '../utils/library/createRoom'
+import {libraryShelfEntries,shelfSlot} from '../utils/library/shelfCatalog'
+import {createLibraryRoom,shelfBookMatrix} from '../utils/library/createRoom'
 import {constrainPosition,shelfPoint,ROOM_RADIUS,MAX_WALK_RADIUS,isWalkablePoint,EYE_HEIGHT,findWalkPath,clearWalkSegment,smoothJourneyProgress} from '../utils/library/navigation'
 
 test('walking stays in the hall and outside the central reading desk',()=>{
@@ -87,4 +87,17 @@ test('CMS detective and novel books occupy separate slots on their shared bay',(
  const sample=libraryBooks[0]!
  const entries=libraryShelfEntries([{...sample,id:'detective-test',topic:'detective',shelf:8},{...sample,id:'novel-test',topic:'novels',shelf:3}])
  assert.equal(entries.length,2);assert.equal(entries[0]!.bay,entries[1]!.bay);assert.notEqual(entries[0]!.lateral,entries[1]!.lateral)
+})
+
+test('a book can occupy a free slot in its own subject while other books retain their places',()=>{
+ const books=[libraryBooks[0]!,{...libraryBooks[0]!,id:'another-prose'},{...libraryBooks[1]!}]
+ const before=libraryShelfEntries(books)
+ const after=libraryShelfEntries(books,{'gikor':36})
+ assert.equal(after.find(entry=>entry.book.id==='gikor')?.slot,36)
+ assert.equal(after.find(entry=>entry.book.id==='another-prose')?.slot,0)
+ assert.equal(after.find(entry=>entry.book.id==='qaj-nazar')?.slot,before.find(entry=>entry.book.id==='qaj-nazar')?.slot)
+ assert.equal(shelfSlot('prose',36)?.row,1)
+ assert.equal(shelfSlot('tales',36)?.row,1)
+ assert.equal(shelfSlot('missing',0),null)
+ assert.notDeepEqual(shelfBookMatrix(after[0]!).elements,shelfBookMatrix(before[0]!).elements)
 })

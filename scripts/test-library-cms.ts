@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import {PrismaClient} from '@prisma/client'
 import {randomBytes,createHash} from 'node:crypto'
-import {newContent,prepareContent} from '../shared/cmsEditor'
+import {gzipSync} from 'node:zlib'
+import {newContent,prepareContent,editorRecord} from '../shared/cmsEditor'
 const db=new PrismaClient(),base=process.env.CMS_TEST_URL||'http://localhost:3000',token=randomBytes(32).toString('hex'),key='book-integration-'+Date.now()
 let userId='',contentId=''
 async function request(path:string,method='GET',body?:unknown){const response=await fetch(base+path,{method,headers:{cookie:'factum-session='+token,...(body?{'content-type':'application/json',origin:base}:{})},body:body?JSON.stringify(body):undefined});const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));return data}
+async function requestCompressed(path:string,body:unknown){const response=await fetch(base+path,{method:'PUT',headers:{cookie:'factum-session='+token,origin:base,'content-type':'application/octet-stream','x-factum-payload':'gzip-json'},body:gzipSync(JSON.stringify(body))});const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));return data}
 try{
  const user=await db.user.create({data:{email:key+'@example.test',name:'Library test',passwordHash:'disabled-test-login',role:'ADMIN'}});userId=user.id
  await db.session.create({data:{userId,tokenHash:createHash('sha256').update(token).digest('hex'),expiresAt:new Date(Date.now()+60000)}})
@@ -13,7 +15,9 @@ try{
  const initial=await request('/api/library');assert.equal(new Set(initial.items.map((book:any)=>book.id)).size,initial.items.length)
  const draft=await request('/api/admin/content','POST',prepareContent(form));contentId=draft.id
  assert.ok(!(await request('/api/library')).items.some((book:any)=>book.id===key))
- const published=await request('/api/admin/content?id='+contentId,'PUT',{...prepareContent(form),version:draft.version,action:'publish'})
+ const reopened=editorRecord(await request('/api/admin/content?id='+contentId));reopened.data.description='Խմբագրված նկարագրություն'
+ const published=await requestCompressed('/api/admin/content?id='+contentId,{...prepareContent(reopened),version:draft.version,action:'publish'})
+ assert.equal(published.data.description,'Խմբագրված նկարագրություն');assert.equal(published.publishedData,undefined)
  const catalogue=await request('/api/library');assert.equal(catalogue.total,initial.total+1);const book=catalogue.items.find((book:any)=>book.id===key);assert.ok(book);assert.equal(book.text,undefined);assert.equal(book.language,'Հայերեն');assert.equal(book.shelf,8)
  const response=await fetch(base+book.file,{headers:{cookie:'factum-session='+token}});assert.equal(response.status,200);assert.equal(await response.text(),form.data.text.trim());assert.match(response.headers.get('cache-control')||'',/private/)
  await request('/api/admin/content?id='+contentId,'PUT',{...prepareContent(form),version:published.version,action:'archive'})
