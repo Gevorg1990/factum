@@ -169,7 +169,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="atom-lab" :style="{ '--atom-accent': elementFamilies[element.family].color }">
     <header class="atom-lab-heading">
-      <div><p class="atom-eyebrow"><Atom :size="15" aria-hidden="true" /> FACTUM · ԱՏՈՄՆԵՐԻ ԱՇԽԱՐՀ</p><h2>{{ element.name }} <span>{{ element.symbol }}</span></h2><p class="muted">Բացահայտիր չեզոք ատոմի կառուցվածքը՝ մասնիկ առ մասնիկ։</p></div>
+      <div><p class="atom-eyebrow"><Atom :size="15" aria-hidden="true" /> COGNITIO · ԱՏՈՄՆԵՐԻ ԱՇԽԱՐՀ</p><h2>{{ element.name }} <span>{{ element.symbol }}</span></h2><p class="muted">Բացահայտիր չեզոք ատոմի կառուցվածքը՝ մասնիկ առ մասնիկ։</p></div>
       <button type="button" class="btn-secondary atom-back" @click="emit('back')"><ChevronLeft :size="16" aria-hidden="true" /> Պարբերական աղյուսակ</button>
     </header>
     <p class="atom-quantum-intro">Քվանտային օրբիտալներ · Հավանականության ամպ</p>

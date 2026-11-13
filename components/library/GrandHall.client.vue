@@ -217,10 +217,10 @@ defineExpose({visit,reset,focusBook})
   <div v-if="loading" class="hall-loading"><Landmark :size="42" :stroke-width="1"/><span>Բացում ենք սրահի դռները…</span><i/></div>
   <div v-if="failed" class="hall-loading"><Landmark :size="36"/><strong>3D սրահը չհաջողվեց բացել</strong><span>Փորձիր թարմացնել էջը կամ միացնել բրաուզերի գրաֆիկական արագացումը։</span></div>
   <template v-if="!loading&&!failed">
-   <div class="hall-badge"><i/>FACTUM · ԳՐԱԴԱՐԱՆԻ ՄԵԾ ՍՐԱՀ<span>ՍՐԱՀ 01</span></div>
+   <div class="hall-badge"><i/>COGNITIO · ԳՐԱԴԱՐԱՆԻ ՄԵԾ ՍՐԱՀ<span>ՍՐԱՀ 01</span></div>
    <div class="hall-top-actions"><button aria-label="Սկզբնական տեսք" title="Սկզբնական տեսք" @click="reset"><RotateCcw :size="17"/></button><button aria-label="Ամբողջ էկրանով" title="Ամբողջ էկրանով" @click="fullscreen"><Expand :size="17"/></button></div>
    <aside v-if="selectedBook" class="selected-book-panel" aria-label="Դարակից ընտրված գիրքը">
-    <header class="book-panel-heading"><span>FACTUM · ԳՐԱԴԱՐԱՆ</span><button type="button" class="return-book" aria-label="Փակել և վերադարձնել գիրքը դարակին" @click="closeBook"><X :size="18"/></button></header>
+    <header class="book-panel-heading"><span>COGNITIO · ԳՐԱԴԱՐԱՆ</span><button type="button" class="return-book" aria-label="Փակել և վերադարձնել գիրքը դարակին" @click="closeBook"><X :size="18"/></button></header>
     <div class="book-panel-summary"><div class="book-cover-frame"><img :src="selectedBook.cover" :alt="selectedBook.title"/></div><div class="book-panel-title"><small>{{libraryTopics.find(topic=>topic.id===selectedBook?.topic)?.short}}</small><h2>{{selectedBook.title}}</h2><p>{{selectedBook.author}}</p><span class="book-language">Հայերեն</span></div></div>
     <p class="book-panel-description">{{selectedBook.description}}</p>
     <div class="book-panel-actions"><button v-if="selectedBook.file" type="button" class="book-read-action" @click="emit('read',selectedBook.id)">Կարդալ գիրքը <ArrowRight :size="16"/></button><button type="button" class="book-save-action save-control" :aria-pressed="library.includes(selectedBook.id)" @click="toggleBook(selectedBook.id)"><Heart :size="16" :fill="library.includes(selectedBook.id)?'currentColor':'none'"/>{{library.includes(selectedBook.id)?'Պահպանված է':'Պահպանել'}}</button></div>

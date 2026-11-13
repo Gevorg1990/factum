@@ -38,7 +38,7 @@ onBeforeUnmount(()=>{disposed=true;travelling.value=false;stop();preference?.rem
 </script>
 <template>
   <section class="earth-interior" aria-label="Երկրի խորքերը">
-    <header class="earth-heading"><div><p class="earth-eyebrow">FACTUM · ՃԱՆԱՊԱՐՀՈՐԴՈՒԹՅՈՒՆ ԴԵՊԻ ԿԵՆՏՐՈՆ</p><h2>Երկրի խորքերը</h2><p>Մակերևույթից մինչև կենտրոն՝ 6371 կմ։ Բացիր շերտերը և իմացիր՝ ինչ կա մեր ոտքերի տակ։</p></div><button type="button" class="btn-secondary earth-back" @click="leave"><ArrowLeft :size="17"/>Վերադառնալ գլոբուսին</button></header>
+    <header class="earth-heading"><div><p class="earth-eyebrow">COGNITIO · ՃԱՆԱՊԱՐՀՈՐԴՈՒԹՅՈՒՆ ԴԵՊԻ ԿԵՆՏՐՈՆ</p><h2>Երկրի խորքերը</h2><p>Մակերևույթից մինչև կենտրոն՝ 6371 կմ։ Բացիր շերտերը և իմացիր՝ ինչ կա մեր ոտքերի տակ։</p></div><button type="button" class="btn-secondary earth-back" @click="leave"><ArrowLeft :size="17"/>Վերադառնալ գլոբուսին</button></header>
     <div class="earth-workspace">
       <div class="panel earth-stage">
         <div class="earth-stage-title"><span><Layers :size="16"/>Երկրի 3D կտրվածք</span><span>Շերտերի շառավիղները՝ համամասնորեն</span></div>

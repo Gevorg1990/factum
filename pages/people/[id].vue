@@ -22,7 +22,7 @@ const workGroups = computed(() => {
   return groups
 })
 watch(() => route.params.id, () => { selectedWork.value = null })
-useHead({ title: computed(() => `${person.value?.name || 'Հայ հայտնիներ'} — FACTUM`) })
+useHead({ title: computed(() => `${person.value?.name || 'Հայ հայտնիներ'} — COGNITIO`) })
 useSavedScroll(() => route.hash === '#saved-person' ? 'saved-person' : undefined)
 </script>
 

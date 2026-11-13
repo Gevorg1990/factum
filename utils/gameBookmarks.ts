@@ -21,7 +21,7 @@ const savedGameQuestions: SavedGameQuestion[] = [
   ...geniusStatements.map(item => ({
     id: bookmarkId('genius', item.statement),
     game: 'genius' as const,
-    gameTitle: 'FACTUM Genius',
+    gameTitle: 'COGNITIO Genius',
     question: item.statement,
     answers: ['Ճիշտ է', 'Սխալ է'],
     correct: item.correct ? 0 : 1,
@@ -30,7 +30,7 @@ const savedGameQuestions: SavedGameQuestion[] = [
   ...logicPuzzles.map(item => ({
     id: bookmarkId('logic', item.question),
     game: 'logic' as const,
-    gameTitle: 'FACTUM Logic',
+    gameTitle: 'COGNITIO Logic',
     question: item.question,
     answers: item.answers,
     correct: item.correct,

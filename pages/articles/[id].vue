@@ -24,7 +24,7 @@ onMounted(() => {
   if (question) markRead(question.id)
 })
 
-useHead({ title: `${question?.title || 'Նյութ'} — FACTUM` })
+useHead({ title: `${question?.title || 'Նյութ'} — COGNITIO` })
 useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefined)
 </script>
 
@@ -37,7 +37,7 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
     <article v-if="question" id="saved-article" tabindex="-1" class="panel mt-5 atom-article saved-destination">
       <div class="atom-article-intro">
         <div>
-          <p class="gold text-sm mb-3">FACTUM · {{ subject?.name }}</p>
+          <p class="gold text-sm mb-3">COGNITIO · {{ subject?.name }}</p>
           <h1 class="heading">{{ question.title }}</h1>
           <p class="atom-article-lead">{{ question.answer }}</p>
           <p v-if="isAtomArticle" class="muted mt-4 leading-8">

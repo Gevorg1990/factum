@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'Մեր մասին · FACTUM' })
+useHead({ title: 'Մեր մասին · COGNITIO' })
 </script>
 
 <template>

@@ -24,7 +24,7 @@ export default defineEventHandler(async event=>{
  if(databaseEnabled()) {
   const rows=await db.$queryRaw<any[]>`SELECT kind, key, "publishedData" AS data FROM "Content" WHERE "publishedData" IS NOT NULL AND kind IN ('ARTICLE','PERSON','FACT','EVENT','CATEGORY','PAGE','VIDEO') AND to_tsvector('simple', "publishedData"::text) @@ plainto_tsquery('simple', ${query}) LIMIT 25`
   const urls:Record<string,string>={ARTICLE:'/articles/',PERSON:'/people/',FACT:'/facts?fact=',EVENT:'/history?event=',CATEGORY:'/subjects/',PAGE:'/content/',VIDEO:'/videos?video='}
-  return {query,items:rows.map(row=>({title:row.data.title||row.data.name,description:row.data.answer||row.data.bio||row.data.text||'',url:urls[row.kind]+encodeURIComponent(row.key),kind:'FACTUM'}))}
+  return {query,items:rows.map(row=>({title:row.data.title||row.data.name,description:row.data.answer||row.data.bio||row.data.text||'',url:urls[row.kind]+encodeURIComponent(row.key),kind:'COGNITIO'}))}
  }
  let cms:typeof records=[]
  return {query,items:[...local,...searchRecords(cms,terms,25)].slice(0,25)}

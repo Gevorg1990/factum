@@ -47,13 +47,13 @@ async function showOnMap(code: string, returnTarget = 'capital-quiz-title') {
   mapFocus.value = { code, requestId: (mapFocus.value?.requestId ?? 0) + 1 }
   scrollToSection(returnTarget === 'globe-games' || !window.matchMedia('(max-width: 900px)').matches ? 'interactive-globe' : 'globe-country-info')
 }
-useHead({ title: 'Երկրագունդ — FACTUM', meta: [{ name: 'description', content: 'Պտտիր ինտերակտիվ երկրագունդը, բացահայտիր երկրները, մայրաքաղաքները և աշխարհամասերը։' }] })
+useHead({ title: 'Երկրագունդ — COGNITIO', meta: [{ name: 'description', content: 'Պտտիր ինտերակտիվ երկրագունդը, բացահայտիր երկրները, մայրաքաղաքները և աշխարհամասերը։' }] })
 </script>
 
 <template>
   <main class="shell globe-page">
     <header class="globe-heading">
-      <p class="gold">FACTUM · ԲԱՑԱՀԱՅՏԻՐ ԱՇԽԱՐՀԸ</p>
+      <p class="gold">COGNITIO · ԲԱՑԱՀԱՅՏԻՐ ԱՇԽԱՐՀԸ</p>
       <h1 class="heading"><Globe2 :size="32" /> Երկրագունդ</h1>
       <p class="muted">Պտտիր աշխարհը և բացահայտիր երկրները՝ մեկ հպումով։</p>
       <div class="globe-heading-actions">

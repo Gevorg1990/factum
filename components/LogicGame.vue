@@ -119,7 +119,7 @@ onMounted(() => {
   <main v-else class="shell logic-game">
     <GameLoading v-if="roundLoading" game="logic" /><div v-else-if="roundError" class="panel" role="alert">{{roundError}} <button class="gold" @click="newRound">Կրկնել</button><button @click="returnToLevels">Վերադառնալ</button></div><template v-else>
     <p class="gold text-sm font-semibold">ՏՐԱՄԱԲԱՆԱԿԱՆ ՄԱՐՏԱՀՐԱՎԵՐ</p>
-    <h1 class="heading mt-3">FACTUM Logic</h1>
+    <h1 class="heading mt-3">COGNITIO Logic</h1>
     <button class="btn-secondary mb-4" type="button" :aria-pressed="soundEnabled" @click="toggleSound">{{ soundEnabled ? '🔊 Ձայնը միացված է' : '🔇 Միացնել ձայնը' }}</button>
     <p class="muted mb-6">{{ difficultyTitle(level) }} մակարդակ · {{ roundSize }} պատահական գլուխկոտրուկ։ {{ requiredCorrectAnswers(roundSize) }} ճիշտ պատասխանով կանցնես այս փուլը։</p>
     <GameDifficultyProgress :current="level || 'easy'" :unlocked-index="unlockedIndex" :completed-levels="completedLevels" />
