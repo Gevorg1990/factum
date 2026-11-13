@@ -646,14 +646,10 @@
 
 /* Phase 22: readable highlighted search matches. */
 .search-match {
-  color: #FFFFFF;
+  color: #f6c85f;
   display: inline;
-  background: #f6c85f;
-  border-radius: 3px;
-  padding: 0 2px;
+  background: transparent;
   font-weight: 800;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
 }
 
 /* Phase 23: subjects scroll horizontally without the final arrow button. */

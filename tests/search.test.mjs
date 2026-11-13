@@ -7,13 +7,22 @@ const require=createRequire(import.meta.url),ts=require('typescript')
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8')
 const url=source=>'data:text/javascript;base64,'+Buffer.from(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')
 const termsUrl=url(read('utils/searchTerms.ts')),recordsUrl=url(read('utils/searchRecords.ts')),atomUrl=url(read('data/atomArticle.ts'))
+const bibleUrl=url(read('data/bible.ts'))
+const monumentsUrl=url("export const personMonuments=[]")
+const geographyPlacesUrl=url(read('data/geography/places.ts'))
+const geographyRecordsUrl=url(read('data/geography/records.ts'))
+const armeniaRegionsUrl=url(read('data/geography/armeniaRegions.ts'))
+const highlightUrl=url(read('utils/searchHighlight.ts').replace("from './searchTerms'",`from '${termsUrl}'`))
+const dbUrl=url('export const databaseEnabled=()=>false;export const db={}')
 const subjectUrl=url(read('utils/searchSubjects.ts').replace("from '../data/content'",`from '${contentUrl}'`))
 const {getSearchSubject}=await import(subjectUrl)
 const {searchRecords}=await import(recordsUrl)
 const {getSearchTerms}=await import(termsUrl)
+const {highlightedParts}=await import(highlightUrl)
 globalThis.__searchTest={defineEventHandler:fn=>fn,getQuery:event=>event,useRuntimeConfig:()=>({public:{directusUrl:''}}),$fetch:()=>{throw new Error('unexpected external request')}}
 let source='const {defineEventHandler,getQuery,useRuntimeConfig,$fetch}=globalThis.__searchTest;'+read('server/api/search.get.ts')
-for(const [path,module] of [['~/utils/searchSubjects',subjectUrl],['~/utils/searchTerms',termsUrl],['~/utils/searchRecords',recordsUrl],['~/data/content',contentUrl],['~/data/atomArticle',atomUrl]])source=source.replace(`from '${path}'`,`from '${module}'`)
+for(const [path,module] of [['~/utils/searchSubjects',subjectUrl],['~/utils/searchTerms',termsUrl],['~/utils/searchRecords',recordsUrl],['~/data/content',contentUrl],['~/data/atomArticle',atomUrl],['~/data/bible',bibleUrl],['~/data/personMonuments',monumentsUrl],['~/data/geography/places',geographyPlacesUrl],['~/data/geography/records',geographyRecordsUrl],['~/data/geography/armeniaRegions',armeniaRegionsUrl]])source=source.replace(`from '${path}'`,`from '${module}'`)
+source=source.replace("import('../utils/db')",`import('${dbUrl}')`)
 const handler=(await import(url(source))).default
 
 test('temperature finds the solution article through its detailed explanation',async()=>{
@@ -45,6 +54,23 @@ test('title matches rank above body matches and a matching snippet is returned',
  assert.match(results[1].description,/Ջերմաստիճանը/)
  assert.ok(results[1].description.length<=262)
  assert.deepEqual(searchRecords(records,[]),[])
+})
+
+test('word stems match inflected Armenian text and only matching letters are highlighted',()=>{
+ const terms=getSearchTerms('լուծույթներից')
+ assert.deepEqual(terms,['լուծույթ'])
+ assert.ok(searchRecords([{title:'Լուծույթը',description:'Նյութերի խառնուրդ',url:'/article',kind:'Հոդված'}],terms).length)
+ assert.deepEqual(highlightedParts('Լուծույթները', 'լուծույթներից'),[
+  {text:'Լուծույթ',matched:true},{text:'ները',matched:false},
+ ])
+})
+
+test('all matches remain accessible by paging through server results',async()=>{
+ const first=await handler({q:'ություն',limit:5,offset:0})
+ const second=await handler({q:'ություն',limit:5,offset:5})
+ assert.equal(first.items.length,5)
+ assert.ok(first.total>5)
+ assert.notDeepEqual(first.items.map(item=>item.title),second.items.map(item=>item.title))
 })
 
 test('empty and unrelated requests do not produce arbitrary results',async()=>{
@@ -84,7 +110,7 @@ test('rendered search results show the subject even when cached API data lacks m
  const {descriptor}=parse(read('pages/search.vue'))
  let code=compileScript(descriptor,{id:'search-render-test',inlineTemplate:true}).content
   .replaceAll("from 'vue'",`from '${vueUrl}'`).replaceAll('from "vue"',`from '${vueUrl}'`)
-  .replace("from '~/utils/searchTerms'",`from '${termsUrl}'`).replace("from '~/utils/searchSubjects'",`from '${subjectUrl}'`)
+  .replace("from '~/utils/searchHighlight'",`from '${highlightUrl}'`).replace("from '~/utils/searchSubjects'",`from '${subjectUrl}'`)
  code=`import {ref,computed,watch} from '${vueUrl}';const useRoute=()=>({query:{q:'ջերմաստիճան'}});const useFetch=async()=>globalThis.__searchRender;`+code
  const component=(await import(url(code))).default
  const app=createSSRApp(component)
@@ -110,12 +136,12 @@ test('history page opens and scrolls to the event supplied by a search link',asy
  globalThis.cancelAnimationFrame=id=>frames.delete(id)
  t.after(()=>{unmounted.forEach(fn=>fn());Object.assign(globalThis,original);delete globalThis.__historyTest})
  const detailsUrl=url(read('data/historyDetails.ts'))
- const {descriptor}=parse(read('pages/history.vue'))
+ const {descriptor}=parse(read('pages/history.vue').replace("const timeline = await usePublishedContent('EVENT', legacyTimeline)", 'const timeline = legacyTimeline'))
  let code=compileScript(descriptor,{id:'history-navigation-test'}).content
   .replaceAll("from 'vue'",`from '${vueUrl}'`)
   .replace("from '~/data/content'",`from '${contentUrl}'`).replace("from '~/data/historyDetails'",`from '${detailsUrl}'`)
- code=`import {ref,computed,watch,nextTick} from '${vueUrl}';const useRoute=()=>globalThis.__historyTest.route;const useNuxtApp=()=>({hook:()=>()=>{}});const onMounted=()=>{};const onBeforeUnmount=fn=>globalThis.__historyTest.unmounted.push(fn);`+code
- const page=(await import(url(code))).default.setup({},{expose(){}})
+ code=`import {ref,computed,watch,nextTick} from '${vueUrl}';const usePublishedContent=async(_,items)=>items;const useRoute=()=>globalThis.__historyTest.route;const useNuxtApp=()=>({hook:()=>()=>{}});const onMounted=()=>{};const onBeforeUnmount=fn=>globalThis.__historyTest.unmounted.push(fn);`+code
+ const page=await (await import(url(code))).default.setup({},{expose(){}})
  const flushFrames=()=>{while(frames.size){const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn())}}
  await page.jumpToEvent();flushFrames()
  assert.ok(page.expanded.value.includes('451'))
@@ -129,8 +155,8 @@ test('history page opens and scrolls to the event supplied by a search link',asy
 
 test('enriched encyclopedia lessons cover every subject and their examples are searchable', async () => {
  const {questions,subjects}=await import(contentUrl)
- const lessons=questions.filter(question=>question.sections)
- assert.equal(lessons.length,subjects.length)
+ const lessons=questions.filter(question=>question.sections?.length===2 && question.example && question.takeaway && question.source)
+ assert.ok(lessons.length>=subjects.length)
  assert.equal(new Set(questions.map(question=>question.id)).size,questions.length)
  for(const subject of subjects){
   const lesson=lessons.find(question=>question.subject===subject.slug)

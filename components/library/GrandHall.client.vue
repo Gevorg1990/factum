@@ -6,7 +6,7 @@ import {libraryTopics,type LibraryBook} from '~/data/library/catalog'
 import type {BookObject} from '~/utils/library/createRoom'
 import {createBookPullout} from '~/utils/library/bookPullout'
 import {createLibraryRoom,shelfBookMatrix} from '~/utils/library/createRoom'
-import {libraryShelfEntries,shelfSlot,type ShelfPlacements,SLOTS_PER_TOPIC} from '~/utils/library/shelfCatalog'
+import {libraryShelfEntries,shelfSlot,migrateLibraryShelfPlacement,type ShelfPlacements,SLOTS_PER_TOPIC} from '~/utils/library/shelfCatalog'
 import {constrainPosition,EYE_HEIGHT,shelfPoint,isWalkablePoint,findWalkPath,smoothJourneyProgress} from '~/utils/library/navigation'
 const {library,toggleBook}=useProgress()
 const props=defineProps<{paused?:boolean;books:readonly LibraryBook[]}>()
@@ -23,6 +23,7 @@ let renderFrame:((time:number)=>void)|undefined
 let renderer:THREE.WebGLRenderer|undefined,camera:THREE.PerspectiveCamera,scene:THREE.Scene,observer:ResizeObserver,intersection:IntersectionObserver
 const raycaster=new THREE.Raycaster(),floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0)
 let clickTimer:ReturnType<typeof setTimeout>|undefined
+let shelfHoldTimer:ReturnType<typeof setTimeout>|undefined
 let destinationMarker:THREE.Mesh|undefined,markerUntil=0
 let visible=true,disposed=false,last=0,yaw=0,pitch=initialView.pitch,targetHeight=EYE_HEIGHT,keys=new Set<string>(),lookAt:THREE.Vector3|undefined
 let journey:{points:THREE.Vector3[];lengths:number[];total:number;started:number;duration:number;height:number;onArrive?:()=>void}|undefined
@@ -30,7 +31,7 @@ const walkVelocity=new THREE.Vector2()
 let hoverMesh:THREE.Object3D|undefined
 let bookObjects:BookObject[]=[],pickableBooks:THREE.Object3D[]=[],hoverPoint:THREE.Vector2|undefined,lastHover=0
 const placements=ref<ShelfPlacements>({})
-let shelfDrag:{mesh:THREE.InstancedMesh;id:string;topic:string;original:THREE.Matrix4;markers?:THREE.InstancedMesh;slots:number[];target:number|null;travel:number}|undefined
+let shelfDrag:{mesh:THREE.InstancedMesh;id:string;topic:string;original:THREE.Matrix4;markers?:THREE.InstancedMesh;slots:number[];target:number|null;travel:number;activated:boolean}|undefined
 let colliders:{x:number;z:number;r:number}[]=[],down:{x:number;y:number;id:number;travel:number;dragging:boolean}|undefined,joyId:number|undefined,joyOrigin={x:0,y:0},cleanup:(()=>void)[]=[]
 function enter(){walking.value=true;targetHeight=EYE_HEIGHT;host.value?.focus({preventScroll:true})}
 function reset(){closeBook();keys.clear();journey=undefined;walkVelocity.set(0,0);touring.value=false;walking.value=false;targetHeight=EYE_HEIGHT;camera?.position.set(initialView.x,EYE_HEIGHT,initialView.z);yaw=0;pitch=initialView.pitch;lookAt=undefined;joystick.value={x:0,y:0};document.exitPointerLock?.()}
@@ -66,12 +67,21 @@ watch(()=>props.paused,value=>{if(value){clearInput();renderer?.setAnimationLoop
 function keyUp(e:KeyboardEvent){keys.delete(e.code)}
 function clearInput(){cancelShelfDrag();journey=undefined;touring.value=false;hovered.value=null;hoverPoint=undefined;walkVelocity.set(0,0);keys.clear();joystick.value={x:0,y:0};joyId=undefined;down=undefined}
 function clearShelfDrag(){
+ clearTimeout(shelfHoldTimer);shelfHoldTimer=undefined
  if(!shelfDrag)return
  if(shelfDrag.markers){scene.remove(shelfDrag.markers);shelfDrag.markers.geometry.dispose();const material=shelfDrag.markers.material as THREE.MeshBasicMaterial;material.map?.dispose();material.dispose()}
  shelfDrag=undefined
 }
 function cancelShelfDrag(){
  if(shelfDrag){shelfDrag.mesh.setMatrixAt(0,shelfDrag.original);shelfDrag.mesh.instanceMatrix.needsUpdate=true;shelfDrag.mesh.computeBoundingSphere();clearShelfDrag()}
+}
+function activateShelfDrag(){
+ if(!shelfDrag||shelfDrag.activated)return
+ shelfDrag.activated=true
+ clearTimeout(clickTimer)
+ journey=undefined;touring.value=false;walkVelocity.set(0,0)
+ showShelfTargets()
+ tip.value=shelfDrag.markers?'Գիրքը քաշիր դեպի ոսկեգույն ազատ տեղը։':'Այս դարակում ազատ տեղ չկա։'
 }
 function showShelfTargets(){
  if(!shelfDrag||shelfDrag.markers)return
@@ -97,7 +107,7 @@ function showShelfTargets(){
  shelfDrag.slots=slots;shelfDrag.markers=markers
 }
 function pointerDown(e:PointerEvent){
- if(e.button!==0)return
+ if(e.button!==0||down)return
  host.value?.focus({preventScroll:true});down={x:e.clientX,y:e.clientY,id:e.pointerId,travel:0,dragging:false};renderer?.domElement.setPointerCapture(e.pointerId)
  const hit=pickBook(e.clientX,e.clientY),mesh=hit?.object
  if(!(mesh instanceof THREE.InstancedMesh))return
@@ -105,7 +115,9 @@ function pointerDown(e:PointerEvent){
  for(const [key,animation] of pullouts){if(animation.mesh===mesh){animation.restore();pullouts.delete(key)}}
  if(selectedBook.value?.id===book.id){selectedBook.value=null;selectedCopy=undefined}
  const original=new THREE.Matrix4();mesh.getMatrixAt(0,original)
- shelfDrag={mesh,id:book.id,topic:book.topic,original,slots:[],target:null,travel:0}
+ shelfDrag={mesh,id:book.id,topic:book.topic,original,slots:[],target:null,travel:0,activated:false}
+ clearTimeout(shelfHoldTimer)
+ shelfHoldTimer=setTimeout(()=>{if(down?.id===e.pointerId)activateShelfDrag()},350)
 }
 function pointerMove(e:PointerEvent){
  if(renderer){const rect=renderer.domElement.getBoundingClientRect();hoverPoint=locked.value?new THREE.Vector2(0,0):new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);hoverPosition.value={x:Math.max(12,Math.min(e.clientX-rect.left+18,rect.width-285)),y:Math.max(14,Math.min(e.clientY-rect.top+18,rect.height-170))}}
@@ -114,8 +126,7 @@ function pointerMove(e:PointerEvent){
  if(shelfDrag&&down){
   shelfDrag.travel+=Math.hypot(dx,dy);down.x=e.clientX;down.y=e.clientY
   if(shelfDrag.travel>=6&&renderer){
-   clearTimeout(clickTimer);journey=undefined;touring.value=false
-   showShelfTargets()
+   activateShelfDrag()
    const rect=renderer.domElement.getBoundingClientRect(),point=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1)
    camera.updateMatrixWorld();scene.updateMatrixWorld();raycaster.setFromCamera(point,camera)
    const target=shelfDrag.markers?raycaster.intersectObject(shelfDrag.markers,false)[0]:undefined
@@ -136,17 +147,19 @@ function pointerMove(e:PointerEvent){
 function pointerUp(event:PointerEvent){
  if(shelfDrag){
   const drag=shelfDrag
+  clearTimeout(shelfHoldTimer);shelfHoldTimer=undefined
   if(drag.travel>=6){
    const target=drag.target
    if(target!==null){
     drag.mesh.setMatrixAt(0,shelfBookMatrix(shelfSlot(drag.topic,target)!));placements.value={...placements.value,[drag.id]:target}
-    try{window.localStorage.setItem('factum-library-placements',JSON.stringify(placements.value))}catch{}
+    try{window.localStorage.setItem('factum-library-placements-v2',JSON.stringify(placements.value))}catch{}
     tip.value='Գիրքը տեղափոխվեց ազատ դարակ։'
    }else{drag.mesh.setMatrixAt(0,drag.original);tip.value='Գիրքը դիր ոսկեգույն ազատ տեղում։'}
    drag.mesh.instanceMatrix.needsUpdate=true;drag.mesh.computeBoundingSphere()
    clearShelfDrag();down=undefined;return
   }
   clearShelfDrag()
+  if(drag.activated){down=undefined;tip.value='';return}
  }
  const click=down&&down.id===event.pointerId&&down.travel<6&&event.button===0
  down=undefined
@@ -222,7 +235,20 @@ function safeMove(dx:number,dz:number){
 }
 onMounted(async()=>{
  mobile.value=window.matchMedia('(pointer: coarse)').matches
- try{const stored=JSON.parse(window.localStorage.getItem('factum-library-placements')||'{}');if(stored&&typeof stored==='object'&&!Array.isArray(stored))placements.value=Object.fromEntries(Object.entries(stored).filter(([id,slot])=>typeof id==='string'&&Number.isInteger(slot)&&Number(slot)>=0&&Number(slot)<SLOTS_PER_TOPIC)) as ShelfPlacements}catch{}
+ try{
+  const saved=window.localStorage.getItem('factum-library-placements-v2')
+  const stored=JSON.parse(saved??window.localStorage.getItem('factum-library-placements')??'{}')
+  if(stored&&typeof stored==='object'&&!Array.isArray(stored)){
+   const topics=new Map(props.books.map(book=>[book.id,book.topic]))
+   placements.value=Object.fromEntries(Object.entries(stored).flatMap(([id,slot])=>{
+    const topic=topics.get(id)
+    if(!topic||!Number.isInteger(slot))return []
+    const next=saved===null?migrateLibraryShelfPlacement(topic,Number(slot)):Number(slot)
+    return next!==null&&shelfSlot(topic,next)?[[id,next]]:[]
+   })) as ShelfPlacements
+   if(saved===null)window.localStorage.setItem('factum-library-placements-v2',JSON.stringify(placements.value))
+  }
+ }catch{}
  try{
   // A slow font must not prevent the 3D room from opening.
   await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1500))]);if(disposed||!canvasHost.value)return
@@ -242,7 +268,7 @@ onMounted(async()=>{
   listen(window,'keydown',keyDown as EventListener);listen(window,'keyup',keyUp as EventListener);listen(window,'blur',clearInput)
   listen(document,'visibilitychange',()=>{if(document.hidden)clearInput()})
   listen(document,'pointerlockchange',()=>{locked.value=document.pointerLockElement===renderer?.domElement;if(!locked.value)clearInput()})
-  listen(renderer.domElement,'pointerdown',pointerDown as EventListener);listen(renderer.domElement,'pointermove',pointerMove as EventListener);listen(renderer.domElement,'pointerup',pointerUp as EventListener);listen(renderer.domElement,'pointercancel',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'lostpointercapture',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'pointerleave',()=>{hovered.value=null;hoverPoint=undefined})
+  listen(renderer.domElement,'pointerdown',pointerDown as EventListener);listen(renderer.domElement,'pointermove',pointerMove as EventListener);listen(renderer.domElement,'pointerup',pointerUp as EventListener);listen(renderer.domElement,'pointercancel',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'lostpointercapture',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'pointerleave',()=>{hovered.value=null;hoverPoint=undefined});listen(renderer.domElement,'contextmenu',e=>e.preventDefault())
   listen(renderer.domElement,'dblclick',((event:MouseEvent)=>{event.preventDefault();clearTimeout(clickTimer);approachPoint(event.clientX,event.clientY)}) as EventListener)
   listen(renderer.domElement,'webglcontextlost',e=>{e.preventDefault();failed.value=true;clearInput();emit('error')})
   renderFrame=time=>{
@@ -294,7 +320,7 @@ defineExpose({visit,reset,focusBook})
   <template v-if="!loading&&!failed">
    <div class="hall-badge"><i/>COGNITIO · ԳՐԱԴԱՐԱՆԻ ՄԵԾ ՍՐԱՀ<span>ՍՐԱՀ 01</span></div>
    <div class="hall-top-actions"><button aria-label="Սկզբնական տեսք" title="Սկզբնական տեսք" @click="reset"><RotateCcw :size="17"/></button><button aria-label="Ամբողջ էկրանով" title="Ամբողջ էկրանով" @click="fullscreen"><Expand :size="17"/></button></div>
-   <aside v-if="selectedBook" class="selected-book-panel" aria-label="Դարակից ընտրված գիրքը">
+   <aside v-if="selectedBook" class="selected-book-panel" :style="{'--book-accent':selectedBook.color}" aria-label="Դարակից ընտրված գիրքը">
     <header class="book-panel-heading"><span>COGNITIO · ԳՐԱԴԱՐԱՆ</span><button type="button" class="return-book" aria-label="Փակել և վերադարձնել գիրքը դարակին" @click="closeBook"><X :size="18"/></button></header>
     <div class="book-panel-summary"><div class="book-cover-frame"><img :src="selectedBook.cover" :alt="selectedBook.title"/></div><div class="book-panel-title"><small>{{libraryTopics.find(topic=>topic.id===selectedBook?.topic)?.short}}</small><h2>{{selectedBook.title}}</h2><p>{{selectedBook.author}}</p><span class="book-language">Հայերեն</span></div></div>
     <p class="book-panel-description">{{selectedBook.description}}</p>
@@ -320,4 +346,16 @@ defineExpose({visit,reset,focusBook})
 .book-hover{position:absolute;z-index:4;display:flex;gap:12px;width:270px;padding:13px;border:1px solid #dfc38d88;background:#0d1b29f0;backdrop-filter:blur(15px);border-radius:12px;pointer-events:none;box-shadow:0 12px 35px #0007;color:#eee1c5}.book-hover>img{width:55px;height:82px;object-fit:cover;background:#19212a;border-radius:3px}.book-hover>div{display:flex;flex-direction:column;gap:6px;min-width:0}.book-hover small{font-size:8px;color:#bda26f}.book-hover strong{font-size:12px;line-height:1.6}.book-hover span{font-size:10px;color:#b0c1c8;line-height:1.5}.book-hover em{font-size:8px;font-style:normal;color:#869ba7}
 
 .grand-hall{position:relative;width:100%;height:100%;min-height:580px;background:#1c2023;outline:none;overflow:hidden;isolation:isolate}.grand-hall:focus-visible{box-shadow:inset 0 0 0 2px #d2b77e}.hall-canvas{position:absolute;inset:0;touch-action:none}.hall-canvas :deep(canvas){display:block;width:100%;height:100%}.hall-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:radial-gradient(ellipse at 50% 30%,#384044,#111b26 70%);color:#dfc594;font-size:12px;text-align:center;padding:25px}.hall-loading i{width:90px;height:2px;background:linear-gradient(90deg,transparent,#d7bc87,transparent);animation:loading-pulse 1.8s ease-in-out infinite}.hall-loading strong{font-size:20px}.hall-badge{position:absolute;top:24px;left:25px;display:flex;align-items:center;gap:10px;padding:11px 15px;border:1px solid #fff1c832;background:#0b1924bb;border-radius:24px;backdrop-filter:blur(12px);font-size:9px;letter-spacing:1.5px;color:#ead9b3;pointer-events:none}.hall-badge>i{width:5px;height:5px;border-radius:50%;background:#d8c28f;box-shadow:0 0 9px #d8c28f}.hall-badge>span{border-left:1px solid #ffffff2a;padding-left:12px;font-size:8px;color:#b9c7c6}.hall-top-actions{position:absolute;right:20px;top:22px;display:flex;gap:8px}.hall-top-actions button{display:grid;place-items:center;width:36px;height:36px;border:1px solid #ffffff36;background:#0b1924b8;border-radius:50%;color:#eddfc2;backdrop-filter:blur(8px)}.hall-bottom{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:30px 25px 22px;background:linear-gradient(transparent,#091522e8);pointer-events:none}.hall-instructions{display:flex;align-items:center;gap:10px;font-size:10px;color:#f2e8d0;text-shadow:0 1px 4px #000}.hall-buttons{display:flex;gap:9px;pointer-events:auto}.hall-buttons button{display:flex;align-items:center;gap:8px;padding:12px 17px;background:#0d1c28be;border:1px solid #d5be8a70;border-radius:9px;color:#f1dfb9;font-size:11px;backdrop-filter:blur(8px)}.hall-buttons .enter-button{background:linear-gradient(130deg,#e8d1a5,#c5a36b);color:#152334;border-color:#ebd2a4}.hall-crosshair{position:absolute;left:50%;top:50%;width:5px;height:5px;background:#fff8da;border-radius:50%;box-shadow:0 0 3px #000;pointer-events:none}.tour-status{position:absolute;top:78px;left:27px;padding:9px 13px;color:#fff3d1;background:#0b1924b8;border-radius:8px;font-size:10px;pointer-events:none}.hall-tip{position:absolute;bottom:88px;left:25px;font-size:11px;color:#fff1d0;background:#152333d9;padding:9px;border-radius:8px}.touch-joystick{position:absolute;left:22px;bottom:105px;width:98px;height:98px;border:1px solid #eedab566;border-radius:50%;background:#0b19243d;backdrop-filter:blur(4px);touch-action:none;user-select:none}.touch-joystick>span{position:absolute;left:28px;top:28px;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#ead6ad,#ac8858);border:1px solid #fff3d599;box-shadow:0 4px 14px #0005;pointer-events:none}.touch-joystick>svg{position:absolute;color:#e8d7ad88;pointer-events:none}.joy-up{left:42px;top:6px}.joy-down{left:42px;bottom:6px}.joy-left{top:42px;left:6px}.joy-right{top:42px;right:6px}.grand-hall:fullscreen{height:100vh}.hall-top-actions button:focus-visible,.hall-buttons button:focus-visible{outline:2px solid #f1d6a0;outline-offset:3px}@keyframes loading-pulse{50%{opacity:.25;transform:scaleX(.6)}}@media(max-width:700px){.grand-hall{min-height:580px}.hall-badge{left:13px;top:16px;letter-spacing:.5px;font-size:7px;padding:10px}.hall-badge>span{display:none}.hall-top-actions{right:12px;top:13px}.hall-bottom{flex-direction:column-reverse;align-items:flex-end;padding:30px 13px 16px}.hall-instructions{font-size:8px;max-width:100%;line-height:1.8}.hall-buttons button{font-size:10px;padding:10px 12px}.hall-tip{left:12px;right:12px;bottom:78px;font-size:9px}.tour-status{top:64px;left:13px}}@media(prefers-reduced-motion:reduce){.hall-loading i{animation:none}}
+
+/* A firm cover and narrow spine, with the image filling the board. */
+.book-cover-frame{position:relative;overflow:hidden;border:2px solid color-mix(in srgb,var(--book-accent) 60%,#152234);border-left-width:9px;border-radius:3px 6px 6px 3px;background:#142231;box-shadow:-3px 0 0 #091522,8px 14px 22px #000a,inset -2px 0 #ffffff22}
+.book-cover-frame::before{content:'';position:absolute;z-index:2;top:0;bottom:0;left:0;width:7px;background:linear-gradient(90deg,#000a,color-mix(in srgb,var(--book-accent) 48%,#152234) 55%,#ffffff36 85%,transparent);box-shadow:1px 0 2px #0009;pointer-events:none}
+.book-cover-frame img{display:block;object-fit:cover;border-radius:0 2px 2px 0;filter:none}
+.book-panel-title{align-self:stretch;flex:1;padding:10px 12px;border:1px solid #ffffff19;border-radius:9px;background:#061421}
+.book-panel-title small{color:#c8d5df;font-weight:650}
+.book-panel-title h2{font-weight:800;color:#fff;line-height:1.5;text-shadow:0 1px 2px #000}
+.book-panel-title p{font-size:13px;font-weight:650;color:#f1f5f8}
+.book-hover{background:#061421f7}
+.book-hover strong{font-weight:800;color:#fff;text-shadow:0 1px 2px #000}
+.book-hover span{font-weight:650;color:#f1f5f8}
 </style>

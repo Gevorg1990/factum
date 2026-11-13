@@ -15,7 +15,7 @@ const visibleEntries=computed(()=>{
 })
 const isObject=computed(()=>props.modelValue!==null&&typeof props.modelValue==='object'&&!Array.isArray(props.modelValue))
 const label=computed(()=>fieldLabels[props.field||'']||'Լրացուցիչ տեղեկություն')
-const hint=computed(()=>props.kind?.startsWith('GEO_')&&props.field==='location'?'Օբյեկտի երկիրը կամ աշխարհագրական տարածքը։':props.kind?.startsWith('GEO_')&&props.field==='detail'?'Գրիր ստուգված բացատրությունը և անհրաժեշտ վերապահումները։':fieldHints[props.field||''])
+const hint=computed(()=>props.kind==='BOOK'&&props.field==='topic'?'Ընտրիր գրքի հիմնական ժանրը․ պոեմը և բանաստեղծությունների ժողովածուն տարբեր բաժիններ են։':props.kind?.startsWith('GEO_')&&props.field==='location'?'Օբյեկտի երկիրը կամ աշխարհագրական տարածքը։':props.kind?.startsWith('GEO_')&&props.field==='detail'?'Գրիր ստուգված բացատրությունը և անհրաժեշտ վերապահումները։':fieldHints[props.field||''])
 const longFields=new Set(['text','detail','answer','bio','explanation','description','significance','example','takeaway','intro','body','hint','statement','question'])
 const numberFields=new Set(['openedYear','installedYear','slot','index','sortOrder','longitude','latitude','dataYear'])
 const imageFields=new Set(['cover','portrait','image','src','preview'])
@@ -56,7 +56,7 @@ function add(){
   </div>
   <label v-else-if="typeof modelValue==='boolean'" class="boolean-field"><input type="checkbox" :checked="modelValue" @change="emit('update:modelValue',($event.target as HTMLInputElement).checked)"><span><strong>{{label}}</strong><small v-if="hint">{{hint}}</small></span></label>
   <div v-else class="cms-field">
-    <label v-if="field!=='arrayText'" :for="fieldId" class="field-label">{{label}} <span v-if="requiredFields.includes(field||'')" class="required-dot">*</span><span v-else class="optional-label">ոչ պարտադիր</span></label>
+    <label v-if="field!=='arrayText'" :for="fieldId" class="field-label">{{kind==='BOOK'&&field==='topic'?'Գրքի բաժին':label}} <span v-if="requiredFields.includes(field||'')" class="required-dot">*</span><span v-else class="optional-label">ոչ պարտադիր</span></label>
     <AdminReferenceField v-if="kind==='GEO_ENTRY'&&field==='category'" :model-value="modelValue" kind="GEO_CATEGORY" label="Աշխարհագրական թեմա" :area="geographyArea" :required="true" placeholder="Ընտրիր աշխարհագրական բաժինը" @update:model-value="emit('update:modelValue',$event||'')"/>
     <AdminReferenceField v-else-if="field==='subject'||field==='personId'||(field==='category'&&kind==='FACT')" :model-value="modelValue" :kind="field==='subject'?'CATEGORY':field==='category'?'FACT_CATEGORY':'PERSON'" :required="requiredFields.includes(field||'')" :disabled="disabledFields.includes(field||'')" :placeholder="field==='subject'?'Ընտրիր հոդվածի բաժինը':field==='category'?'Ընտրիր փաստի թեման':'Ընտրիր մարդուն'" @update:model-value="emit('update:modelValue',$event||'')"/>
     <LazyAdminVideoField v-else-if="field==='cardVideo'" :model-value="modelValue" @update:model-value="emit('update:modelValue',$event)"/>

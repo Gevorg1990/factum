@@ -1,8 +1,9 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import * as THREE from 'three'
 import {libraryBooks,libraryTopics} from '../data/library/catalog'
-import {libraryShelfEntries,shelfSlot} from '../utils/library/shelfCatalog'
+import {libraryShelfEntries,shelfSlot,migrateLibraryShelfPlacement} from '../utils/library/shelfCatalog'
 import {createLibraryRoom,shelfBookMatrix} from '../utils/library/createRoom'
 import {constrainPosition,shelfPoint,ROOM_RADIUS,MAX_WALK_RADIUS,isWalkablePoint,EYE_HEIGHT,findWalkPath,clearWalkSegment,smoothJourneyProgress} from '../utils/library/navigation'
 
@@ -15,6 +16,18 @@ test('walking stays in the hall and outside the central reading desk',()=>{
  for(let i=0;i<4;i++){
   const shelf=shelfPoint(i,13.8),safe=constrainPosition(shelf.x,shelf.z)
   assert.ok(Math.abs(safe.x-shelf.x)<.001&&Math.abs(safe.z-shelf.z)<.001)
+ }
+})
+
+test('books stay inserted with their spines facing the room',()=>{
+ for(const topic of libraryTopics){
+  const matrix=shelfBookMatrix(shelfSlot(topic.id,0)!)
+  const position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3()
+  matrix.decompose(position,rotation,scale)
+  const spineNormal=new THREE.Vector3(0,0,1).applyQuaternion(rotation)
+  assert.ok(spineNormal.dot(new THREE.Vector3(-position.x,0,-position.z).normalize())>.95)
+  assert.ok(Math.abs(scale.x-.25)<1e-6)
+  assert.ok(Math.abs(scale.z-.55)<1e-6)
  }
 })
 
@@ -89,6 +102,25 @@ test('CMS detective and novel books occupy separate slots on their shared bay',(
  assert.equal(entries.length,2);assert.equal(entries[0]!.bay,entries[1]!.bay);assert.notEqual(entries[0]!.lateral,entries[1]!.lateral)
 })
 
+test('new book subjects have distinct identifiers, valid bays and usable CMS shelf slots',()=>{
+ assert.equal(new Set(libraryTopics.map(topic=>topic.id)).size,libraryTopics.length)
+ assert.equal(new Set(libraryTopics.map(topic=>topic.shelf)).size,libraryTopics.length)
+ for(const topic of libraryTopics){
+  const slot=shelfSlot(topic.id,0)
+  assert.ok(slot,topic.id)
+  assert.ok(slot.bay>=0&&slot.bay<8,topic.id)
+  assert.ok(Math.abs(slot.lateral)<5.4,topic.id)
+ }
+ for(const topic of ['psychology','science-fiction','fantasy','philosophy'])assert.ok(libraryTopics.some(item=>item.id===topic))
+})
+
+test('all bundled and importable books match their literary subject',()=>{
+ const expected:Record<string,string>={gikor:'prose','qaj-nazar':'tales','sasuntsi-davit':'poetry',cinderella:'tales','hansel-gretel':'tales','little-match-girl':'tales'}
+ const imported=JSON.parse(readFileSync(new URL('../scripts/library-import/selection.json',import.meta.url),'utf8')) as {key:string;data:{topic:string}}[]
+ for(const book of libraryBooks)assert.equal(book.topic,expected[book.id],book.id)
+ for(const book of imported)assert.equal(book.data.topic,expected[book.key],book.key)
+})
+
 test('a book can occupy a free slot in its own subject while other books retain their places',()=>{
  const books=[libraryBooks[0]!,{...libraryBooks[0]!,id:'another-prose'},{...libraryBooks[1]!}]
  const before=libraryShelfEntries(books)
@@ -97,7 +129,9 @@ test('a book can occupy a free slot in its own subject while other books retain 
  assert.equal(after.find(entry=>entry.book.id==='another-prose')?.slot,0)
  assert.equal(after.find(entry=>entry.book.id==='qaj-nazar')?.slot,before.find(entry=>entry.book.id==='qaj-nazar')?.slot)
  assert.equal(shelfSlot('prose',36)?.row,1)
- assert.equal(shelfSlot('tales',36)?.row,1)
+ assert.equal(shelfSlot('tales',36)?.row,2)
+ assert.equal(migrateLibraryShelfPlacement('tales',36),18)
+ assert.equal(migrateLibraryShelfPlacement('novels',18),12)
  assert.equal(shelfSlot('missing',0),null)
  assert.notDeepEqual(shelfBookMatrix(after[0]!).elements,shelfBookMatrix(before[0]!).elements)
 })

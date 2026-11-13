@@ -23,8 +23,8 @@ export function getSearchTerms(query: string): string[] {
   const selected = meaningful.length ? meaningful : words.filter(word => word.length > 1)
 
   return [...new Set(selected.map(word => {
-    // Armenian definite article, e.g. «մոլեկուլը» -> «մոլեկուլ».
-    if (word.length > 4 && /[ըն]$/u.test(word)) return word.slice(0, -1)
-    return word
+    // Common case endings let an inflected query find the same word stem.
+    const ending = ['ներից', 'ներում', 'ների', 'ներով', 'ները', 'ներին', 'ության', 'ությամբ', 'ությանց', 'ից', 'ում', 'ին', 'ով', 'ներ', 'ը'].find(suffix => word.endsWith(suffix) && word.length - suffix.length >= 4)
+    return ending ? word.slice(0, -ending.length) : word
   }))]
 }
