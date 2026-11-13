@@ -23,6 +23,7 @@ let renderFrame:((time:number)=>void)|undefined
 let renderer:THREE.WebGLRenderer|undefined,camera:THREE.PerspectiveCamera,scene:THREE.Scene,observer:ResizeObserver,intersection:IntersectionObserver
 const raycaster=new THREE.Raycaster(),floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0)
 let clickTimer:ReturnType<typeof setTimeout>|undefined
+let shelfHoldTimer:ReturnType<typeof setTimeout>|undefined
 let destinationMarker:THREE.Mesh|undefined,markerUntil=0
 let visible=true,disposed=false,last=0,yaw=0,pitch=initialView.pitch,targetHeight=EYE_HEIGHT,keys=new Set<string>(),lookAt:THREE.Vector3|undefined
 let journey:{points:THREE.Vector3[];lengths:number[];total:number;started:number;duration:number;height:number;onArrive?:()=>void}|undefined
@@ -30,7 +31,7 @@ const walkVelocity=new THREE.Vector2()
 let hoverMesh:THREE.Object3D|undefined
 let bookObjects:BookObject[]=[],pickableBooks:THREE.Object3D[]=[],hoverPoint:THREE.Vector2|undefined,lastHover=0
 const placements=ref<ShelfPlacements>({})
-let shelfDrag:{mesh:THREE.InstancedMesh;id:string;topic:string;original:THREE.Matrix4;markers?:THREE.InstancedMesh;slots:number[];target:number|null;travel:number}|undefined
+let shelfDrag:{mesh:THREE.InstancedMesh;id:string;topic:string;original:THREE.Matrix4;markers?:THREE.InstancedMesh;slots:number[];target:number|null;travel:number;activated:boolean}|undefined
 let colliders:{x:number;z:number;r:number}[]=[],down:{x:number;y:number;id:number;travel:number;dragging:boolean}|undefined,joyId:number|undefined,joyOrigin={x:0,y:0},cleanup:(()=>void)[]=[]
 function enter(){walking.value=true;targetHeight=EYE_HEIGHT;host.value?.focus({preventScroll:true})}
 function reset(){closeBook();keys.clear();journey=undefined;walkVelocity.set(0,0);touring.value=false;walking.value=false;targetHeight=EYE_HEIGHT;camera?.position.set(initialView.x,EYE_HEIGHT,initialView.z);yaw=0;pitch=initialView.pitch;lookAt=undefined;joystick.value={x:0,y:0};document.exitPointerLock?.()}
@@ -66,12 +67,21 @@ watch(()=>props.paused,value=>{if(value){clearInput();renderer?.setAnimationLoop
 function keyUp(e:KeyboardEvent){keys.delete(e.code)}
 function clearInput(){cancelShelfDrag();journey=undefined;touring.value=false;hovered.value=null;hoverPoint=undefined;walkVelocity.set(0,0);keys.clear();joystick.value={x:0,y:0};joyId=undefined;down=undefined}
 function clearShelfDrag(){
+ clearTimeout(shelfHoldTimer);shelfHoldTimer=undefined
  if(!shelfDrag)return
  if(shelfDrag.markers){scene.remove(shelfDrag.markers);shelfDrag.markers.geometry.dispose();const material=shelfDrag.markers.material as THREE.MeshBasicMaterial;material.map?.dispose();material.dispose()}
  shelfDrag=undefined
 }
 function cancelShelfDrag(){
  if(shelfDrag){shelfDrag.mesh.setMatrixAt(0,shelfDrag.original);shelfDrag.mesh.instanceMatrix.needsUpdate=true;shelfDrag.mesh.computeBoundingSphere();clearShelfDrag()}
+}
+function activateShelfDrag(){
+ if(!shelfDrag||shelfDrag.activated)return
+ shelfDrag.activated=true
+ clearTimeout(clickTimer)
+ journey=undefined;touring.value=false;walkVelocity.set(0,0)
+ showShelfTargets()
+ tip.value=shelfDrag.markers?'Գիրքը քաշիր դեպի ոսկեգույն ազատ տեղը։':'Այս դարակում ազատ տեղ չկա։'
 }
 function showShelfTargets(){
  if(!shelfDrag||shelfDrag.markers)return
@@ -97,7 +107,7 @@ function showShelfTargets(){
  shelfDrag.slots=slots;shelfDrag.markers=markers
 }
 function pointerDown(e:PointerEvent){
- if(e.button!==0)return
+ if(e.button!==0||down)return
  host.value?.focus({preventScroll:true});down={x:e.clientX,y:e.clientY,id:e.pointerId,travel:0,dragging:false};renderer?.domElement.setPointerCapture(e.pointerId)
  const hit=pickBook(e.clientX,e.clientY),mesh=hit?.object
  if(!(mesh instanceof THREE.InstancedMesh))return
@@ -105,7 +115,9 @@ function pointerDown(e:PointerEvent){
  for(const [key,animation] of pullouts){if(animation.mesh===mesh){animation.restore();pullouts.delete(key)}}
  if(selectedBook.value?.id===book.id){selectedBook.value=null;selectedCopy=undefined}
  const original=new THREE.Matrix4();mesh.getMatrixAt(0,original)
- shelfDrag={mesh,id:book.id,topic:book.topic,original,slots:[],target:null,travel:0}
+ shelfDrag={mesh,id:book.id,topic:book.topic,original,slots:[],target:null,travel:0,activated:false}
+ clearTimeout(shelfHoldTimer)
+ shelfHoldTimer=setTimeout(()=>{if(down?.id===e.pointerId)activateShelfDrag()},350)
 }
 function pointerMove(e:PointerEvent){
  if(renderer){const rect=renderer.domElement.getBoundingClientRect();hoverPoint=locked.value?new THREE.Vector2(0,0):new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);hoverPosition.value={x:Math.max(12,Math.min(e.clientX-rect.left+18,rect.width-285)),y:Math.max(14,Math.min(e.clientY-rect.top+18,rect.height-170))}}
@@ -114,8 +126,7 @@ function pointerMove(e:PointerEvent){
  if(shelfDrag&&down){
   shelfDrag.travel+=Math.hypot(dx,dy);down.x=e.clientX;down.y=e.clientY
   if(shelfDrag.travel>=6&&renderer){
-   clearTimeout(clickTimer);journey=undefined;touring.value=false
-   showShelfTargets()
+   activateShelfDrag()
    const rect=renderer.domElement.getBoundingClientRect(),point=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1)
    camera.updateMatrixWorld();scene.updateMatrixWorld();raycaster.setFromCamera(point,camera)
    const target=shelfDrag.markers?raycaster.intersectObject(shelfDrag.markers,false)[0]:undefined
@@ -136,6 +147,7 @@ function pointerMove(e:PointerEvent){
 function pointerUp(event:PointerEvent){
  if(shelfDrag){
   const drag=shelfDrag
+  clearTimeout(shelfHoldTimer);shelfHoldTimer=undefined
   if(drag.travel>=6){
    const target=drag.target
    if(target!==null){
@@ -147,6 +159,7 @@ function pointerUp(event:PointerEvent){
    clearShelfDrag();down=undefined;return
   }
   clearShelfDrag()
+  if(drag.activated){down=undefined;tip.value='';return}
  }
  const click=down&&down.id===event.pointerId&&down.travel<6&&event.button===0
  down=undefined
@@ -242,7 +255,7 @@ onMounted(async()=>{
   listen(window,'keydown',keyDown as EventListener);listen(window,'keyup',keyUp as EventListener);listen(window,'blur',clearInput)
   listen(document,'visibilitychange',()=>{if(document.hidden)clearInput()})
   listen(document,'pointerlockchange',()=>{locked.value=document.pointerLockElement===renderer?.domElement;if(!locked.value)clearInput()})
-  listen(renderer.domElement,'pointerdown',pointerDown as EventListener);listen(renderer.domElement,'pointermove',pointerMove as EventListener);listen(renderer.domElement,'pointerup',pointerUp as EventListener);listen(renderer.domElement,'pointercancel',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'lostpointercapture',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'pointerleave',()=>{hovered.value=null;hoverPoint=undefined})
+  listen(renderer.domElement,'pointerdown',pointerDown as EventListener);listen(renderer.domElement,'pointermove',pointerMove as EventListener);listen(renderer.domElement,'pointerup',pointerUp as EventListener);listen(renderer.domElement,'pointercancel',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'lostpointercapture',()=>{cancelShelfDrag();down=undefined});listen(renderer.domElement,'pointerleave',()=>{hovered.value=null;hoverPoint=undefined});listen(renderer.domElement,'contextmenu',e=>e.preventDefault())
   listen(renderer.domElement,'dblclick',((event:MouseEvent)=>{event.preventDefault();clearTimeout(clickTimer);approachPoint(event.clientX,event.clientY)}) as EventListener)
   listen(renderer.domElement,'webglcontextlost',e=>{e.preventDefault();failed.value=true;clearInput();emit('error')})
   renderFrame=time=>{
