@@ -1,7 +1,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   // Production builds must not replace a running dev server's generated aliases.
-  $production: { buildDir: '.nuxt-build' },
+  $production: { buildDir: process.env.VERCEL ? '.nuxt' : '.nuxt-build' },
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
   // Production build files must not invalidate the live reader in Vite dev.
   vite: { server: { watch: { ignored: ['**/.nuxt-build/**', '**/.output/**'] } } },
