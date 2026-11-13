@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Brain, UserRound, Menu, X } from 'lucide-vue-next'
+import { Brain, UserRound, Menu, X, House, BookOpen, Atom, Globe2, BookMarked, LibraryBig } from 'lucide-vue-next'
 import { SAVE_ANIMATION_EVENT, animateSaveFlight, type SaveAnimationDetail, type SaveFlight } from '~/utils/saveAnimation'
-const nav=[['/','Գլխավոր'],['/subjects','Հանրագիտարան'],['/periodic-table','Մենդելեևի աղյուսակ'],['/globe','Երկրագունդ'],['/bible','Աստվածաշունչ']]
+const nav=[{to:'/',label:'Գլխավոր',icon:House,color:'#efc984'},{to:'/subjects',label:'Հանրագիտարան',icon:BookOpen,color:'#82c6eb'},{to:'/periodic-table',label:'Մենդելեևի աղյուսակ',icon:Atom,color:'#b2a2f4'},{to:'/globe',label:'Երկրագունդ',icon:Globe2,color:'#83d5b6'},{to:'/bible',label:'Աստվածաշունչ',icon:BookMarked,color:'#edb48a'},{to:'/library',label:'Գրադարան',icon:LibraryBig,color:'#d9b783'}]
 const mobile=ref(false)
 function menuBeforeEnter(element: Element) { (element as HTMLElement).style.height = '0px' }
 function menuEnter(element: Element) {
@@ -58,13 +58,19 @@ onUnmounted(() => {
 </script>
 <template>
 <header class="factum-header"><div class="header-inner">
-<NuxtLink to="/" class="brand" aria-label="FACTUM գլխավոր էջ"><span class="brand-icon"><Brain :size="38" :stroke-width="1.4"/></span><span><strong>FACTUM</strong><small>ԳԻՏԵԼԻՔԻ ԱՇԽԱՐՀ</small></span></NuxtLink>
-<nav class="desktop-nav" aria-label="Հիմնական նավիգացիա"><NuxtLink v-for="item in nav" :key="item[0]" :to="item[0]" active-class="nav-active">{{item[1]}}</NuxtLink></nav>
-<div class="header-actions"><NuxtLink to="/profile" aria-label="Իմ FACTUM-ը" data-save-target class="sign-in" :class="{ 'save-pulse': savePulse }"><UserRound :size="17"/> Իմ FACTUM-ը<span v-if="savePulse" class="save-sparkle" aria-hidden="true">✦</span></NuxtLink><span class="sr-only" role="status">{{ savePulse ? 'Ավելացվեց Իմ FACTUM-ում' : '' }}</span><button class="mobile-menu" :aria-label="mobile ? 'Փակել ընտրացանկը' : 'Բացել ընտրացանկը'" :aria-expanded="mobile" aria-controls="mobile-site-nav" @click="mobile=!mobile"><X v-if="mobile"/><Menu v-else/></button></div>
-</div><Transition name="mobile-nav" @before-enter="menuBeforeEnter" @enter="menuEnter" @after-enter="menuAfterEnter" @before-leave="menuBeforeLeave" @leave="menuLeave"><div v-if="mobile" id="mobile-site-nav" class="mobile-nav-collapse"><div class="mobile-nav-clip"><nav class="mobile-nav" aria-label="Մոբայլ նավիգացիա"><NuxtLink v-for="item in nav" :key="item[0]" :to="item[0]" @click="mobile=false">{{item[1]}}</NuxtLink></nav></div></div></Transition></header>
+<NuxtLink to="/" class="brand" aria-label="COGNITIO գլխավոր էջ"><span class="brand-icon"><Brain :size="38" :stroke-width="1.4"/></span><span><strong>COGNITIO</strong><small>ԳԻՏԵԼԻՔԻ ԱՇԽԱՐՀ</small></span></NuxtLink>
+<nav class="desktop-nav" aria-label="Հիմնական նավիգացիա"><NuxtLink v-for="(item,i) in nav" :key="item.to" :to="item.to" class="sculpture-link" :aria-label="item.label" :style="{'--icon-color':item.color,'--spin-delay':`${i*-3}s`}" active-class="nav-active"><NavSculpture :icon="item.icon"/><span class="nav-tooltip">{{item.label}}</span></NuxtLink></nav>
+<div class="header-actions"><NuxtLink to="/profile" aria-label="Իմ COGNITIO-ը" data-save-target class="sign-in" :class="{ 'save-pulse': savePulse }"><UserRound :size="17"/> Իմ COGNITIO-ը<span v-if="savePulse" class="save-sparkle" aria-hidden="true">✦</span></NuxtLink><span class="sr-only" role="status">{{ savePulse ? 'Ավելացվեց Իմ COGNITIO-ում' : '' }}</span><button class="mobile-menu" :aria-label="mobile ? 'Փակել ընտրացանկը' : 'Բացել ընտրացանկը'" :aria-expanded="mobile" aria-controls="mobile-site-nav" @click="mobile=!mobile"><X v-if="mobile"/><Menu v-else/></button></div>
+</div><Transition name="mobile-nav" @before-enter="menuBeforeEnter" @enter="menuEnter" @after-enter="menuAfterEnter" @before-leave="menuBeforeLeave" @leave="menuLeave"><div v-if="mobile" id="mobile-site-nav" class="mobile-nav-collapse"><div class="mobile-nav-clip"><nav class="mobile-nav" aria-label="Մոբայլ նավիգացիա"><NuxtLink v-for="(item,i) in nav" :key="item.to" :to="item.to" class="sculpture-link" :aria-label="item.label" :style="{'--icon-color':item.color,'--spin-delay':`${i*-3}s`}" @click="mobile=false"><NavSculpture :icon="item.icon"/><span class="nav-tooltip">{{item.label}}</span></NuxtLink></nav></div></div></Transition></header>
 </template>
 
 <style scoped>
+
+:global(html:not(.factum-light)) .factum-header{background:linear-gradient(180deg,#080e1e70,#080e1e45);border-bottom-color:#a7bfdf24}
+:global(html.factum-light) .factum-header{background:#ffffffa6}
+.factum-header{-webkit-backdrop-filter:blur(9px) saturate(115%);backdrop-filter:blur(9px) saturate(115%)}
+.desktop-nav{gap:22px}.sculpture-link{position:relative;display:grid;place-items:center;width:68px;height:66px;isolation:isolate;color:var(--icon-color);border-radius:16px}.sculpture-link:focus-visible{outline:2px solid var(--icon-color);outline-offset:2px}.desktop-nav .sculpture-link.nav-active::after{left:28px;right:28px;bottom:0;height:3px;border-radius:3px;background:var(--icon-color)}.nav-tooltip{position:absolute;top:calc(100% + 9px);left:50%;transform:translateX(-50%);opacity:0;visibility:hidden;pointer-events:none;background:#0a172bf0;border:1px solid #d6bb8140;border-radius:10px;color:#f1e4cb;padding:9px 13px;font-size:11px;white-space:nowrap;z-index:5}.sculpture-link:hover .nav-tooltip,.sculpture-link:focus-visible .nav-tooltip{opacity:1;visibility:visible}.mobile-nav{justify-content:center;gap:8px;background:#06142a55;padding-bottom:34px}.mobile-nav .nav-tooltip{top:auto;bottom:-20px;font-size:9px;white-space:normal;text-align:center;max-width:115px;padding:5px}.mobile-nav .sculpture-link{width:56px;height:60px}@media(max-width:1000px) and (min-width:801px){.desktop-nav{gap:5px}.sculpture-link{width:53px}}
+
 .factum-header { position: sticky; top: 0; z-index: 60; isolation: isolate; }
 @media (max-width: 800px) {
   .factum-header { padding-top: env(safe-area-inset-top, 0px); }

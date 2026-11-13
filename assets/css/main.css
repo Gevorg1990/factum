@@ -1282,13 +1282,17 @@ html:not(.factum-light) .encyclopedia-subject-hero { border-color: var(--night-b
 /* Shared gold focus state for form fields in both themes. */
 html .factum-app :is(input, textarea, select):focus {
   outline: none;
-  border-color: #f4c46c;
-  box-shadow: none;
+  border-color: #d9bd87;
+  box-shadow: 0 0 12px #d9bd871c;
 }
-html .factum-app .hero-search:focus-within,
-html .factum-app .periodic-search:focus-within {
+html .factum-app :is(.hero-search, .periodic-search, .catalog-search, .auth-input-wrap):focus-within {
   outline: none;
-  border-color: #f4c46c;
+  border-color: #d9bd87;
+  box-shadow: 0 0 12px #d9bd871c;
+}
+html .factum-app :is(.hero-search, .periodic-search, .catalog-search, .auth-input-wrap) :is(input, select):focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .saved-destination { scroll-margin-top: 24px; }
@@ -1438,3 +1442,67 @@ html select:not([multiple]):not([size]) {
   background-size: 14px 14px !important;
   background-repeat: no-repeat !important;
 }
+
+/* Shared button feedback preserves each section's colours and button geometry. */
+:where(.factum-app) :where(button, .btn, .btn-secondary, .sign-in) {
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, filter .16s ease;
+}
+:where(.factum-app) :where(button, .btn, .btn-secondary, .sign-in):not(:disabled):not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  :where(.factum-app) :where(button, .btn, .btn-secondary, .sign-in):not(:disabled):not([aria-disabled="true"]):not(:where(nav button[aria-pressed="true"], [role="tab"][aria-selected="true"], .is-active, .active)):hover {
+    filter: brightness(1.12);
+    outline: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+    outline-offset: 2px;
+  }
+  :where(.factum-app) .btn:not(:disabled):not([aria-disabled="true"]):hover {
+    color: #071327;
+  }
+}
+:where(.factum-app) :where(button, .btn, .btn-secondary, .sign-in):not(:disabled):not([aria-disabled="true"]):active {
+  filter: brightness(.94);
+}
+:where(.factum-app) :where(button, .btn, .btn-secondary, .sign-in):not(:disabled):not([aria-disabled="true"]):focus-visible {
+  outline: 2px solid #d9bd87;
+  outline-offset: -2px;
+}
+:where(.factum-app) button:disabled,
+:where(.factum-app) [aria-disabled="true"] {
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.factum-app) :where(button, .btn, .btn-secondary, .sign-in) { transition: none; }
+}
+
+/* Small icon controls stay quiet; labelled action buttons keep full feedback. */
+@media (hover: hover) and (pointer: fine) {
+  :where(.factum-app) :where(article, .panel, .bookmark-list, .reading-chunk, .reader-tools, .reader-window-actions, .reader-personal-tools, .profile-categories, .personal-library-tabs)
+    :where(button[aria-label]:not(:has(> span, > strong))):not(:disabled):not([aria-disabled="true"]):not(:focus-visible):hover {
+    outline: none;
+    filter: brightness(1.06);
+  }
+}
+
+/* Saving controls preview a softer version of their selected accent. */
+.save-control{--save-active:#f4c46c;--save-hover:color-mix(in srgb,var(--save-active) 72%,#a9bbd4)}
+.catalog-favorite.save-control{--save-active:#e3bd79}
+.book-save-action.save-control{--save-active:#f0d49c}
+.reader-personal-tools .save-control{--save-active:#e2bb77}
+@media(hover:hover) and (pointer:fine){
+ html .factum-app button.save-control:not(:disabled):not([aria-disabled="true"]):hover{color:var(--save-hover);filter:none;outline:none}
+}
+
+@media(hover:hover) and (pointer:fine){
+ html .factum-app .text-action:not(:disabled):not([aria-disabled="true"]):not(:focus-visible):hover{color:#f2d49f;filter:none;outline:none}
+}
+.text-action{transition:color .16s ease}
+@media(prefers-reduced-motion:reduce){.text-action{transition:none}}
+
+.save-control:has(>svg){display:inline-flex;align-items:center;gap:7px}
+.save-control>svg{transition:fill .16s ease,stroke .16s ease}
+@media(hover:hover) and (pointer:fine){
+ html .factum-app button.save-control:not(:disabled):not([aria-disabled="true"]):hover>svg{fill:var(--save-hover);stroke:var(--save-hover)}
+}
+@media(prefers-reduced-motion:reduce){.save-control>svg{transition:none}}

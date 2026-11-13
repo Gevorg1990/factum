@@ -18,7 +18,7 @@ const isSaved = computed(() => saved.value.includes(bookmarkId.value))
     <button type="button" class="btn-secondary" :disabled="disabled" :aria-pressed="isSaved" :class="{ 'is-saved': isSaved }" @click="!disabled && toggleSaved(bookmarkId, $event)">
       <Check v-if="isSaved" :size="16" />
       <Bookmark v-else :size="16" />
-      {{ isSaved ? 'Պահպանված է Իմ FACTUM-ում' : 'Պահպանել Իմ FACTUM-ում' }}
+      {{ isSaved ? 'Պահպանված է Իմ COGNITIO-ում' : 'Պահպանել Իմ COGNITIO-ում' }}
     </button>
     <p>{{ disabled ? 'Պատասխանիր հարցին՝ պահպանելու համար։' : 'Հարցը պահպանվում է ճիշտ պատասխանով և բացատրությամբ։' }}</p>
   </div>

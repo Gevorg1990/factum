@@ -60,9 +60,9 @@ async function askQuestion() {
 
 <template>
   <div class="factum-ai-widget">
-    <section v-if="isOpen" class="factum-ai-panel" aria-label="FACTUM AI օգնական">
+    <section v-if="isOpen" class="factum-ai-panel" aria-label="COGNITIO AI օգնական">
       <header class="factum-ai-panel-header">
-        <span class="factum-ai-panel-heading"><Sparkles :size="19" /> FACTUM AI</span>
+        <span class="factum-ai-panel-heading"><Sparkles :size="19" /> COGNITIO AI</span>
         <button type="button" class="factum-ai-close" aria-label="Փակել AI օգնականը" @click="isOpen = false">
           <X :size="20" />
         </button>
@@ -93,7 +93,7 @@ async function askQuestion() {
     </section>
 
     <button v-if="!isOpen" type="button" class="factum-ai-trigger" :aria-expanded="isOpen"
-            aria-label="Բացել FACTUM AI որոնումը" @click="isOpen = !isOpen">
+            aria-label="Բացել COGNITIO AI որոնումը" @click="isOpen = !isOpen">
       <Bot :size="27" />
     </button>
   </div>

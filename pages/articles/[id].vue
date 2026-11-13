@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {Star} from 'lucide-vue-next'
 import { allEncyclopediaQuestions, subjects, collectionSubjects } from '~/data/content'
 import { atomFacts, atomParticles, atomSections } from '~/data/atomArticle'
 
@@ -23,7 +24,7 @@ onMounted(() => {
   if (question) markRead(question.id)
 })
 
-useHead({ title: `${question?.title || 'Նյութ'} — FACTUM` })
+useHead({ title: `${question?.title || 'Նյութ'} — COGNITIO` })
 useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefined)
 </script>
 
@@ -36,7 +37,7 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
     <article v-if="question" id="saved-article" tabindex="-1" class="panel mt-5 atom-article saved-destination">
       <div class="atom-article-intro">
         <div>
-          <p class="gold text-sm mb-3">FACTUM · {{ subject?.name }}</p>
+          <p class="gold text-sm mb-3">COGNITIO · {{ subject?.name }}</p>
           <h1 class="heading">{{ question.title }}</h1>
           <p class="atom-article-lead">{{ question.answer }}</p>
           <p v-if="isAtomArticle" class="muted mt-4 leading-8">
@@ -121,8 +122,8 @@ useSavedScroll(() => route.hash === '#saved-article' ? 'saved-article' : undefin
       </footer>
 
       <div class="flex flex-wrap gap-3 mt-8">
-        <button class="btn-secondary" @click="toggleSaved(question.id, $event)">
-          {{ saved.includes(question.id) ? '★ Պահպանված' : '☆ Պահպանել' }}
+        <button class="btn-secondary save-control" :aria-pressed="saved.includes(question.id)" @click="toggleSaved(question.id, $event)">
+          <Star :size="16" :fill="saved.includes(question.id)?'currentColor':'none'" aria-hidden="true"/><span>{{saved.includes(question.id)?'Պահպանված':'Պահպանել'}}</span>
         </button>
       </div>
     </article>

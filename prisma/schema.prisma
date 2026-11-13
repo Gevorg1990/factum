@@ -12,6 +12,9 @@ enum Role {
   USER
 }
 enum ContentKind {
+  GEO_ENTRY
+  GEO_CATEGORY
+  BOOK
   ARTICLE
   CATEGORY
   AUTHOR

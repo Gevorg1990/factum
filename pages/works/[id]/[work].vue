@@ -37,7 +37,7 @@ const suggestions = computed(() => {
 const libraryQuery = computed(() => `${person.value?.name || ''} ${work.value || ''}`)
 const libraryUrl = computed(() => `https://www.google.com/search?q=${encodeURIComponent(libraryQuery.value + (person.value?.category === 'Գրականություն' ? ' site:hy.wikisource.org' : ''))}`)
 const mediaUrl = computed(() => `https://www.youtube.com/results?search_query=${encodeURIComponent(libraryQuery.value)}`)
-useHead({ title: computed(() => `${work.value || 'Գործ'} — FACTUM`), meta: [{ name: 'description', content: 'FACTUM․ հայտնի գործերի բացատրություններ և լրացուցիչ ուսումնասիրության հնարավորություններ' }] })
+useHead({ title: computed(() => `${work.value || 'Գործ'} — COGNITIO`), meta: [{ name: 'description', content: 'COGNITIO․ հայտնի գործերի բացատրություններ և լրացուցիչ ուսումնասիրության հնարավորություններ' }] })
 </script>
 
 <template>

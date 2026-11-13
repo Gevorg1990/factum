@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cinderella",
+    "source": "https://hy.wikisource.org/wiki/%D5%84%D5%B8%D5%AD%D6%80%D5%B8%D5%BF%D5%A8",
+    "revision": 360204,
+    "translator": "Հովհաննես Թումանյան",
+    "textLength": 13816,
+    "textSha256": "d59a2073cfa54ef4c81e6dde2b781a906d7205774c2848e2c89bc88ba263ae28",
+    "coverSource": "https://hy.wikisource.org/wiki/%D4%B7%D5%BB%3A%D4%B9%D5%B8%D6%82%D5%B4%D5%A1%D5%B6%D5%B5%D5%A1%D5%B6%D5%AB_%D4%B5%D4%BC%D4%BA_%D5%B05.djvu/384",
+    "coverSha256": "5983c91d63255544170fe1baa12d4e807a2f8101ae6ac97d82f5c14577c540b4"
+  },
+  {
+    "id": "hansel-gretel",
+    "source": "https://hy.wikisource.org/wiki/%D5%80%D5%A5%D5%B6%D5%A6%D5%A5%D5%AC%D5%B6_%D5%B8%D6%82_%D4%B3%D6%80%D5%A5%D5%BF%D5%A5%D5%AC%D5%A8",
+    "revision": 360191,
+    "translator": "Հովհաննես Թումանյան",
+    "textLength": 14887,
+    "textSha256": "c1fd1deb9265861564ee420365b9b5bcbb51ccc2cb13426b297dbcc26c78bf5a",
+    "coverSource": "https://antares.am/portfolio-item/hansel-and-gretel-am/",
+    "coverSha256": "aba22ddff76cfa9b7bf8c8760f6a70a7c958efeef1e2ea1dff84e7854068fd83"
+  },
+  {
+    "id": "little-match-girl",
+    "source": "https://hy.wikisource.org/wiki/%D5%93%D5%B8%D6%84%D6%80%D5%AB%D5%AF_%D5%A1%D5%B2%D5%BB%D5%AB%D5%AF%D5%A8_%D6%87_%D5%AC%D5%B8%D6%82%D6%81%D5%AF%D5%AB%D5%B6%D5%A5%D6%80%D5%A8",
+    "revision": 360101,
+    "translator": "Զավեն Տիգրան",
+    "textLength": 4881,
+    "textSha256": "310289128f6de1d18fb3aef08febf755cc694e57bfc74bb036f2828c29749ff5",
+    "coverSource": "https://hy.wikisource.org/wiki/%D4%BB%D5%B6%D5%A4%D5%A5%D6%84%D5%BD%3A%D4%B1%D5%B6%D5%A4%D5%A7%D6%80%D5%BD%D5%A8%D5%B6%D5%AB_%D5%B0%D5%A7%D6%84%D5%AB%D5%A1%D5%A9%D5%B6%D5%A5%D6%80%D5%A8_%28Hans_Christian_Andersen%2C_Fairy_Tales%29.pdf",
+    "coverSha256": "7aaeefabc2d7b9fdfc4be412c38e1f04ea9182f7a6ae05e595a4d6320aed525d"
+  }
+]

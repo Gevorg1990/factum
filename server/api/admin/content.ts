@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import {geographyAreaSchema} from '../../../shared/geographyCms'
 import { fieldLabels } from '../../../shared/cmsEditor'
 import { parseContent, kindSchema } from '../../../shared/cms'
 import { db } from '../../utils/db'
@@ -19,7 +20,10 @@ export default defineEventHandler(async event => {
       if(query.difficulty!==undefined)gameFilters.push({data:{path:['difficulty'],equals:z.enum(['easy','medium','hard']).parse(query.difficulty)}})
       if(query.slot!==undefined)gameFilters.push({data:{path:['slot'],equals:z.coerce.number().int().min(0).max(14).parse(query.slot)}})
     }
-    const where: Prisma.ContentWhereInput = { kind,...(gameFilters.length?{AND:gameFilters}:{}),...(status.success?{status:status.data}:{}), ...(q ? { OR: [{ title: { contains: q, mode: 'insensitive' } }, { key: { contains: q, mode: 'insensitive' } }] } : {}) }
+    const parsedGeoArea=query.area!==undefined?geographyAreaSchema.safeParse(query.area):undefined
+    if(parsedGeoArea&&!parsedGeoArea.success)throw createError({statusCode:400,statusMessage:'Սխալ աշխարհագրական բաժին'})
+    const geoArea=parsedGeoArea?.success?parsedGeoArea.data:undefined
+    const where: Prisma.ContentWhereInput = { kind,...(['GEO_ENTRY','GEO_CATEGORY'].includes(kind)&&geoArea?{data:{path:['area'],equals:geoArea}}:{}),...(gameFilters.length?{AND:gameFilters}:{}),...(status.success?{status:status.data}:{}), ...(q ? { OR: [{ title: { contains: q, mode: 'insensitive' } }, { key: { contains: q, mode: 'insensitive' } }] } : {}) }
     const [items,total] = await db.$transaction([db.content.findMany({ where, orderBy: { updatedAt: 'desc' }, take: 25, skip: (page-1)*25, select: { id:true,key:true,title:true,status:true,version:true,updatedAt:true } }), db.content.count({ where })])
     return { items,total,page }
   }
@@ -51,6 +55,16 @@ export default defineEventHandler(async event => {
     throw createError({statusCode:400,statusMessage:'Որոշ դաշտեր լրացված չեն կամ սխալ են։ Ստուգիր ստորև նշված դաշտերը։',data:{fields}})
   }
   const { action, version, data, ...fields } = input
+  if(input.kind==='GEO_CATEGORY'&&event.method==='PUT'){const current=await db.content.findUnique({where:{id:String(query.id||'')},select:{data:true}});if(current&&(current.data as Record<string,unknown>).area!==data.area)throw createError({statusCode:400,statusMessage:'Գործող բաժնի տեղը մի փոխիր․ անհրաժեշտության դեպքում ստեղծիր նոր բաժին։'})}
+  if(input.kind==='GEO_ENTRY'&&event.method==='POST'&&data.id!==input.key)throw createError({statusCode:400,statusMessage:'Նոր նյութի ներքին նշումը պետք է համապատասխանի հասցեի նշմանը։'})
+  if(input.kind==='GEO_ENTRY'&&event.method==='PUT'){const current=await db.content.findUnique({where:{id:String(query.id||'')},select:{data:true}});if(current&&(current.data as Record<string,unknown>).id!==data.id)throw createError({statusCode:400,statusMessage:'Աշխարհագրական նյութի սկզբնական նշումը չի փոխվում։'})}
+  if(input.kind==='GEO_ENTRY'){
+    const category=await db.content.findUnique({where:{kind_key:{kind:'GEO_CATEGORY',key:String(data.category)}},select:{data:true,publishedData:true}})
+    const categoryData=category?.data as Record<string,unknown>|undefined,published=category?.publishedData as Record<string,unknown>|undefined
+    if(!categoryData||categoryData.area!==data.area)throw createError({statusCode:400,statusMessage:'Ընտրիր նույն աշխարհագրական բաժնի թեման։'})
+    if(action==='publish'&&(!published||published.area!==data.area))throw createError({statusCode:400,statusMessage:'Նախ հրապարակիր նյութի աշխարհագրական բաժինը։'})
+  }
+
   if(input.kind==='CATEGORY'&&data.cardVideo&&String(data.cardVideo).startsWith('https:')&&!(await db.videoPreview.findUnique({where:{url:String(data.cardVideo)}})))throw createError({statusCode:400,statusMessage:'Վիդեոն նախ վերբեռնիր և օպտիմիզացրու CMS-ից'})
   for (const [id,kind] of [[fields.categoryId,'CATEGORY'],[fields.authorId,'AUTHOR']] as const) {
     if (id && !(await db.content.findFirst({where:{id,kind}}))) throw createError({statusCode:400,statusMessage:'Սխալ հեղինակ կամ կատեգորիա'})

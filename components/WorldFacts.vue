@@ -1,28 +1,11 @@
 <script setup lang="ts">
 import { Search, MapPin, ArrowUpRight, Globe2, ChevronDown, ChevronUp } from 'lucide-vue-next'
-import { worldFacts, worldFactCategories, withPopulationEstimates } from '~/data/worldFacts'
 const emit = defineEmits<{ showOnMap: [code: string] }>()
 const { estimates: populationEstimates } = usePopulationEstimates()
-const search = ref('')
-const category = ref('all')
-const expanded = ref(false)
-const orderedFacts = shallowRef([...worldFacts])
-onMounted(() => {
-  // Randomize only after hydration; preserve this order while reading/filtering.
-  const shuffled = [...worldFacts]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
-  }
-  orderedFacts.value = shuffled
-})
-const filtered = computed(() => {
-  const term = search.value.trim().toLocaleLowerCase('hy')
-  return withPopulationEstimates(orderedFacts.value, populationEstimates.value).filter(fact => (category.value === 'all' || fact.category === category.value)
-    && (!term || [fact.question, fact.answer, fact.detail, worldFactCategories[fact.category]].some(value => value.toLocaleLowerCase('hy').includes(term))))
-})
-const visible = computed(() => expanded.value ? filtered.value : filtered.value.slice(0, 2))
-watch([search, category], () => { expanded.value = false })
+const search=ref(''),category=ref('all')
+const {items,categories,total,pending,error,hasMore,load}=useGeographyContent('world-facts',{query:search,category,limit:6})
+const worldFactCategories=computed(()=>Object.fromEntries(categories.value.map(item=>[item.id,item.title])))
+const visible=computed(()=>items.value.map(fact=>{const population=populationEstimates.value.IND;if(!fact.livePopulation||fact.id!=='most-populous-country'||!population)return fact;return {...fact,answer:`Հնդկաստանը՝ մոտ ${Math.round(population.value/1_000_000).toLocaleString('hy-AM')} միլիոն մարդ՝ ${population.year} թ. գնահատմամբ։`,detail:`${population.source.name} աղբյուրի ${population.year} թվականի տվյալներում Հնդկաստանի բնակչությունը գնահատվում է ${population.value.toLocaleString('hy-AM')} մարդ։ Սա տվյալ տարվա գնահատական է․ բնակչության թիվը փոխվում է, իսկ նոր գնահատումները կարող են վերանայվել։`,source:population.source,dataYear:population.year}}))
 </script>
 
 <template>
@@ -35,9 +18,9 @@ watch([search, category], () => { expanded.value = false })
     <label class="facts-search"><Search :size="18" aria-hidden="true" /><span class="sr-only">Որոնել աշխարհի մասին հարցերը</span><input v-model="search" type="search" placeholder="Օրինակ՝ բնակչություն, ամենամեծ, օվկիանոս…" /></label>
     <div class="facts-filters" role="group" aria-label="Հարցերի թեմաներ">
       <button type="button" :aria-pressed="category === 'all'" @click="category = 'all'">Բոլորը</button>
-      <button v-for="(label,key) in worldFactCategories" :key="key" type="button" :aria-pressed="category === key" @click="category = key">{{label}}</button>
+      <button v-for="(label,key) in worldFactCategories" :key="key" type="button" :aria-pressed="category === key" @click="category = String(key)">{{label}}</button>
     </div>
-    <p class="facts-count muted" role="status">{{visible.length}} / {{filtered.length}} հարց</p>
+    <p class="facts-count muted" role="status">{{visible.length}} / {{total}} հարց</p>
     <div id="world-facts-list" class="facts-grid">
       <article v-for="fact in visible" :key="fact.id" class="panel fact-card">
         <div class="fact-meta"><span>{{worldFactCategories[fact.category]}}</span><span v-if="fact.dataYear">{{fact.dataYear}} թ.</span></div>
@@ -50,13 +33,9 @@ watch([search, category], () => { expanded.value = false })
         </footer>
       </article>
     </div>
-    <div v-if="filtered.length > 2" class="facts-toggle">
-      <button type="button" class="btn-secondary" :aria-expanded="expanded" aria-controls="world-facts-list" @click="expanded = !expanded">
-        {{expanded ? 'Փակել' : `Ցույց տալ բոլորը (+${filtered.length - 2})`}}
-        <ChevronUp v-if="expanded" :size="17" /><ChevronDown v-else :size="17" />
-      </button>
-    </div>
-    <p v-if="!filtered.length" class="panel facts-empty">Հարց չի գտնվել։ <button type="button" @click="search = ''; category = 'all'">Մաքրել որոնումը</button></p>
+    <p v-if="pending" role="status">Բեռնվում են հարցերը…</p><p v-if="error" role="alert">{{error}} <button type="button" @click="load()">Կրկին փորձել</button></p>
+    <div v-if="hasMore" class="facts-toggle"><button type="button" class="btn-secondary" :disabled="pending" @click="load(true)">Հաջորդ 6 հարցերը <ChevronDown :size="17"/></button></div>
+    <p v-if="!pending&&!error&&!visible.length" class="panel facts-empty">Հարց չի գտնվել։ <button type="button" @click="search='';category='all'">Մաքրել որոնումը</button></p>
   </section>
 </template>
 

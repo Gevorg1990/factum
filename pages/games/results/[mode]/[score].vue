@@ -9,7 +9,7 @@ const level = computed(() => ['million', 'genius', 'logic'].includes(result.valu
 const levelTitle = computed(() => level.value ? `${resultLevels[level.value]} մակարդակ` : '')
 const origin = useRequestURL().origin
 const title = computed(() => `${result.value!.title}${levelTitle.value ? ` · ${levelTitle.value}` : ''}․ իմ արդյունքը՝ ${result.value!.score} / ${result.value!.total}`)
-const description = 'Փորձիր քո գիտելիքները FACTUM-ում։ Խաղա և կիսվիր քո արդյունքով։'
+const description = 'Փորձիր քո գիտելիքները COGNITIO-ում։ Խաղա և կիսվիր քո արդյունքով։'
 const url = computed(() => new URL(gameResultPath(result.value!.mode, result.value!.score, level.value), origin).href)
 const image = computed(() => new URL(optimizedImage(result.value!.image), origin).href)
 useSeoMeta({
@@ -18,7 +18,7 @@ useSeoMeta({
   ogTitle: () => title.value,
   ogDescription: description,
   ogType: 'website',
-  ogSiteName: 'FACTUM',
+  ogSiteName: 'COGNITIO',
   ogUrl: () => url.value,
   ogImage: () => image.value,
   ogImageAlt: () => result.value!.title,

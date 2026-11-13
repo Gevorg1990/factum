@@ -1,3 +1,4 @@
+import {geographyLegacyRows} from './geographyLegacy'
 import type { ContentKind } from '@prisma/client'
 // Server-only imports: archive data never enter the admin bundle.
 import { legacyLiteratureQuestions } from '../../data/encyclopedia/literatureLegacy'
@@ -15,6 +16,7 @@ export type LegacyRecord = {kind:ContentKind;key:string;title:string;data:Record
 export function legacyContent(): LegacyRecord[] {
   const visibleArticles=new Set(questions.map(x=>x.id))
   return [
+    ...geographyLegacyRows(),
     ...[...subjects,...collectionSubjects].map(x=>({kind:'CATEGORY' as const,key:x.slug,title:x.name,data:x})),
     ...[...allEncyclopediaQuestions,...legacyLiteratureQuestions,...legacyHealthQuestions].map(x=>({kind:'ARTICLE' as const,key:x.id,title:x.title,data:{...x,listed:visibleArticles.has(x.id)}})),
     ...people.map(x=>({kind:'PERSON' as const,key:x.id,title:x.name,data:{...x,portrait:localPortraits[x.id]}})),

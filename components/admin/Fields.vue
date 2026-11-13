@@ -1,31 +1,35 @@
 <script setup lang="ts">
+import {geographyAreas} from '~/shared/geographyCms'
+import {libraryTopics} from '~/data/library/catalog'
 import { ChevronDown, Plus, Trash2 } from 'lucide-vue-next'
 import { fieldLabels, fieldHints } from '~/shared/cmsEditor'
 defineOptions({name:'AdminFields'})
-const props=withDefaults(defineProps<{modelValue:any;field?:string;kind?:string;hiddenKeys?:string[];answerOptions?:string[];requiredFields?:string[];disabledFields?:string[]}>(),{hiddenKeys:()=>[],requiredFields:()=>[],disabledFields:()=>[]})
+const props=withDefaults(defineProps<{modelValue:any;field?:string;kind?:string;geographyArea?:string;hiddenKeys?:string[];answerOptions?:string[];requiredFields?:string[];disabledFields?:string[]}>(),{hiddenKeys:()=>[],requiredFields:()=>[],disabledFields:()=>[]})
 const emit=defineEmits(['update:modelValue'])
 const fieldId=useId()
 const visibleEntries=computed(()=>{
- const order:Record<string,string[]>={ARTICLE:['subject','answer','detail','image','listed','sections','example','takeaway','source'],PERSON:['years','role','category','bio','portrait','isArmenian','biographySections','timeline','works','source','biographyDocument'],FACT:['category','text','image','source'],EVENT:['year','era','details'],GAME:['difficulty','title','answers','correct','explanation','hint','topic'],MONUMENT:['personId','city','location','image','source','installedYear','openedYear','openedDate','sculptor','architect'],WORK:['personId','index','description','significance','type','date','group','sources'],CATEGORY:['image','cardVideo','shortName'],source:['name','url'],image:['src','alt','credit','license','sourceUrl','licenseUrl','fit','position'],details:['intro','sections','facts']}
+ const order:Record<string,string[]>={GEO_ENTRY:['area','category','answer','measure','location','detail','longitude','latitude','countryCode','dataYear','source','includeInFacts','globeSearch','livePopulation','sortOrder'],GEO_CATEGORY:['area','sortOrder'],ARTICLE:['subject','answer','detail','image','listed','sections','example','takeaway','source'],PERSON:['years','role','category','bio','portrait','isArmenian','biographySections','timeline','works','source','biographyDocument'],FACT:['category','text','image','source'],EVENT:['year','era','details'],GAME:['difficulty','title','answers','correct','explanation','hint','topic'],MONUMENT:['personId','city','location','image','source','installedYear','openedYear','openedDate','sculptor','architect'],WORK:['personId','index','description','significance','type','date','group','sources'],CATEGORY:['image','cardVideo','shortName'],source:['name','url'],image:['src','alt','credit','license','sourceUrl','licenseUrl','fit','position'],details:['intro','sections','facts']}
  const keys=[...(order[props.field||props.kind||'']||[]),'title','heading','date','name','text','body','url']
  const rank=(key:string)=>{const i=keys.indexOf(key);return i<0?1000:i}
- return Object.entries(props.modelValue||{}).filter(([key])=>!props.hiddenKeys.includes(key)).sort(([a],[b])=>rank(a)-rank(b)||a.localeCompare(b,'en'))
+ return Object.entries(props.modelValue||{}).filter(([key])=>!props.hiddenKeys.includes(key)&&!(props.kind==='GEO_ENTRY'&&!props.field&&((props.modelValue.area!=='world-facts'&&['answer','livePopulation'].includes(key))||(props.modelValue.area!=='records'&&['measure','location'].includes(key))||(props.modelValue.area==='world-facts'&&['longitude','latitude','includeInFacts'].includes(key))||(props.modelValue.area==='facts'&&key==='includeInFacts')||(props.modelValue.area!=='places'&&key==='globeSearch')||(props.modelValue.id!=='most-populous-country'&&key==='livePopulation')))).sort(([a],[b])=>rank(a)-rank(b)||a.localeCompare(b,'en'))
 })
 const isObject=computed(()=>props.modelValue!==null&&typeof props.modelValue==='object'&&!Array.isArray(props.modelValue))
 const label=computed(()=>fieldLabels[props.field||'']||'Լրացուցիչ տեղեկություն')
-const hint=computed(()=>fieldHints[props.field||''])
+const hint=computed(()=>props.kind?.startsWith('GEO_')&&props.field==='location'?'Օբյեկտի երկիրը կամ աշխարհագրական տարածքը։':props.kind?.startsWith('GEO_')&&props.field==='detail'?'Գրիր ստուգված բացատրությունը և անհրաժեշտ վերապահումները։':fieldHints[props.field||''])
 const longFields=new Set(['text','detail','answer','bio','explanation','description','significance','example','takeaway','intro','body','hint','statement','question'])
-const numberFields=new Set(['openedYear','installedYear','slot','index'])
-const imageFields=new Set(['portrait','image','src','preview'])
+const numberFields=new Set(['openedYear','installedYear','slot','index','sortOrder','longitude','latitude','dataYear'])
+const imageFields=new Set(['cover','portrait','image','src','preview'])
 const personCategories=['Գրականություն','Մշակույթ և պատմություն','Կերպարվեստ և ճարտարապետություն','Երաժշտություն','Կինո և թատրոն','Գիտություն և տեխնոլոգիա','Սպորտ','Պետական և ռազմական գործիչներ']
 const options=computed(()=>{
+ if(props.field==='area'&&props.kind?.startsWith('GEO_'))return geographyAreas.map(area=>({value:area.id,label:area.label}))
+ if(props.field==='topic'&&props.kind==='BOOK')return libraryTopics.map(topic=>({value:topic.id,label:topic.title}))
  if(props.field==='difficulty')return [{value:'easy',label:'Հեշտ'},{value:'medium',label:'Միջին'},{value:'hard',label:'Բարդ'}]
  if(props.field==='category'&&props.kind==='PERSON')return personCategories.map(x=>({value:x,label:x}))
  if(props.field==='fit')return [{value:'contain',label:'Ցույց տալ ամբողջ նկարը'},{value:'cover',label:'Լրացնել նկարի տարածքը'}]
  if(props.field==='portraitLanguage')return [{value:'hy',label:'Հայերեն'},{value:'en',label:'Անգլերեն'}]
  return []
 })
-function update(key:string|number,value:any){const next=Array.isArray(props.modelValue)?[...props.modelValue]:{...props.modelValue};next[key]=value;if(key==='answers'&&typeof next.correct==='number'){if(value.length<props.modelValue.answers.length)next.correct=Math.max(0,value.indexOf(props.modelValue.answers[next.correct]));else if(next.correct>=value.length)next.correct=0;}emit('update:modelValue',next)}
+function update(key:string|number,value:any){const next=Array.isArray(props.modelValue)?[...props.modelValue]:{...props.modelValue};next[key]=value;if(key==='area'&&props.kind==='GEO_ENTRY')next.category='';if(key==='answers'&&typeof next.correct==='number'){if(value.length<props.modelValue.answers.length)next.correct=Math.max(0,value.indexOf(props.modelValue.answers[next.correct]));else if(next.correct>=value.length)next.correct=0;}emit('update:modelValue',next)}
 function add(){
  const defaults:Record<string,any>={sections:props.kind==='EVENT'?{heading:'',body:''}:{title:'',text:''},biographySections:{title:'',text:''},timeline:{date:'',text:''},sources:{name:'',url:''}}
  const sample=props.modelValue[0]||defaults[props.field||'']
@@ -35,7 +39,7 @@ function add(){
 </script>
 <template>
   <div v-if="isObject" class="fields-grid">
-    <div v-if="field" class="object-heading"><strong>{{label}}</strong><p v-if="hint" class="field-hint">{{hint}}</p></div><AdminFields v-for="[key,value] in visibleEntries" :key="key" :model-value="value" :field="String(key)" :kind="kind" :answer-options="modelValue.answers" :required-fields="requiredFields" :disabled-fields="disabledFields" @update:model-value="update(key,$event)"/>
+    <div v-if="field" class="object-heading"><strong>{{label}}</strong><p v-if="hint" class="field-hint">{{hint}}</p></div><AdminFields v-for="[key,value] in visibleEntries" :key="key" :model-value="value" :field="String(key)" :kind="kind" :geography-area="modelValue.area||geographyArea" :answer-options="modelValue.answers" :required-fields="kind?.startsWith('GEO_')&&key==='source'?['name','url']:requiredFields" :disabled-fields="disabledFields" @update:model-value="update(key,$event)"/>
   </div>
   <fieldset v-else-if="Array.isArray(modelValue)" class="array-field">
     <legend>{{label}}</legend><p v-if="hint" class="field-hint">{{hint}}</p>
@@ -53,11 +57,13 @@ function add(){
   <label v-else-if="typeof modelValue==='boolean'" class="boolean-field"><input type="checkbox" :checked="modelValue" @change="emit('update:modelValue',($event.target as HTMLInputElement).checked)"><span><strong>{{label}}</strong><small v-if="hint">{{hint}}</small></span></label>
   <div v-else class="cms-field">
     <label v-if="field!=='arrayText'" :for="fieldId" class="field-label">{{label}} <span v-if="requiredFields.includes(field||'')" class="required-dot">*</span><span v-else class="optional-label">ոչ պարտադիր</span></label>
-    <AdminReferenceField v-if="field==='subject'||field==='personId'||(field==='category'&&kind==='FACT')" :model-value="modelValue" :kind="field==='subject'?'CATEGORY':field==='category'?'FACT_CATEGORY':'PERSON'" :required="requiredFields.includes(field||'')" :disabled="disabledFields.includes(field||'')" :placeholder="field==='subject'?'Ընտրիր հոդվածի բաժինը':field==='category'?'Ընտրիր փաստի թեման':'Ընտրիր մարդուն'" @update:model-value="emit('update:modelValue',$event||'')"/>
+    <AdminReferenceField v-if="kind==='GEO_ENTRY'&&field==='category'" :model-value="modelValue" kind="GEO_CATEGORY" label="Աշխարհագրական թեմա" :area="geographyArea" :required="true" placeholder="Ընտրիր աշխարհագրական բաժինը" @update:model-value="emit('update:modelValue',$event||'')"/>
+    <AdminReferenceField v-else-if="field==='subject'||field==='personId'||(field==='category'&&kind==='FACT')" :model-value="modelValue" :kind="field==='subject'?'CATEGORY':field==='category'?'FACT_CATEGORY':'PERSON'" :required="requiredFields.includes(field||'')" :disabled="disabledFields.includes(field||'')" :placeholder="field==='subject'?'Ընտրիր հոդվածի բաժինը':field==='category'?'Ընտրիր փաստի թեման':'Ընտրիր մարդուն'" @update:model-value="emit('update:modelValue',$event||'')"/>
     <LazyAdminVideoField v-else-if="field==='cardVideo'" :model-value="modelValue" @update:model-value="emit('update:modelValue',$event)"/>
-    <AdminImageField v-else-if="imageFields.has(field||'')" :model-value="modelValue" :label="label" @update:model-value="emit('update:modelValue',$event)"/>
+    <AdminImageField v-else-if="imageFields.has(field||'')" :model-value="modelValue" :label="label" :fill="kind==='BOOK'&&field==='cover'" @update:model-value="emit('update:modelValue',$event)"/>
     <select v-else-if="options.length" :id="fieldId" :value="modelValue" @change="emit('update:modelValue',($event.target as HTMLSelectElement).value)"><option value="" disabled>Ընտրիր ցանկից</option><option v-if="modelValue&&!options.some(x=>x.value===modelValue)" :value="modelValue">{{modelValue}}</option><option v-for="option in options" :key="option.value" :value="option.value">{{option.label}}</option></select>
-    <input v-else-if="typeof modelValue==='number'||numberFields.has(field||'')" :id="fieldId" type="number" :value="field==='index'&&modelValue!==undefined?modelValue+1:modelValue" :min="field==='index'?1:undefined" :disabled="disabledFields.includes(field||'')" :required="requiredFields.includes(field||'')" @input="emit('update:modelValue',($event.target as HTMLInputElement).value===''?undefined:Number(($event.target as HTMLInputElement).value)-(field==='index'?1:0))">
+    <input v-else-if="typeof modelValue==='number'||numberFields.has(field||'')" :id="fieldId" type="number" :value="field==='index'&&modelValue!==undefined?modelValue+1:modelValue" :min="field==='index'?1:field==='longitude'?-180:field==='latitude'?-90:undefined" :max="field==='longitude'?180:field==='latitude'?90:undefined" :step="['longitude','latitude'].includes(field||'')?'any':1" :disabled="disabledFields.includes(field||'')" :required="requiredFields.includes(field||'')" @input="emit('update:modelValue',($event.target as HTMLInputElement).value===''?undefined:Number(($event.target as HTMLInputElement).value)-(field==='index'?1:0))">
+    <LazyAdminBookTextField v-else-if="kind==='BOOK'&&field==='text'" :model-value="modelValue" @update:model-value="emit('update:modelValue',$event)"/>
     <textarea v-else-if="longFields.has(field||'')||(typeof modelValue==='string'&&modelValue.length>160)" :id="fieldId" :value="modelValue??''" :rows="['detail','text','bio','body'].includes(field||'')?6:3" :required="requiredFields.includes(field||'')" :disabled="disabledFields.includes(field||'')" @input="emit('update:modelValue',($event.target as HTMLTextAreaElement).value)"/>
     <input v-else :id="fieldId" :value="modelValue??''" :required="requiredFields.includes(field||'')" :disabled="disabledFields.includes(field||'')" :type="['url','sourceUrl','licenseUrl'].includes(field||'')?'url':'text'" :placeholder="['url','sourceUrl','licenseUrl'].includes(field||'')?'https://…':undefined" @input="emit('update:modelValue',($event.target as HTMLInputElement).value)">
     <p v-if="hint" class="field-hint">{{hint}}</p>

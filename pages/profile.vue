@@ -13,7 +13,11 @@ import { findGameBookmark } from '~/utils/gameBookmarks'
 import { BookOpen as EncyclopediaSectionIcon, Gamepad2 as GameSectionIcon, Bookmark as SavedSectionIcon } from 'lucide-vue-next'
 import { BookOpen, Trophy, ScrollText, Sparkles, Users, Landmark, Gamepad2, Bookmark, ArrowUpRight, Trash2, Check } from 'lucide-vue-next'
 
-const { saved, removeSaved } = useProgress()
+const { saved, removeSaved, library } = useProgress()
+const {records:libraryRecords,loadSaved:loadSavedLibrary}=useLibraryReading()
+onMounted(loadSavedLibrary)
+const savedLibraryIds=computed(()=>[...new Set([...library.value,...Object.entries(libraryRecords.value).filter(([,state])=>state.bookmarks.length>0).map(([id])=>id)])])
+const savedLibraryCount=computed(()=>savedLibraryIds.value.length)
 const geographyFacts=shallowRef<GeoFact[]>([])
 let geographyPending=false
 watch(saved,async ids=>{if(geographyPending||geographyFacts.value.length||!ids.some(id=>id.startsWith('geo-')))return;geographyPending=true;try{geographyFacts.value=await $fetch<GeoFact[]>('/data/geography/facts-v1.json',{timeout:10000,retry:1})}catch{}finally{geographyPending=false}},{immediate:true})
@@ -49,7 +53,7 @@ async function removeEntry(id: string, event: Event) {
   removeSaved(id)
   removing.value = new Set([...removing.value].filter(item => item !== id))
   if (disposed) return
-  removalMessage.value = 'Նյութը հեռացվեց Իմ FACTUM-ից։'
+  removalMessage.value = 'Նյութը հեռացվեց Իմ COGNITIO-ից։'
   await nextTick()
   const target = nextButton?.isConnected ? nextButton : document.querySelector<HTMLButtonElement>('.profile-categories button')
   target?.focus({ preventScroll: true })
@@ -60,7 +64,7 @@ onBeforeUnmount(() => {
   removalEffects.clear()
 })
 
-type SavedCategory = 'encyclopedia' | 'games' | 'bible' | 'facts' | 'people' | 'history' | 'other'
+type SavedCategory = 'library' | 'encyclopedia' | 'games' | 'bible' | 'facts' | 'people' | 'history' | 'other'
 type SavedEntry = { id: string; title: string; to: string; kind: string; category: SavedCategory; sourceSection?: string; answer?: string; explanation?: string }
 const activeCategory = ref<SavedCategory | 'all'>('all')
 const gameRecords = ref<GameRecord[]>([])
@@ -99,6 +103,7 @@ onBeforeUnmount(() => {
 const sectionDefinitions = [
   { id: 'encyclopedia', title: 'Հանրագիտարան', icon: EncyclopediaSectionIcon, description: 'Հոդվածներ ու հարցերի բացատրություններ', to: '/subjects' },
   { id: 'games', title: 'Խաղեր', icon: GameSectionIcon, description: 'Միլիոնատեր, Genius և Logic․ լավագույն արդյունքներ ու պահպանված հարցեր', to: '/games/genius' },
+  { id: 'library', title: 'Գրադարան', icon: EncyclopediaSectionIcon, description: 'Պահպանված գրքեր, էջանշված տողեր և անձնական նշումներ', to: '/library' },
   { id: 'bible', title: 'Աստվածաշունչ', icon: ScrollText, description: 'Պահպանված գրքեր և գլուխներ', to: '/bible' },
   { id: 'facts', title: 'Հետաքրքիր փաստեր', icon: Sparkles, description: 'Քեզ հետաքրքրած փաստերն ու բացահայտումները', to: '/facts' },
   { id: 'people', title: 'Նշանավոր մարդիկ', icon: Users, description: 'Կենսագրություններ և ստեղծագործություններ', to: '/people' },
@@ -169,13 +174,13 @@ function describeEntry(id: string): SavedEntry {
 const managedSaved=ref<SavedEntry[]>([])
 watch(saved,async ids=>{try{const output:SavedEntry[]=[];for(let i=0;i<ids.length;i+=100){const response=await $fetch<{items:SavedEntry[]}>('/api/content/saved',{method:'POST',body:{keys:ids.slice(i,i+100)}});output.push(...response.items)}managedSaved.value=output}catch{}},{immediate:true})
 const savedEntries = computed(() => [...new Set(saved.value)].map(id=>managedSaved.value.find(item=>item.id===id)||describeEntry(id)))
-const savedCount = computed(() => savedEntries.value.length + gameRecords.value.length)
+const savedCount = computed(() => savedEntries.value.length + gameRecords.value.length + savedLibraryCount.value)
 const sections = computed(() => sectionDefinitions.map(section => {
   const items = savedEntries.value.filter(item => item.category === section.id)
   const records = profileGameRecords.value.filter(record => record.category === section.id)
-  return { ...section, items, records, count: items.length + records.length }
+  return { ...section, items, records, count: items.length + records.length + (section.id==='library'?savedLibraryCount.value:0) }
 }))
-const categoryTabs = computed(() => sections.value.filter(section => ['encyclopedia','games','bible'].includes(section.id) || section.items.length || section.id === activeCategory.value))
+const categoryTabs = computed(() => sections.value.filter(section => ['encyclopedia','games','bible','library'].includes(section.id) || section.items.length || section.id === activeCategory.value))
 const shownSections = computed(() => sections.value.filter(section => activeCategory.value === 'all' ? section.count : section.id === activeCategory.value))
 </script>
 
@@ -185,13 +190,14 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
     <AccountPanel />
     <header class="profile-heading"><span class="gold profile-eyebrow">ՔՈ ԱՆՁՆԱԿԱՆ ԳԻՏԵԼԻՔՆԵՐԻ ՀԱՎԱՔԱԾՈՒՆ</span><h2 class="heading">Իմ հավաքածուն</h2><p class="muted">{{savedCount}} պահպանված նյութ։ Ընտրիր բաժինը և շարունակիր բացահայտել։</p></header>
     <div class="profile-summary" aria-label="Քո հավաքածուի ամփոփումը">
-      <div><span class="profile-summary-icon"><Bookmark :size="19" /></span><p><strong>{{savedEntries.length}}</strong><span>պահպանված նյութ</span></p></div>
+      <div><span class="profile-summary-icon"><Bookmark :size="19" /></span><p><strong>{{savedEntries.length+savedLibraryCount}}</strong><span>պահպանված նյութ</span></p></div>
       <div><span class="profile-summary-icon"><Trophy :size="19" /></span><p><strong>{{gameRecords.length}}</strong><span>խաղային ռեկորդ</span></p></div>
       <div><span class="profile-summary-icon"><BookOpen :size="19" /></span><p><strong>{{sections.filter(section=>section.count>0).length}}</strong><span>բացահայտված բաժին</span></p></div>
     </div>
     <nav class="profile-categories" aria-label="Պահպանված նյութերի բաժիններ"><button :aria-pressed="activeCategory === 'all'" :class="{'is-active':activeCategory === 'all'}" @click="activeCategory='all'"><Bookmark :size="17" /> Բոլորը <span>{{savedCount}}</span></button><button v-for="section in categoryTabs" :key="section.id" :aria-pressed="activeCategory === section.id" :class="{'is-active':activeCategory === section.id}" @click="activeCategory=section.id"><component :is="section.icon" :size="17" />{{section.title}}<span>{{section.count}}</span></button></nav>
     <section v-for="section in shownSections" :key="section.id" class="profile-section" :aria-labelledby="`saved-section-${section.id}`">
       <header class="profile-section-heading"><div class="profile-section-icon"><component :is="section.icon" :size="23" /></div><div><h2 :id="`saved-section-${section.id}`">{{section.title}} <span>{{section.count}}</span></h2><p class="muted">{{section.description}}</p></div></header>
+      <LazyLibraryProfileCollection v-if="section.id==='library'&&savedLibraryCount" :ids="savedLibraryIds"/>
       <article v-for="record in section.records" :key="record.mode" class="panel profile-game-record">
         <div class="genius-record-art">
           <img :src="optimizedImage(record.image)" :alt="record.title" width="640" height="358" loading="lazy" decoding="async" />
@@ -214,8 +220,8 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
           </div>
         </div>
       </article>
-      <div v-if="section.items.length" class="profile-entry-grid"><article v-for="item in section.items" :key="item.id" class="panel profile-entry" :aria-busy="removing.has(item.id)" :class="{'is-removing':removing.has(item.id)}"><div class="profile-entry-top"><div class="profile-entry-labels"><span class="gold">{{item.kind}}</span><span v-if="item.sourceSection" class="profile-entry-source">{{item.sourceSection}}</span></div><button class="profile-remove" :disabled="removing.has(item.id)" :aria-label="`${item.title}՝ հեռացնել պահպանվածներից`" @click="removeEntry(item.id, $event)"><Trash2 :size="15" /> Հեռացնել</button></div><NuxtLink :to="item.to" class="profile-entry-title">{{item.title}} <ArrowUpRight :size="16" /></NuxtLink><div v-if="item.answer" class="profile-answer"><span><Check :size="15" /> Ճիշտ պատասխան</span><strong>{{item.answer}}</strong></div><p v-if="item.explanation" class="profile-explanation">{{item.explanation}}</p></article></div>
-      <div v-else-if="!section.records.length" class="panel profile-empty"><component :is="section.icon" :size="30" /><p>Այս բաժնում դեռ պահպանված նյութեր չկան։</p><NuxtLink :to="section.to" class="btn-secondary">Բացահայտել բաժինը <ArrowUpRight :size="15" /></NuxtLink></div>
+      <div v-if="section.items.length" class="profile-entry-grid"><article v-for="item in section.items" :key="item.id" class="panel profile-entry" :aria-busy="removing.has(item.id)" :class="{'is-removing':removing.has(item.id)}"><div class="profile-entry-top"><div class="profile-entry-labels"><span class="gold">{{item.kind}}</span><span v-if="item.sourceSection" class="profile-entry-source">{{item.sourceSection}}</span></div><button class="profile-remove" :disabled="removing.has(item.id)" :aria-label="`${item.title}՝ հեռացնել պահպանվածներից`" @click="removeEntry(item.id, $event)"><Trash2 :size="15" /> Հեռացնել</button></div><NuxtLink :to="item.to" class="profile-entry-title text-action">{{item.title}} <ArrowUpRight :size="16" /></NuxtLink><div v-if="item.answer" class="profile-answer"><span><Check :size="15" /> Ճիշտ պատասխան</span><strong>{{item.answer}}</strong></div><p v-if="item.explanation" class="profile-explanation">{{item.explanation}}</p></article></div>
+      <div v-else-if="!section.records.length&&!(section.id==='library'&&savedLibraryCount)" class="panel profile-empty"><component :is="section.icon" :size="30" /><p>Այս բաժնում դեռ պահպանված նյութեր չկան։</p><NuxtLink :to="section.to" class="btn-secondary">Բացահայտել բաժինը <ArrowUpRight :size="15" /></NuxtLink></div>
     </section>
     <div v-if="activeCategory === 'all' && !savedCount" class="panel profile-empty"><Bookmark :size="32" /><h2>Քո հավաքածուն սկսվում է մեկ պահպանումից</h2><p class="muted">Պահպանիր հոդվածներ, Միլիոնատերի հարցեր կամ Աստվածաշնչի գլուխներ․ դրանք կհայտնվեն իրենց բաժիններում։</p><NuxtLink to="/subjects" class="btn">Բացահայտել հանրագիտարանը</NuxtLink></div>
     <div v-if="removalMessage" class="profile-removal-status" role="status">
@@ -285,7 +291,7 @@ const shownSections = computed(() => sections.value.filter(section => activeCate
 .profile-summary p > span { font-size: 10px; color: #95a3b7; line-height: 1.6; }
 .profile-categories { padding-bottom: 22px; border-bottom: 1px solid #9aaec21c; gap: 8px; margin-bottom: 28px; }
 .profile-categories button { border-radius: 10px; border-color: transparent; color: #a5b0c2; transition: background .15s, color .15s; }
-.profile-categories button:hover { background: #ffffff05; color: #e1c593; }
+.profile-categories button:not(.is-active):hover { background: #ffffff05; color: #e1c593; }
 .profile-categories button.is-active { background: #dfc38f0b; border-color: #dfc38f3d; }
 .profile-entry { border: 1px solid #9aaec228; border-radius: 16px; background: linear-gradient(140deg,#ffffff03,#ffffff01); transition: border-color .15s; }
 .profile-entry:hover { border-color: #d8bc8544; }

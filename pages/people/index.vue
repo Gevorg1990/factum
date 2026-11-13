@@ -18,7 +18,7 @@ const filtered = computed(() => {
 const visible = computed(() => filtered.value.slice(0, limit.value))
 watch([search, category], () => { limit.value = pageSize }, { flush: 'sync' })
 function resetFilters() { search.value = ''; category.value = 'all' }
-useHead({ title: 'Հայ հայտնիներ — FACTUM', meta: [{ name: 'description', content: `Բացահայտիր ${armenianPeople.length} հայ հայտնի գործիչների կյանքը, ստեղծագործություններն ու ձեռքբերումները՝ գրականությունից և արվեստից մինչև գիտություն ու սպորտ։` }] })
+useHead({ title: 'Հայ հայտնիներ — COGNITIO', meta: [{ name: 'description', content: `Բացահայտիր ${armenianPeople.length} հայ հայտնի գործիչների կյանքը, ստեղծագործություններն ու ձեռքբերումները՝ գրականությունից և արվեստից մինչև գիտություն ու սպորտ։` }] })
 </script>
 
 <template>

@@ -11,7 +11,7 @@
     "test:speech": "node --test tests/biography-database.test.mjs tests/biography-speech.test.mjs tests/game-speech.test.mjs tests/game-speech-player.test.mjs tests/voice-answers.test.mjs tests/game-feedback-audio.test.mjs tests/biography-player.test.mjs",
     "dev": "nuxt dev",
     "build": "nuxt build",
-    "build:vercel": "node scripts/check-deployment-env.mjs && prisma generate && NITRO_PRESET=vercel nuxt build",
+    "build:vercel": "node scripts/check-deployment-env.mjs && NITRO_PRESET=vercel nuxt build",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
     "test:bible-reader": "node --test tests/bible-reader.test.mjs",
@@ -31,7 +31,10 @@
     "test:video": "node --import tsx --test tests/video-preview.test.ts",
     "test:cms": "node --import tsx --test tests/cms.test.ts tests/cms-editor.test.ts tests/million-stages.test.ts",
     "db:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup.ts",
-    "test:cms:integration": "node --env-file-if-exists=.env --import tsx scripts/test-cms-integration.ts"
+    "test:cms:integration": "node --env-file-if-exists=.env --import tsx scripts/test-cms-integration.ts",
+    "db:import:geography": "node --env-file-if-exists=.env --import tsx scripts/import-geography.ts",
+    "test:geography:cms": "node --import tsx --test tests/geography-cms.test.ts",
+    "test:geography:integration": "node --env-file-if-exists=.env --import tsx scripts/test-geography-cms.ts"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",

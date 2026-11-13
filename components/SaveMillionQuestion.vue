@@ -10,7 +10,7 @@ const isSaved = computed(() => saved.value.includes(bookmarkId.value))
 
 <template>
   <div class="million-bookmark">
-    <button type="button" class="btn-secondary" :disabled="disabled" :class="{'is-saved':isSaved}" :aria-pressed="isSaved" @click="!disabled && toggleSaved(bookmarkId, $event)"><Check v-if="isSaved" :size="16" /><Bookmark v-else :size="16" />{{ isSaved ? 'Պահպանված է Իմ FACTUM-ում' : 'Պահպանել հարցը Իմ FACTUM-ում' }}</button>
+    <button type="button" class="btn-secondary" :disabled="disabled" :class="{'is-saved':isSaved}" :aria-pressed="isSaved" @click="!disabled && toggleSaved(bookmarkId, $event)"><Check v-if="isSaved" :size="16" /><Bookmark v-else :size="16" />{{ isSaved ? 'Պահպանված է Իմ COGNITIO-ում' : 'Պահպանել հարցը Իմ COGNITIO-ում' }}</button>
     <p>{{ disabled ? 'Պատասխանիր հարցին՝ պահպանելու համար։' : 'Հարցը պահպանվում է ճիշտ պատասխանով և բացատրությամբ։' }}</p>
   </div>
 </template>

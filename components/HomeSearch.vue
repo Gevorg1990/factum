@@ -100,7 +100,7 @@ onBeforeUnmount(()=>{
   <div ref="container" class="home-search" @focusout="focusOut" @keydown.esc.prevent="close">
     <form class="hero-search" role="search" @submit.prevent="submit">
       <Search :size="24" aria-hidden="true" />
-      <input v-model="value" type="search" maxlength="160" autocomplete="off" placeholder="Օրինակ՝ ո՞րն է ամենաբարձր լեռը…" aria-label="Որոնել FACTUM-ում" role="combobox" aria-autocomplete="list" aria-controls="home-search-results" :aria-expanded="open" :aria-activedescendant="active >= 0 ? `home-search-result-${active}` : undefined" @focus="focus" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" />
+      <input v-model="value" type="search" maxlength="160" autocomplete="off" placeholder="Օրինակ՝ ո՞րն է ամենաբարձր լեռը…" aria-label="Որոնել COGNITIO-ում" role="combobox" aria-autocomplete="list" aria-controls="home-search-results" :aria-expanded="open" :aria-activedescendant="active >= 0 ? `home-search-result-${active}` : undefined" @focus="focus" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" />
       <LoaderCircle v-if="pending" :size="19" class="animate-spin home-search-spinner" aria-label="Որոնում ենք" />
     </form>
     <div v-if="open" class="home-search-dropdown">

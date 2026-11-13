@@ -1,0 +1,34 @@
+{
+  "excluded": {
+    "node/13069494840": {
+      "name": "Հովունի",
+      "reason": "Unverified second distant point; retain the region-tagged village node/925397665 (Q2223002).",
+      "source": "https://armstat.am/file/doc/99564433.pdf"
+    },
+    "node/13069494838": {
+      "name": "Ոսկեհասկ",
+      "reason": "Unverified second distant point; retain the region-tagged village node/1415979807 (Q2222820).",
+      "source": "https://armstat.am/file/doc/99564433.pdf"
+    },
+    "way/552362290": {
+      "name": "Խաչիկ",
+      "reason": "Unverified distant area centre; retain the region-tagged village node/5660223528 (Q2536483).",
+      "source": "https://www.arlis.am/hy/acts/123766"
+    },
+    "node/10973341911": {
+      "name": "Հորբատեղ",
+      "reason": "Unverified second distant point; retain the region-tagged village node/1363386651 (Q2672584).",
+      "source": "https://www.arlis.am/hy/acts/123766"
+    },
+    "way/448793044": {
+      "name": "Հորբատեղ",
+      "reason": "Area representation of the unverified second distant Horpategh point; retain node/1363386651 (Q2672584).",
+      "source": "https://www.arlis.am/hy/acts/123766"
+    },
+    "node/12296547256": {
+      "name": "Ջրառատ",
+      "reason": "Unverified second nearby point without administrative tags; retain node/8110489469 (Q2222674).",
+      "source": "https://gov.am/regions-23"
+    }
+  }
+}

@@ -8,7 +8,7 @@ const roundLoading=ref(false),roundError=ref('')
 const route = useRoute()
 const router = useRouter()
 const mode = computed(() => String(route.params.mode))
-const title = computed(() => ({ million: 'FACTUM Million', genius: 'FACTUM Genius', logic: 'FACTUM Logic' } as Record<string, string>)[mode.value] || 'FACTUM')
+const title = computed(() => ({ million: 'COGNITIO Million', genius: 'COGNITIO Genius', logic: 'COGNITIO Logic' } as Record<string, string>)[mode.value] || 'COGNITIO')
 const isMillion = computed(() => mode.value === 'million')
 const { enabled: soundEnabled, play: playSound, stop: stopSound, toggle: toggleSound, cancelNext } = useGameFeedback()
 function sound(cue: Parameters<typeof playSound>[0]) { if (isMillion.value) void playSound(cue) }
@@ -133,7 +133,7 @@ function useFifty() {
 }
 function restart() { resetRound() }
 watch(mode, () => { cancelNext(); stopSound() })
-useHead({ title: `${title.value} — FACTUM` })
+useHead({ title: `${title.value} — COGNITIO` })
 </script>
 
 <template>

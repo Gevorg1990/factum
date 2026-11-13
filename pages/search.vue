@@ -66,7 +66,7 @@ watch(() => route.query.q, value => {
 
 <template>
   <main class="shell py-10 max-w-5xl">
-    <h1 class="heading">Որոնում FACTUM-ում</h1>
+    <h1 class="heading">Որոնում COGNITIO-ում</h1>
 
     <form class="flex gap-3 mb-7" @submit.prevent="submit">
       <input
@@ -123,7 +123,7 @@ watch(() => route.query.q, value => {
       </div>
 
       <div v-if="query.trim() && !data?.items?.length" class="panel p-6">
-        <p>FACTUM-ի նյութերում այս հարցմամբ պատասխան չգտնվեց։ Փորձիր այլ բառերով որոնել։</p>
+        <p>COGNITIO-ի նյութերում այս հարցմամբ պատասխան չգտնվեց։ Փորձիր այլ բառերով որոնել։</p>
       </div>
     </template>
   </main>

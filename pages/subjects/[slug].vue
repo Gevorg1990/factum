@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {Star} from 'lucide-vue-next'
 import { subjects, questions, collectionSubjects } from '~/data/content'
 
 const route = useRoute()
@@ -81,12 +82,12 @@ function toggleQuestion(id: string) {
 
 <template>
   <main class="shell page-with-back encyclopedia-page py-10">
-    <NuxtLink to="/subjects" class="gold">← Բոլոր առարկաները</NuxtLink>
+    <NuxtLink to="/subjects" class="gold subjects-back">← Բոլոր առարկաները</NuxtLink>
 
     <div class="encyclopedia-subject-hero mt-5">
       <img :src="customSubjectImage || subjectImages[slug] || '/images/space-art.jpg'" :alt="subject?.name || 'Առարկա'">
       <div class="encyclopedia-subject-hero-content">
-        <p class="encyclopedia-eyebrow">FACTUM · ՀԱՆՐԱԳԻՏԱՐԱՆ</p>
+        <p class="encyclopedia-eyebrow">COGNITIO · ՀԱՆՐԱԳԻՏԱՐԱՆ</p>
         <h1 class="heading">{{ subject?.name || 'Առարկա' }}</h1>
         <p>Ընթերցված՝ {{ readCount }} / {{ items.length }}</p>
       </div>
@@ -106,7 +107,8 @@ function toggleQuestion(id: string) {
       <button
         v-for="option in filters"
         :key="option.id"
-        :class="filter === option.id ? 'btn' : 'btn-secondary'"
+        :class="[filter === option.id ? 'btn' : 'btn-secondary', {'is-active':filter===option.id}]"
+        :aria-pressed="filter===option.id"
         class="text-sm"
         @click="filter = option.id"
       >
@@ -119,7 +121,7 @@ function toggleQuestion(id: string) {
     <div id="subject-questions">
     <div v-for="question in displayed" :key="question.id" class="panel p-5 mb-3">
       <div class="flex gap-3 justify-between">
-        <button class="text-left flex-1 font-bold" :aria-expanded="opened.includes(question.id)" :aria-controls="`question-${question.id}`" @click="toggleQuestion(question.id)">
+        <button class="text-left flex-1 font-bold text-action" :aria-expanded="opened.includes(question.id)" :aria-controls="`question-${question.id}`" @click="toggleQuestion(question.id)">
           <span :class="read.includes(question.id) ? 'text-green-400' : 'gold'">
             {{ read.includes(question.id) ? '✓' : '○' }}
           </span>
@@ -128,10 +130,11 @@ function toggleQuestion(id: string) {
         </button>
         <button
           :aria-label="`Պահպանել ${question.title}`"
-          class="gold"
+          class="gold save-control"
+          :aria-pressed="saved.includes(question.id)"
           @click="toggleSaved(question.id, $event)"
         >
-          {{ saved.includes(question.id) ? '★' : '☆' }}
+          <Star :size="18" :fill="saved.includes(question.id)?'currentColor':'none'" aria-hidden="true"/>
         </button>
       </div>
 
@@ -159,4 +162,5 @@ function toggleQuestion(id: string) {
 <style scoped>
 .subject-source { display: block; margin-top: 18px; font-size: 12px; color: #a8b8d4; text-decoration: underline; text-underline-offset: 3px; }
 :global(html.factum-light) .subject-source { color: #4e6481; }
+.subjects-back{display:inline-flex;align-items:center;padding:8px 10px;margin-left:-10px;border-radius:8px;transition:color .16s ease,background-color .16s ease}@media(hover:hover) and (pointer:fine){.subjects-back:hover{color:#eed19a;background:#bc9c6114;outline:none}}.subjects-back:focus-visible{outline:2px solid #d9bd87;outline-offset:-2px}@media(prefers-reduced-motion:reduce){.subjects-back{transition:none}}
 </style>

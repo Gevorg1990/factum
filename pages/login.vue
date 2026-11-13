@@ -39,21 +39,21 @@ async function submit() {
   }
 }
 
-useHead(() => ({ title: `${register.value ? 'Գրանցում' : 'Մուտք'} — FACTUM` }))
+useHead(() => ({ title: `${register.value ? 'Գրանցում' : 'Մուտք'} — COGNITIO` }))
 </script>
 
 <template>
   <main class="auth-page">
     <div class="shell auth-shell">
-      <NuxtLink v-if="user" to="/" class="auth-back"><ArrowLeft :size="16" /> Վերադառնալ FACTUM</NuxtLink><p v-else class="auth-back"><ShieldCheck :size="16"/>Կայքից օգտվելու համար անհրաժեշտ է հաշիվ</p>
+      <NuxtLink v-if="user" to="/" class="auth-back"><ArrowLeft :size="16" /> Վերադառնալ COGNITIO</NuxtLink><p v-else class="auth-back"><ShieldCheck :size="16"/>Կայքից օգտվելու համար անհրաժեշտ է հաշիվ</p>
 
       <section class="auth-card" aria-labelledby="auth-title">
         <aside class="auth-story">
-          <div class="auth-brand"><Sparkles :size="20" /><span>FACTUM</span><span class="brand-dot" /></div>
+          <div class="auth-brand"><Sparkles :size="20" /><span>COGNITIO</span><span class="brand-dot" /></div>
           <div class="auth-story-copy">
             <p class="auth-eyebrow">ՔՈ ՀԱՋՈՐԴ ԲԱՑԱՀԱՅՏՈՒՄԸ ՍԿՍՎՈՒՄ Է ԱՅՍՏԵՂ</p>
             <h2>Հետաքրքրությունդ<br>դարձրու <span>գիտելիք։</span></h2>
-            <p class="story-description">Միացի՛ր FACTUM-ին և ստեղծիր գիտելիքի քո անձնական աշխարհը։</p>
+            <p class="story-description">Միացի՛ր COGNITIO-ին և ստեղծիր գիտելիքի քո անձնական աշխարհը։</p>
           </div>
 
           <div class="knowledge-art" aria-hidden="true">
@@ -83,7 +83,7 @@ useHead(() => ({ title: `${register.value ? 'Գրանցում' : 'Մուտք'} �
           <header class="auth-form-heading">
             <span class="welcome-icon"><component :is="register ? Sparkles : UserRound" :size="24" :stroke-width="1.6" /></span>
             <h1 id="auth-title">{{ register ? 'Ստեղծիր քո հաշիվը' : 'Ուրախ ենք քեզ տեսնել' }}</h1>
-            <p>{{ register ? 'Գրանցվիր՝ FACTUM-ի բովանդակությունը բացելու համար։' : 'Կայքից օգտվելու համար մուտք գործիր քո հաշիվ։' }}</p>
+            <p>{{ register ? 'Գրանցվիր՝ COGNITIO-ի բովանդակությունը բացելու համար։' : 'Կայքից օգտվելու համար մուտք գործիր քո հաշիվ։' }}</p>
           </header>
 
           <form class="auth-form" :aria-busy="busy" @submit.prevent="submit">

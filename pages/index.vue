@@ -129,12 +129,12 @@ const tiles = computed(() => subjectOrder.value.map(slug => homeSubjects.find(su
   label: ('shortName' in subject && typeof subject.shortName==='string' ? subject.shortName : undefined) || subject.name,
   accent: cardTheme(subject.slug).color,
 })))
-const games=[{id:'million',name:'FACTUM Million',desc:'15 հարց՝ 5 հեշտ ու հումորային, 5 միջին և 5 շատ բարդ։',button:'Խաղալ',tone:'gold'},{id:'genius',name:'FACTUM Genius',desc:'Հեշտ, միջին և դժվար մակարդակներ․ հաջորդը բացվում է հաջող ավարտից հետո։',button:'Խաղալ',tone:'blue'},{id:'logic',name:'FACTUM Logic',desc:'Երեք բարդության մակարդակ՝ նոր գլուխկոտրուկներով ու հաջորդական բացմամբ։',button:'Խաղալ',tone:'purple'}]
+const games=[{id:'million',name:'COGNITIO Million',desc:'15 հարց՝ 5 հեշտ ու հումորային, 5 միջին և 5 շատ բարդ։',button:'Խաղալ',tone:'gold'},{id:'genius',name:'COGNITIO Genius',desc:'Հեշտ, միջին և դժվար մակարդակներ․ հաջորդը բացվում է հաջող ավարտից հետո։',button:'Խաղալ',tone:'blue'},{id:'logic',name:'COGNITIO Logic',desc:'Երեք բարդության մակարդակ՝ նոր գլուխկոտրուկներով ու հաջորդական բացմամբ։',button:'Խաղալ',tone:'purple'}]
 function goSearch(){if(search.value.trim())navigateTo('/search?q='+encodeURIComponent(search.value.trim()))}
 function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+featuredPeople.value.length)%featuredPeople.value.length}
 </script>
 <template><main class="factum-home">
-<div class="home-cosmic-backdrop" aria-hidden="true"></div>
+<div class="home-cosmic-backdrop" aria-hidden="true"><HomeCosmicMotion/></div>
 <section class="cosmic-hero"><div class="shell hero-content"><div class="hero-copy"><h1><span>Աշխարհն ավելի հետաքրքիր է,</span><br/>քան պատկերացնում ես</h1><p>Հարցրու, բացահայտիր, սովորիր և փորձիր քո գիտելիքները։</p><HomeSearch v-model="search" @submit="goSearch" /><div class="quick-queries"><span>Հանրաճանաչ հարցեր՝</span><button v-for="q in popularQuestions" :key="q" @click="search=q;goSearch()">{{q}}</button></div></div><blockquote class="hero-quote">«Գիտելիքը ճանապարհ է,<br/> որը երբեք չի ավարտվում»</blockquote></div></section>
 <div class="shell home-content"><section class="subject-section" aria-labelledby="home-encyclopedia-title"><div class="section-title"><h2 id="home-encyclopedia-title"><NuxtLink prefetch-on="interaction" to="/subjects" class="encyclopedia-heading-link"><BookOpen :size="23" /> Հանրագիտարան <ArrowRight :size="19" /></NuxtLink></h2></div><div class="home-subject-grid"><NuxtLink prefetch-on="interaction" v-for="s in tiles" :key="s.slug" :to="'/subjects/'+s.slug" class="subject-tile" :style="{ '--card-accent': s.accent }"><CardVideo v-if="s.media.video" :src="s.media.video" :poster="s.media.poster" /><img v-else :src="s.img" :alt="s.name" loading="lazy" decoding="async"/><span class="subject-emblem" aria-hidden="true"><component :is="s.icon" :size="17" :stroke-width="1.9" /></span><strong :title="s.name">{{s.label}}</strong></NuxtLink></div></section>
 <section class="games-section"><div class="section-title"><h2><Sparkles :size="24"/> Փորձիր քո գիտելիքները</h2></div><div class="games-grid"><NuxtLink prefetch-on="interaction" v-for="g in games" :key="g.id" :to="'/games/'+g.id" class="game-card" :class="'game-'+g.tone" :style="{ '--card-accent': gameAccents[g.id] }"><img :src="optimizedImage('/images/'+g.id+'-art.jpg')" :alt="g.name"/><div class="game-copy"><h3>{{g.name}}</h3><p>{{g.desc}}</p><span class="game-play">{{g.button}} <ArrowRight :size="17"/></span></div></NuxtLink></div></section>
@@ -145,7 +145,7 @@ function nextPerson(dir:number){personIndex.value=(personIndex.value+dir+feature
   <article v-if="featuredFact" class="discovery-card fact-highlight">
     <img src="/images/Earth_floating_with_digital_netw…_f11676c3.jpg" alt="Երկիր մոլորակը՝ թվային ցանցի կապերով" width="1376" height="768" decoding="async" />
     <div class="discovery-copy">
-      <span class="fact-eyebrow">FACTUM · Գիտե՞ս, որ...</span>
+      <span class="fact-eyebrow">COGNITIO · Գիտե՞ս, որ...</span>
       <h3>{{ featuredFact.title }}</h3>
       <p :title="featuredFact.text">{{ featuredFact.text }}</p>
     </div>
