@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import {ArrowLeft,ArrowUpRight,Columns3,Landmark,Move3D,Search,BookOpen,Heart,Bookmark,Clock3} from 'lucide-vue-next'
+import {ArrowLeft,ArrowUpRight,Columns3,Landmark,Move3D,Search,BookOpen,Heart,Bookmark,Clock3,Volume2} from 'lucide-vue-next'
 import {normalizeBookSearch} from '~/utils/library/navigation'
 import {latestReadingBookmark,readingPositionLabel} from '~/utils/library/reading'
 import {libraryTopics,type LibraryBook} from '~/data/library/catalog'
 const route=useRoute()
+const router=useRouter()
 const {data:catalog}=await useFetch('/api/library')
 const libraryBooks=ref<readonly LibraryBook[]>(catalog.value?.items||[])
 const catalogPage=ref(1),moreCatalog=ref(Boolean(catalog.value?.hasMore)),loadingCatalog=ref(false)
 async function loadMoreCatalog(){loadingCatalog.value=true;try{const next=await $fetch('/api/library',{query:{page:catalogPage.value+1}});const known=new Set(libraryBooks.value.map(book=>book.id));libraryBooks.value=[...libraryBooks.value,...next.items.filter(book=>!known.has(book.id))];catalogPage.value++;moreCatalog.value=Boolean(next.hasMore)}finally{loadingCatalog.value=false}}
-const hall=ref<{visit:(index:number)=>void;reset:()=>void;focusBook:(id:string)=>void}>(),active=ref<number|null>(null),ready=ref(false)
+const hall=ref<{visit:(index:number)=>void;reset:()=>void;focusBook:(id:string)=>boolean}>(),active=ref<number|null>(null),ready=ref(false)
 const {library,toggleBook}=useProgress()
 const {records,load}=useLibraryReading()
 const resumeBookmarks=computed(()=>Object.fromEntries(Object.entries(records.value).map(([id,state])=>[id,latestReadingBookmark(state)])))
 const readerStart=ref<'beginning'|'bookmark'|'resume'>('resume')
+const readerListen=ref(false)
 const personal=ref<'all'|'favorites'|'reading'|'bookmarks'>('all')
 const query=ref(''),limit=ref(12),reader=ref<LibraryBook|null>(null),roomFrame=ref<HTMLElement>()
 const filteredBooks=computed(()=>{const term=normalizeBookSearch(query.value);return libraryBooks.value.filter(book=>(personal.value==='all'||personal.value==='favorites'&&library.value.includes(book.id)||personal.value==='reading'&&Boolean(records.value[book.id]?.updatedAt)&&(library.value.includes(book.id)||Boolean(records.value[book.id]?.bookmarks.length))||personal.value==='bookmarks'&&Boolean(records.value[book.id]?.bookmarks.length))&&(active.value===null||book.shelf===active.value)&&normalizeBookSearch(`${book.title} ${book.originalTitle} ${book.author}`).includes(term))})
@@ -26,7 +28,11 @@ async function openLinkedBook(book:LibraryBook){
  active.value=book.shelf
  roomFrame.value?.scrollIntoView({behavior:'instant',block:'center'})
  await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())))
- hall.value?.focusBook(book.id)
+ if(hall.value?.focusBook(book.id)){
+  const query={...route.query}
+  delete query.book
+  await router.replace({path:route.path,query,hash:route.hash})
+ }
 }
 let loadingTargetId='',focusedTargetId=''
 const targetNotice=ref('')
@@ -49,7 +55,7 @@ async function onHallReady(){
  }finally{loadingTargetId=''}
 }
 watch(()=>route.query.book,()=>{focusedTargetId='';targetNotice.value='';if(ready.value)void onHallReady()})
-function readBook(id:string,start:'beginning'|'bookmark'|'resume'='resume'){readerStart.value=start;reader.value=libraryBooks.value.find(book=>book.id===id&&book.file)||null}
+function readBook(id:string,start:'beginning'|'bookmark'|'resume'='resume',listen=false){readerStart.value=start;readerListen.value=listen;reader.value=libraryBooks.value.find(book=>book.id===id&&book.file)||null}
 
 useHead({title:'Վիրտուալ գրադարան — COGNITIO'})
 </script>
@@ -57,11 +63,14 @@ useHead({title:'Վիրտուալ գրադարան — COGNITIO'})
  <main class="grand-library-page">
   <div class="library-path"><NuxtLink to="/"><ArrowLeft :size="14"/>Գլխավոր</NuxtLink><span>COGNITIO · ՎԻՐՏՈՒԱԼ ԳՐԱԴԱՐԱՆ</span><span class="room-number">ԱՌԱՋԻՆ ՍՐԱՀ</span></div>
   <header class="library-title"><div><p class="library-kicker">ՄԻ ՏԱՐԱԾՔ, ՀԱԶԱՐ ԱՇԽԱՐՀ</p><h1>Գիտելիքի <em>մեծ սրահը</em></h1><p class="library-subtitle">Մարմարե սյուների ու ոսկեգույն գմբեթի ներքո՝ քո հաջորդ բացահայտումը։</p></div><div class="library-seal" aria-hidden="true"><Landmark :size="32" :stroke-width="1"/><span>COGNITIO</span></div></header>
-  <section ref="roomFrame" class="grand-library-frame" aria-label="Գրադարանի ինտերակտիվ 3D միջավայր"><ClientOnly><LazyLibraryGrandHall :key="libraryBooks.length" ref="hall" :books="libraryBooks" :paused="Boolean(reader)" @ready="onHallReady" @read="readBook"/><template #fallback><div class="library-placeholder"><Landmark :size="42" :stroke-width="1"/><span>Բացում ենք սրահի դռները…</span></div></template></ClientOnly></section>
+  <section ref="roomFrame" class="grand-library-frame" aria-label="Գրադարանի ինտերակտիվ 3D միջավայր"><ClientOnly><LazyLibraryGrandHall :key="libraryBooks.length" ref="hall" :books="libraryBooks" :paused="Boolean(reader)" @ready="onHallReady" @read="readBook" @listen="id=>readBook(id,'resume',true)"/><template #fallback><div class="library-placeholder"><Landmark :size="42" :stroke-width="1"/><span>Բացում ենք սրահի դռները…</span></div></template></ClientOnly></section>
   <p v-if="targetNotice" role="status">{{targetNotice}}</p>
-  <nav class="library-room-nav" aria-label="Մոտենալ գրադարանի բաժիններին"><button :disabled="!ready" :class="{active:active===null}" :aria-pressed="active===null" @click="active=null;hall?.reset()"><Columns3 :size="18"/><span>Ամբողջ սրահը</span></button><button v-for="topic in availableTopics" :key="topic.id" :disabled="!ready" :class="{active:active===topic.shelf}" :aria-pressed="active===topic.shelf" @click="visit(topic.shelf)"><small>{{topic.count ? `${topic.count} գիրք` : 'Բաժին'}}</small><span>{{topic.short}}</span><ArrowUpRight :size="15"/></button></nav>
-  <section class="library-editions" aria-label="Գրքերը և բաժինները"><nav class="personal-library-tabs" aria-label="Իմ գրադարանը"><button :aria-pressed="personal==='all'" @click="personal='all'">Բոլոր գրքերը</button><button :aria-pressed="personal==='favorites'" @click="personal='favorites';active=null"><Heart :size="15"/>Պահպանված գրքեր</button><button :aria-pressed="personal==='reading'" @click="personal='reading';active=null"><Clock3 :size="15"/>Շարունակել կարդալ</button><button :aria-pressed="personal==='bookmarks'" @click="personal='bookmarks';active=null"><Bookmark :size="15"/>Էջանշաններով</button></nav><header><div><h2>Գտիր քո գիրքը</h2><p>{{catalog?.total||libraryBooks.length}} տարբեր գիրք · Հայերեն բնագրեր</p></div><label class="catalog-search"><Search :size="17"/><input v-model="query" type="search" placeholder="Գրքի անուն կամ հեղինակ…" aria-label="Որոնել գրադարանի գրքերը"/></label></header><p class="catalog-results" role="status">{{filteredBooks.length}} գիրք{{active!==null?' · '+libraryTopics.find(topic=>topic.shelf===active)?.short:''}}</p><div class="edition-grid"><article v-for="book in visibleBooks" :key="book.id" class="edition-card" :style="{'--book-accent':book.color}"><button type="button" class="edition-main" :disabled="!ready" :aria-label="`${book.title}՝ գտնել դարակում`" @click="findBook(book)"><span class="edition-cover"><img :src="book.cover" :alt="`${book.title} գրքի շապիկ`" width="108" height="154" loading="lazy" decoding="async"/></span><span class="edition-details"><small>{{libraryTopics.find(topic=>topic.id===book.topic)?.short}}</small><strong>{{book.title}}</strong><span>{{book.author}}</span><b>Գտնել դարակում <ArrowUpRight :size="13" aria-hidden="true"/></b></span></button><button type="button" class="catalog-favorite save-control" :aria-pressed="library.includes(book.id)" @click="toggleBook(book.id)"><Heart :size="14" :fill="library.includes(book.id)?'currentColor':'none'"/>{{library.includes(book.id)?'Պահպանված է':'Պահպանել'}}</button><div v-if="book.file" class="catalog-reading-actions"><button type="button" class="catalog-read" @click="readBook(book.id,'beginning')"><BookOpen :size="14"/>Կարդալ</button><button v-if="resumeBookmarks[book.id]" type="button" class="catalog-read catalog-resume" :title="'Շարունակել կարդալ · '+(resumeBookmarks[book.id]!.excerpt||readingPositionLabel(book.topic,resumeBookmarks[book.id]!))" :aria-label="'Շարունակել կարդալ · '+readingPositionLabel(book.topic,resumeBookmarks[book.id]!)" @click="readBook(book.id,'bookmark')"><Clock3 :size="14"/><span>{{readingPositionLabel(book.topic,resumeBookmarks[book.id]!)}}</span></button></div></article></div><div v-if="!filteredBooks.length" class="catalog-empty">{{active!==null&&!query.trim() ? moreCatalog ? 'Այս բաժնի գրքերը կարող են լինել հաջորդ էջերում․ բեռնիր ևս գրքեր։' : 'Այս բաժնում դեռ գրքեր չկան։' : 'Գիրք չի գտնվել։ Փոխիր որոնումը կամ ընտրիր «Ամբողջ սրահը»։'}}</div><button v-if="visibleBooks.length<filteredBooks.length" class="catalog-more" @click="limit+=12">Ցույց տալ հաջորդ գրքերը</button></section>
-  <LazyLibraryBookReader v-if="reader" :key="reader.id+':'+readerStart" :book="reader" :start="readerStart" @close="reader=null"/>
+  <nav class="library-room-nav" aria-label="Մոտենալ գրադարանի բաժիններին">
+   <button type="button" class="library-all-room" :disabled="!ready" :class="{active:active===null}" :aria-pressed="active===null" @click="active=null;hall?.reset()"><Columns3 :size="18"/><span>Ամբողջ սրահը</span></button>
+   <div class="library-topic-grid"><button v-for="topic in availableTopics" :key="topic.id" type="button" :disabled="!ready" :class="{active:active===topic.shelf}" :aria-pressed="active===topic.shelf" @click="visit(topic.shelf)"><small>{{topic.count ? `${topic.count} գիրք` : 'Բաժին'}}</small><span>{{topic.short}}</span><ArrowUpRight :size="15"/></button></div>
+  </nav>
+  <section class="library-editions" aria-label="Գրքերը և բաժինները"><nav class="personal-library-tabs" aria-label="Իմ գրադարանը"><button :aria-pressed="personal==='all'" @click="personal='all'">Բոլոր գրքերը</button><button :aria-pressed="personal==='favorites'" @click="personal='favorites';active=null"><Heart :size="15"/>Պահպանված գրքեր</button><button :aria-pressed="personal==='reading'" @click="personal='reading';active=null"><Clock3 :size="15"/>Շարունակել կարդալ</button><button :aria-pressed="personal==='bookmarks'" @click="personal='bookmarks';active=null"><Bookmark :size="15"/>Էջանշաններով</button></nav><header><div><h2>Գտիր քո գիրքը</h2><p>{{catalog?.total||libraryBooks.length}} տարբեր գիրք · Հայերեն բնագրեր</p></div><label class="catalog-search"><Search :size="17"/><input v-model="query" type="search" placeholder="Գրքի անուն կամ հեղինակ…" aria-label="Որոնել գրադարանի գրքերը"/></label></header><p class="catalog-results" role="status">{{filteredBooks.length}} գիրք{{active!==null?' · '+libraryTopics.find(topic=>topic.shelf===active)?.short:''}}</p><div class="edition-grid"><article v-for="book in visibleBooks" :key="book.id" class="edition-card" :style="{'--book-accent':book.color}"><button type="button" class="edition-main" :disabled="!ready" :aria-label="`${book.title}՝ գտնել դարակում`" @click="findBook(book)"><span class="edition-cover"><img :src="book.cover" :alt="`${book.title} գրքի շապիկ`" width="108" height="154" loading="lazy" decoding="async"/></span><span class="edition-details"><small>{{libraryTopics.find(topic=>topic.id===book.topic)?.short}}</small><strong>{{book.title}}</strong><span>{{book.author}}</span><b>Գտնել դարակում <ArrowUpRight :size="13" aria-hidden="true"/></b></span></button><button type="button" class="catalog-favorite save-control" :aria-pressed="library.includes(book.id)" @click="toggleBook(book.id)"><Heart :size="14" :fill="library.includes(book.id)?'currentColor':'none'"/>{{library.includes(book.id)?'Պահպանված է':'Պահպանել'}}</button><div v-if="book.file" class="catalog-reading-actions"><button type="button" class="catalog-read" @click="readBook(book.id,'beginning')"><BookOpen :size="14"/>Կարդալ</button><button type="button" class="catalog-read catalog-listen" @click="readBook(book.id,'resume',true)"><Volume2 :size="14"/>Լսել</button><button v-if="resumeBookmarks[book.id]" type="button" class="catalog-read catalog-resume" :title="'Շարունակել կարդալ · '+(resumeBookmarks[book.id]!.excerpt||readingPositionLabel(book.topic,resumeBookmarks[book.id]!))" :aria-label="'Շարունակել կարդալ · '+readingPositionLabel(book.topic,resumeBookmarks[book.id]!)" @click="readBook(book.id,'bookmark')"><Clock3 :size="14"/><span>{{readingPositionLabel(book.topic,resumeBookmarks[book.id]!)}}</span></button></div></article></div><div v-if="!filteredBooks.length" class="catalog-empty">{{active!==null&&!query.trim() ? moreCatalog ? 'Այս բաժնի գրքերը կարող են լինել հաջորդ էջերում․ բեռնիր ևս գրքեր։' : 'Այս բաժնում դեռ գրքեր չկան։' : 'Գիրք չի գտնվել։ Փոխիր որոնումը կամ ընտրիր «Ամբողջ սրահը»։'}}</div><button v-if="visibleBooks.length<filteredBooks.length" class="catalog-more" @click="limit+=12">Ցույց տալ հաջորդ գրքերը</button></section>
+  <LazyLibraryBookReader v-if="reader" :key="reader.id+':'+readerStart+':'+readerListen" :book="reader" :start="readerStart" :listen="readerListen" @close="reader=null"/>
   <button v-if="moreCatalog" class="catalog-more" :disabled="loadingCatalog" @click="loadMoreCatalog">{{loadingCatalog?'Բեռնվում է…':'Բեռնել ևս գրքեր'}}</button>
   <footer class="library-room-note"><span><Move3D :size="15"/>Քայլիր սրահում և բացահայտիր տարածքը։</span><p>Ոգեշնչված ԱՄՆ Կոնգրեսի գրադարանի շքեղ ընթերցասրահից։ <a href="https://www.loc.gov/about/online-tours/thomas-jefferson-building/main-reading-room/" target="_blank" rel="noopener noreferrer">Տես ոգեշնչման աղբյուրը ↗</a></p></footer>
  </main>
@@ -108,4 +117,19 @@ useHead({title:'Վիրտուալ գրադարան — COGNITIO'})
 @media(max-width:1100px){.edition-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.edition-grid{grid-template-columns:1fr}.edition-card{min-height:0}.edition-card .edition-cover{flex-basis:90px;width:90px;height:130px}.edition-card .edition-details{min-height:130px}}
 @media(prefers-reduced-motion:reduce){.edition-card,.edition-card .edition-cover{transition:none}.edition-card:hover,.edition-card:focus-within{transform:none}}
+/* Keep the hall control separate from the growing subject list. */
+.library-room-nav{display:block;overflow:visible;padding:12px;border-color:#baa16c43}
+.library-room-nav .library-all-room{display:flex;width:100%;min-width:0;min-height:52px;justify-content:flex-start;gap:11px;padding:12px 17px;border:1px solid #baa16c4d;border-radius:9px;background:#17283b;color:#e5d3ae;font-size:12px;font-weight:700;text-align:left}
+.library-room-nav .library-all-room:hover,.library-room-nav .library-all-room.active{border-color:#d4b679;background:#26394a;color:#fff1d3}
+.library-topic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;min-width:0;margin-top:10px}
+.library-topic-grid button{display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:center;column-gap:7px;row-gap:4px;min-width:0;min-height:68px;padding:10px 12px;border:1px solid #baa16c30;border-radius:9px;background:#0d1c2c;text-align:left}
+.library-room-nav .library-topic-grid button+button{border-left:1px solid #baa16c30}
+.library-topic-grid button small{grid-column:1;font-size:9px;line-height:1.3}
+.library-topic-grid button span{grid-column:1;min-width:0;line-height:1.45}
+.library-topic-grid button>svg:last-child{grid-column:2;grid-row:1 / 3;align-self:center;display:block}
+.library-room-nav .library-topic-grid button:is(:hover,.active,:focus-visible){border-color:#cbae79;background:#25374a;color:#fff1d3}
+.library-room-nav button.active::after{display:none}
+@media(max-width:600px){.library-room-nav{display:block;overflow:visible;padding:10px}.library-room-nav .library-all-room{width:100%;min-width:0;min-height:48px;padding:10px 14px}.library-topic-grid{grid-auto-flow:column;grid-template-columns:none;grid-template-rows:repeat(2,minmax(64px,auto));grid-auto-columns:minmax(174px,52vw);overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:5px;scrollbar-width:thin}.library-topic-grid button{min-width:0;min-height:64px;padding:9px 10px}.library-topic-grid button>svg:last-child{display:none}}
+.catalog-reading-actions{flex-wrap:wrap}
+.catalog-reading-actions>.catalog-listen{flex:0 0 auto}
 </style>
