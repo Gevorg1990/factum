@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as THREE from 'three'
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js'
-import {Expand,Move,Heart,RotateCcw,ArrowUp,ArrowDown,ArrowLeft,ArrowRight,Landmark,X} from 'lucide-vue-next'
+import {Expand,Move,Heart,RotateCcw,ArrowUp,ArrowDown,ArrowLeft,ArrowRight,Landmark,X,Volume2} from 'lucide-vue-next'
 import {libraryTopics,type LibraryBook} from '~/data/library/catalog'
 import type {BookObject} from '~/utils/library/createRoom'
 import {createBookPullout} from '~/utils/library/bookPullout'
@@ -11,7 +11,7 @@ import {constrainPosition,EYE_HEIGHT,shelfPoint,isWalkablePoint,findWalkPath,smo
 const {library,toggleBook}=useProgress()
 const props=defineProps<{paused?:boolean;books:readonly LibraryBook[]}>()
 const initialView={x:0,z:5.2,pitch:.08}
-const emit=defineEmits<{ready:[];error:[];read:[id:string]}>()
+const emit=defineEmits<{ready:[];error:[];read:[id:string];listen:[id:string]}>()
 const host=ref<HTMLElement>(),canvasHost=ref<HTMLElement>(),loading=ref(true),failed=ref(false),walking=ref(false),locked=ref(false),touring=ref(false)
 const selectedBook=ref<LibraryBook|null>(null)
 const pullouts=new Map<string,ReturnType<typeof createBookPullout>>()
@@ -56,12 +56,13 @@ function visit(shelf:number){
 function keyDown(e:KeyboardEvent){if(props.paused)return;if(e.code==='Escape'&&selectedBook.value){closeBook();return}if(!host.value?.contains(document.activeElement)&&!locked.value)return;const key=e.code;if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key)){e.preventDefault();if(!walking.value)enter();keys.add(key);journey=undefined;touring.value=false;lookAt=undefined}}
 function focusBook(id:string){
  const mesh=pickableBooks.find(mesh=>mesh.userData.bookId===id) as THREE.InstancedMesh|undefined
- if(!mesh)return
+ if(!mesh)return false
  const matrix=new THREE.Matrix4();mesh.getMatrixAt(0,matrix)
  const position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();matrix.decompose(position,rotation,scale)
  const goal=position.clone().addScaledVector(new THREE.Vector3(0,0,1).applyQuaternion(rotation),6.6)
- closeBook();if(beginJourney(goal.x,goal.z,()=>toggleBookCopy({object:mesh,instanceId:0})))lookAt=position
+ closeBook();const started=beginJourney(goal.x,goal.z,()=>toggleBookCopy({object:mesh,instanceId:0}));if(started)lookAt=position
  host.value?.focus({preventScroll:true})
+ return started
 }
 watch(()=>props.paused,value=>{if(value){clearInput();renderer?.setAnimationLoop(null)}else if(renderFrame&&!disposed){last=performance.now();renderer?.setAnimationLoop(renderFrame)}})
 function keyUp(e:KeyboardEvent){keys.delete(e.code)}
@@ -324,7 +325,7 @@ defineExpose({visit,reset,focusBook})
     <header class="book-panel-heading"><span>COGNITIO · ԳՐԱԴԱՐԱՆ</span><button type="button" class="return-book" aria-label="Փակել և վերադարձնել գիրքը դարակին" @click="closeBook"><X :size="18"/></button></header>
     <div class="book-panel-summary"><div class="book-cover-frame"><img :src="selectedBook.cover" :alt="selectedBook.title"/></div><div class="book-panel-title"><small>{{libraryTopics.find(topic=>topic.id===selectedBook?.topic)?.short}}</small><h2>{{selectedBook.title}}</h2><p>{{selectedBook.author}}</p><span class="book-language">Հայերեն</span></div></div>
     <p class="book-panel-description">{{selectedBook.description}}</p>
-    <div class="book-panel-actions"><button v-if="selectedBook.file" type="button" class="book-read-action" @click="emit('read',selectedBook.id)">Կարդալ գիրքը <ArrowRight :size="16"/></button><button type="button" class="book-save-action save-control" :aria-pressed="library.includes(selectedBook.id)" @click="toggleBook(selectedBook.id)"><Heart :size="16" :fill="library.includes(selectedBook.id)?'currentColor':'none'"/>{{library.includes(selectedBook.id)?'Պահպանված է':'Պահպանել'}}</button></div>
+    <div class="book-panel-actions"><button v-if="selectedBook.file" type="button" class="book-read-action" @click="emit('read',selectedBook.id)">Կարդալ գիրքը <ArrowRight :size="16"/></button><button v-if="selectedBook.file" type="button" class="book-listen-action" @click="emit('listen',selectedBook.id)"><Volume2 :size="16"/>Լսել</button><button type="button" class="book-save-action save-control" :aria-pressed="library.includes(selectedBook.id)" @click="toggleBook(selectedBook.id)"><Heart :size="16" :fill="library.includes(selectedBook.id)?'currentColor':'none'"/>{{library.includes(selectedBook.id)?'Պահպանված է':'Պահպանել'}}</button></div>
     <button type="button" class="book-return-action" @click="closeBook">Վերադարձնել դարակին</button>
    </aside>
    <aside v-if="hovered&&!selectedBook" class="book-hover" :style="{left:`${hoverPosition.x}px`,top:`${hoverPosition.y}px`}"><img :src="hovered.cover" :alt="hovered.title"/><div><small>{{libraryTopics.find(topic=>topic.id===hovered?.topic)?.short}}</small><strong>{{hovered.title}}</strong><span>{{hovered.author}}</span></div></aside>
@@ -358,4 +359,7 @@ defineExpose({visit,reset,focusBook})
 .book-hover{background:#061421f7}
 .book-hover strong{font-weight:800;color:#fff;text-shadow:0 1px 2px #000}
 .book-hover span{font-weight:650;color:#f1f5f8}
+.book-panel-actions{flex-wrap:wrap}
+.book-listen-action{border:1px solid #bba16b8c;background:#ba9b5d1f;color:#f3ddb0}
+.book-listen-action:hover,.book-listen-action:focus-visible{border-color:#f1d6a0;background:#ba9b5d35}
 </style>
