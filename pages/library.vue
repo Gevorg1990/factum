@@ -6,7 +6,7 @@ import {libraryTopics,type LibraryBook} from '~/data/library/catalog'
 const route=useRoute()
 const router=useRouter()
 const {data:catalog}=await useFetch('/api/library')
-const libraryBooks=ref<readonly LibraryBook[]>(catalog.value?.items||[])
+const libraryBooks=shallowRef<readonly LibraryBook[]>(catalog.value?.items||[])
 const catalogPage=ref(1),moreCatalog=ref(Boolean(catalog.value?.hasMore)),loadingCatalog=ref(false)
 async function loadMoreCatalog(){loadingCatalog.value=true;try{const next=await $fetch('/api/library',{query:{page:catalogPage.value+1}});const known=new Set(libraryBooks.value.map(book=>book.id));libraryBooks.value=[...libraryBooks.value,...next.items.filter(book=>!known.has(book.id))];catalogPage.value++;moreCatalog.value=Boolean(next.hasMore)}finally{loadingCatalog.value=false}}
 const hall=ref<{visit:(index:number)=>void;reset:()=>void;focusBook:(id:string)=>boolean}>(),active=ref<number|null>(null),ready=ref(false)

@@ -29,6 +29,8 @@ let visible=true,disposed=false,last=0,yaw=0,pitch=initialView.pitch,targetHeigh
 let journey:{points:THREE.Vector3[];lengths:number[];total:number;started:number;duration:number;height:number;onArrive?:()=>void}|undefined
 const walkVelocity=new THREE.Vector2()
 let hoverMesh:THREE.Object3D|undefined
+const hoverTarget=new THREE.Vector3()
+const movementTarget=new THREE.Vector2()
 let bookObjects:BookObject[]=[],pickableBooks:THREE.Object3D[]=[],hoverPoint:THREE.Vector2|undefined,lastHover=0
 const placements=ref<ShelfPlacements>({})
 let shelfDrag:{mesh:THREE.InstancedMesh;id:string;topic:string;original:THREE.Matrix4;markers?:THREE.InstancedMesh;slots:number[];target:number|null;travel:number;activated:boolean}|undefined
@@ -273,7 +275,8 @@ onMounted(async()=>{
   listen(renderer.domElement,'dblclick',((event:MouseEvent)=>{event.preventDefault();clearTimeout(clickTimer);approachPoint(event.clientX,event.clientY)}) as EventListener)
   listen(renderer.domElement,'webglcontextlost',e=>{e.preventDefault();failed.value=true;clearInput();emit('error')})
   renderFrame=time=>{
-   if(disposed||props.paused||document.hidden||!visible||time-last<(mobile.value?32:16))return
+   const moving=Boolean(journey||down||lookAt||keys.size||joyId!==undefined||pullouts.size||walkVelocity.lengthSq()>.001)
+   if(disposed||props.paused||document.hidden||!visible||time-last<(moving?(mobile.value?32:16):50))return
    const dt=Math.min((time-last)/1000,.05);last=time
    if(journey){
     const progress=Math.min(1,(time-journey.started)/journey.duration),distance=smoothJourneyProgress(progress)*journey.total
@@ -285,7 +288,8 @@ onMounted(async()=>{
    let forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-joystick.value.y
    let side=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+joystick.value.x
    const len=Math.max(1,Math.hypot(forward,side));forward/=len;side/=len
-   walkVelocity.lerp(new THREE.Vector2(-Math.sin(yaw)*forward+Math.cos(yaw)*side,-Math.cos(yaw)*forward-Math.sin(yaw)*side).multiplyScalar(4.8),1-Math.exp(-dt*((forward||side)?2.6:8)))
+   movementTarget.set(-Math.sin(yaw)*forward+Math.cos(yaw)*side,-Math.cos(yaw)*forward-Math.sin(yaw)*side).multiplyScalar(4.8)
+   walkVelocity.lerp(movementTarget,1-Math.exp(-dt*((forward||side)?2.6:8)))
    if(!journey&&walkVelocity.lengthSq()>.0001)safeMove(walkVelocity.x*dt,walkVelocity.y*dt)
    if(!journey)camera.position.y=THREE.MathUtils.lerp(camera.position.y,targetHeight,1-Math.exp(-dt*4))
    if(lookAt){const dx=lookAt.x-camera.position.x,dz=lookAt.z-camera.position.z,distance=Math.hypot(dx,dz);if(distance<.35){lookAt=undefined}else{const targetYaw=Math.atan2(-dx,-dz),dy=Math.atan2(lookAt.y-camera.position.y,distance);yaw+=Math.atan2(Math.sin(targetYaw-yaw),Math.cos(targetYaw-yaw))*(1-Math.exp(-dt*3));pitch=THREE.MathUtils.lerp(pitch,dy,1-Math.exp(-dt*3))}}
@@ -297,7 +301,8 @@ onMounted(async()=>{
     const book=hit?props.books.find(book=>book.id===hit.object.userData.bookId):undefined
     hoverMesh=hit?.object;hovered.value=book||null;if(renderer)renderer.domElement.style.cursor='grab'
    }
-   for(const book of bookObjects){if(pullouts.has(book.mesh.uuid+':single'))continue;const active=book.mesh===hoverMesh&&book.id===hovered.value?.id;book.mesh.position.lerp(book.rest.clone().addScaledVector(book.normal,active?.3:0),1-Math.exp(-dt*10))}
+   const hoverEase=1-Math.exp(-dt*10)
+   for(const book of bookObjects){if(pullouts.has(book.mesh.uuid+':single'))continue;const active=book.mesh===hoverMesh&&book.id===hovered.value?.id;hoverTarget.copy(book.rest).addScaledVector(book.normal,active?.3:0);book.mesh.position.lerp(hoverTarget,hoverEase)}
    for(const [key,animation] of pullouts){if(!animation.update(dt))pullouts.delete(key)}
    renderer?.render(scene,camera)
   }
@@ -359,7 +364,12 @@ defineExpose({visit,reset,focusBook})
 .book-hover{background:#061421f7}
 .book-hover strong{font-weight:800;color:#fff;text-shadow:0 1px 2px #000}
 .book-hover span{font-weight:650;color:#f1f5f8}
-.book-panel-actions{flex-wrap:wrap}
-.book-listen-action{border:1px solid #bba16b8c;background:#ba9b5d1f;color:#f3ddb0}
-.book-listen-action:hover,.book-listen-action:focus-visible{border-color:#f1d6a0;background:#ba9b5d35}
+.book-panel-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.book-panel-actions button{min-width:0;font-size:12px;font-weight:650;line-height:1.5}
+.book-panel-actions .book-read-action{grid-column:1/-1;min-height:50px;justify-content:space-between;padding-inline:18px;background:linear-gradient(115deg,#f3dba8,#d2ad6e);box-shadow:0 6px 20px #b99b5c29}
+.book-read-action:hover{background:linear-gradient(115deg,#ffe8b8,#dec083);transform:translateY(-1px)}
+.book-listen-action{border:1px solid #c5a8749c;background:#bda16d1b;color:#f3ddb0}
+.book-listen-action:hover{border-color:#f1d6a0;background:#ba9b5d35}
+.book-save-action{width:100%}
+@media(max-width:380px){.book-panel-actions{grid-template-columns:1fr}.book-read-action{grid-column:auto}}
 </style>

@@ -6,8 +6,16 @@ import { armenianPortraits } from '~/data/personPortraits'
 import { selectHomeFacts } from '~/utils/homeFacts'
 import { cardTheme, gameAccents } from '~/data/cardThemes'
 import { ArrowRight, Sparkles, BookOpen, CircleHelp, Brain, Users, Globe2, ChevronRight, ChevronLeft } from 'lucide-vue-next'
-const subjects = await usePublishedContent('CATEGORY',[...legacySubjects,...collectionSubjects.map(item=>({...item,img:item.slug}))])
-const [armenianPeople, timeline, facts] = await Promise.all([usePublishedContent('PERSON',legacyPeople,{limit:20,armenian:true}),usePublishedContent('EVENT',legacyTimeline,{limit:20}),usePublishedContent('FACT',legacyFacts,{limit:24})])
+const [subjects, armenianPeople, timeline, facts] = await Promise.all([
+  usePublishedContent('CATEGORY',[...legacySubjects,...collectionSubjects.map(item=>({...item,img:item.slug}))]),
+  usePublishedContent('PERSON',legacyPeople,{limit:20,armenian:true}),
+  usePublishedContent('EVENT',legacyTimeline,{limit:20}),
+  usePublishedContent('FACT',legacyFacts,{limit:24}),
+])
+useHead({link:[
+  {rel:'preload',as:'image',href:'/images/optimized/cosmic-hero-mobile-b9df223d.webp',media:'(max-width: 800px)',fetchpriority:'high'},
+  {rel:'preload',as:'image',href:'/images/optimized/cosmic-hero-desktop-052c61dc.webp',media:'(min-width: 801px)',fetchpriority:'high'},
+]})
 const search=ref('')
 const personIndex=ref(0)
 const peopleReady = ref(false)
@@ -157,7 +165,7 @@ async function nextPerson(direction: number) {
     <h2><NuxtLink prefetch-on="interaction" to="/facts" class="encyclopedia-heading-link"><Sparkles :size="22" /> Հետաքրքիր փաստեր <ArrowRight :size="18" /></NuxtLink></h2>
   </div>
   <article v-if="featuredFact" class="discovery-card fact-highlight">
-    <img src="/images/Earth_floating_with_digital_netw…_f11676c3.jpg" alt="Երկիր մոլորակը՝ թվային ցանցի կապերով" width="1376" height="768" decoding="async" />
+    <img src="/images/optimized/home-fact-earth-b63bcdb1.webp" alt="Երկիր մոլորակը՝ թվային ցանցի կապերով" width="900" height="502" loading="lazy" decoding="async" />
     <div class="discovery-copy">
       <span class="fact-eyebrow">COGNITIO · Գիտե՞ս, որ...</span>
       <h3>{{ featuredFact.title }}</h3>

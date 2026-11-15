@@ -20,6 +20,9 @@ const marks=computed(()=>records.value[props.book.id]?.bookmarks||[])
 const currentMark=computed(()=>marks.value.find(mark=>mark.page===page.value&&(mark.line??0)===selectedLine.value))
 const dialog=ref<HTMLDialogElement>(),body=ref<HTMLElement>(),loading=ref(true),error=ref(''),pages=ref<string[]>([]),page=ref(0),fontSize=ref(19),paper=ref(false)
 const controller=new AbortController()
+let previousRootOverflow='',previousBodyOverflow=''
+function lockPageScroll(){previousRootOverflow=document.documentElement.style.overflow;previousBodyOverflow=document.body.style.overflow;document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'}
+function unlockPageScroll(){document.documentElement.style.overflow=previousRootOverflow;document.body.style.overflow=previousBodyOverflow}
 const lines=computed(()=>(pages.value[page.value]||'').split('\n'))
 const textChunks=computed(()=>readingLineChunks(pages.value[page.value]||''))
 const pageMarks=computed(()=>new Set(marks.value.filter(mark=>mark.page===page.value).map(mark=>mark.line??0)))
@@ -57,7 +60,7 @@ function deleteMark(markPage:number,line=0){removeBookmark(props.book.id,markPag
 function preserveNote(){if(!loading.value&&!error.value&&note.value.trim()&&note.value.trim()!==(editingMark.value?.note||''))saveBookmark(props.book.id,notePosition.value.page,note.value,notePosition.value.line,bookmarkText(pages.value,notePosition.value.page,notePosition.value.line))}
 function go(value:number,line=0,highlight=false){preserveNote();noteTarget.value=null;touchLine.value=-1;showContents.value=false;showBookmarks.value=false;page.value=Math.max(0,Math.min(pages.value.length-1,value));selectedLine.value=Math.max(0,Math.min(line,lines.value.length-1));savePage(props.book.id,page.value,selectedLine.value);note.value=currentMark.value?.note||'';bookmarkNotice.value='';resumeLine.value=highlight?selectedLine.value:-1;void scrollToLine(selectedLine.value)}
 onMounted(async()=>{
- paper.value=document.documentElement.classList.contains('factum-light');load(props.book.id);dialog.value?.showModal()
+ paper.value=document.documentElement.classList.contains('factum-light');load(props.book.id);lockPageScroll();dialog.value?.showModal()
  try{
   const full=await $fetch<string>(props.book.file,{responseType:'text',signal:controller.signal})
   const start=full.match(/\*\*\* START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^\n]*\*\*\*/i)
@@ -71,7 +74,7 @@ onMounted(async()=>{
   page.value=Math.min(position?.page||0,pages.value.length-1);selectedLine.value=Math.min(position?.line||0,lines.value.length-1);note.value=currentMark.value?.note||'';savePage(props.book.id,page.value,selectedLine.value);if(isPoetry.value&&!records.value[props.book.id]?.pagination)migrateVerse(props.book.id,content.trim(),props.book.topic)
  }catch(e){if(!controller.signal.aborted)error.value='Գիրքը չհաջողվեց բեռնել։ Փակիր և փորձիր կրկին։'}finally{loading.value=false;resumeLine.value=props.start==='beginning'?-1:selectedLine.value;void scrollToLine(selectedLine.value)}
 })
-onUnmounted(()=>{preserveNote();controller.abort();dialog.value?.close()})
+onUnmounted(()=>{preserveNote();controller.abort();dialog.value?.close();unlockPageScroll()})
 function keyboard(e:KeyboardEvent){if(showContents.value||showBookmarks.value||loading.value||error.value)return;if(['SELECT','INPUT','TEXTAREA'].includes((e.target as HTMLElement).tagName))return;if(e.key==='ArrowRight'){e.preventDefault();go(page.value+1)}if(e.key==='ArrowLeft'){e.preventDefault();go(page.value-1)}}
 </script>
 <template>
