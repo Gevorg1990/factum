@@ -4,6 +4,7 @@ const video = ref<HTMLVideoElement | null>(null)
 const completed = ref(false)
 const replayFrame = ref<HTMLCanvasElement | null>(null)
 const holdingLastFrame = ref(false)
+const posterVisible = ref(true)
 let frameCallback: number | undefined
 let card: HTMLElement | null = null
 let observer: IntersectionObserver | undefined
@@ -157,7 +158,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="card-video" aria-hidden="true">
-    <video ref="video" :poster="poster" muted playsinline loop @ended="finishPlayback" preload="none" loading="lazy" tabindex="-1" />
+    <video ref="video" muted playsinline loop @playing="posterVisible=false" @ended="finishPlayback" preload="none" tabindex="-1" />
+    <img v-if="posterVisible" class="video-poster" :src="poster" alt="" loading="lazy" decoding="async" />
     <canvas ref="replayFrame" class="replay-frame" :class="{ 'is-holding': holdingLastFrame }" />
   </div>
 </template>
@@ -165,6 +167,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .card-video { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
 .card-video > :is(video, canvas) { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; border: 0; object-fit: cover; object-position: inherit; }
+.video-poster { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; object-position: inherit; }
+.replay-frame { z-index: 2; }
 .replay-frame { opacity: 0; transition: opacity 260ms ease; }
 .replay-frame.is-holding { opacity: 1; transition: none; }
 @media (prefers-reduced-motion: reduce) { .replay-frame { transition: none; } }

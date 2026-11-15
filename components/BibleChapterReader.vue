@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, Minus, Plus, RefreshCw, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-vue-next'
+import { BookOpen, Minus, Plus, RefreshCw, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Minimize2, Sun, Moon } from 'lucide-vue-next'
 import type { BibleBook } from '~/data/bible'
 import { bibleChapterUrl } from '~/data/bible'
 import type { BibleChapterData } from '~/shared/types/bibleReader'
@@ -11,6 +11,7 @@ const failed = ref(false)
 const failureMessage = ref('')
 const sourceUrl = computed(() => bibleChapterUrl(props.book, props.chapter))
 const fontSize = ref(18)
+const paper = ref(false)
 const isFullscreen = ref(false)
 const fullscreenDialog = ref<HTMLDialogElement | null>(null)
 const fullscreenButton = ref<HTMLButtonElement | null>(null)
@@ -66,16 +67,17 @@ async function load() {
     if (!disposed && version === requestVersion) loading.value = false
   }
 }
+onMounted(() => { if (typeof document !== 'undefined') paper.value = document.documentElement.classList.contains('factum-light') })
 onMounted(load)
 watch(() => [props.book.id, props.chapter], load)
 onBeforeUnmount(() => { disposed = true; closeFullscreen(); requestVersion++; controller?.abort() })
 </script>
 
 <template>
-  <dialog ref="fullscreenDialog" class="bible-fullscreen-dialog" :aria-label="`${book.name}՝ գլուխ ${chapter}, լիաէկրան ընթերցում`" @cancel.prevent="closeFullscreen" @close="closeFullscreen" />
+  <dialog ref="fullscreenDialog" class="bible-fullscreen-dialog" :class="{paper}" :aria-label="`${book.name}՝ գլուխ ${chapter}, լիաէկրան ընթերցում`" @cancel.prevent="closeFullscreen" @close="closeFullscreen" />
   <Teleport :to="fullscreenDialog ?? 'body'" :disabled="!isFullscreen">
-  <section class="bible-inline-reader" :class="{'is-fullscreen':isFullscreen}" :aria-label="`${book.name}՝ գլուխ ${chapter}`" :aria-busy="loading">
-    <div class="bible-reading-toolbar"><span><BookOpen :size="17" /> {{isFullscreen ? `${book.name} · Գլուխ ${chapter}` : 'Կարդա հենց այստեղ'}}</span><div role="group" aria-label="Տառաչափ"><button type="button" :disabled="fontSize <= 16" aria-label="Փոքրացնել տառաչափը" @click="fontSize=Math.max(16,fontSize-1)"><Minus :size="15" /></button><span>{{fontSize}}</span><button type="button" :disabled="fontSize >= 26" aria-label="Մեծացնել տառաչափը" @click="fontSize=Math.min(26,fontSize+1)"><Plus :size="15" /></button><button ref="fullscreenButton" type="button" :aria-label="isFullscreen ? 'Փակել լիաէկրան ընթերցումը' : 'Կարդալ լիաէկրան'" :title="isFullscreen ? 'Փակել (Esc)' : 'Կարդալ լիաէկրան'" :aria-pressed="isFullscreen" @click="isFullscreen ? closeFullscreen() : openFullscreen()"><Minimize2 v-if="isFullscreen" :size="17" /><Maximize2 v-else :size="17" /></button></div></div>
+  <section class="bible-inline-reader" :class="{'is-fullscreen':isFullscreen,paper}" :aria-label="`${book.name}՝ գլուխ ${chapter}`" :aria-busy="loading">
+    <div class="bible-reading-toolbar"><span><BookOpen :size="17" /> {{isFullscreen ? `${book.name} · Գլուխ ${chapter}` : 'Կարդա հենց այստեղ'}}</span><div role="group" aria-label="Ընթերցման կարգավորումներ"><button type="button" :disabled="fontSize <= 16" aria-label="Փոքրացնել տառաչափը" @click="fontSize=Math.max(16,fontSize-1)"><Minus :size="15" /></button><span>{{fontSize}}</span><button type="button" :disabled="fontSize >= 26" aria-label="Մեծացնել տառաչափը" @click="fontSize=Math.min(26,fontSize+1)"><Plus :size="15" /></button><button type="button" :aria-label="paper ? 'Մուգ ընթերցման ֆոն' : 'Բաց ընթերցման ֆոն'" :aria-pressed="paper" @click="paper=!paper"><Moon v-if="paper" :size="17" /><Sun v-else :size="17" /></button><button ref="fullscreenButton" type="button" :aria-label="isFullscreen ? 'Փակել լիաէկրան ընթերցումը' : 'Կարդալ լիաէկրան'" :title="isFullscreen ? 'Փակել (Esc)' : 'Կարդալ լիաէկրան'" :aria-pressed="isFullscreen" @click="isFullscreen ? closeFullscreen() : openFullscreen()"><Minimize2 v-if="isFullscreen" :size="17" /><Maximize2 v-else :size="17" /></button></div></div>
     <p class="bible-reading-edition">Արևելահայերեն · Նոր վերանայված Արարատ</p>
     <div v-if="loading" class="bible-reading-message" role="status"><BookOpen :size="26" /><p>Բեռնում ենք {{book.name}} գրքի {{chapter}}-րդ գլուխը…</p></div>
     <div v-else-if="failed" class="bible-reading-message" role="alert"><p>{{failureMessage}}</p><button class="btn-secondary" type="button" @click="load"><RefreshCw :size="15" /> Փորձել կրկին</button><a class="btn-secondary" :href="sourceUrl" target="_blank" rel="noopener noreferrer">Բացել գլուխը Bible.com-ում <ArrowUpRight :size="15" /></a></div>
@@ -96,6 +98,10 @@ onBeforeUnmount(() => { disposed = true; closeFullscreen(); requestVersion++; co
 .bible-fullscreen-dialog { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left)); border: 0; background: #081020; color: #edf0f7; }
 .bible-fullscreen-dialog::backdrop { background: #081020; }
 .bible-inline-reader.is-fullscreen { display: flex; flex-direction: column; width: 100%; max-width: 900px; height: 100%; min-height: 0; margin: 0 auto; padding: 0; border: 0; border-radius: 0; background: transparent; --bible-gold: #dfc38f; }
+.bible-inline-reader.paper{--bible-gold:#80602f;background:#f5efdf;color:#352f27;border-color:#cbb583}
+.bible-fullscreen-dialog.paper{background:#f5efdf;color:#352f27}
+.bible-inline-reader.is-fullscreen.paper{background:transparent;--bible-gold:#80602f}
+.bible-reading-toolbar button:hover{background:#dfc38f20}
 .is-fullscreen .bible-reading-toolbar,.is-fullscreen .bible-reading-bottom,.is-fullscreen .bible-reading-edition,.is-fullscreen .bible-reading-source { flex-shrink: 0; }
 .is-fullscreen .bible-verse-text { flex: 1; min-height: 0; max-height: none; }
 .is-fullscreen .bible-reading-message { flex: 1; min-height: 0; overflow-y: auto; }

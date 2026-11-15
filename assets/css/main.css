@@ -1343,21 +1343,23 @@ html .factum-app :is(.subject-emblem,.encyclopedia-emblem) {
 .home-cosmic-backdrop {
   position: fixed; inset: 73px 0 auto; z-index: -1; pointer-events: none;
   height: clamp(420px, 37.5vw, 720px);
-  background: url('/images/cosmic-hero-background.webp') center top / 100% auto no-repeat;
+  background: url('/images/optimized/cosmic-hero-desktop-052c61dc.webp') center top / 100% auto no-repeat;
   -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
 }
 html .factum-app .cosmic-hero { background: transparent; }
 @media (max-width: 800px) {
   .home-cosmic-backdrop {
+    position: absolute;
     top: calc(70px + env(safe-area-inset-top, 0px));
     height: 460px;
+    background-image: url('/images/optimized/cosmic-hero-mobile-b9df223d.webp');
     background-size: auto 460px;
     background-position: 66% top;
   }
   .home-cosmic-backdrop::before {
     content: ''; position: absolute; inset: 0 auto 0 0; width: 76px;
-    background: url('/images/cosmic-hero-background.webp') left top / auto 460px no-repeat;
+    background: url('/images/optimized/cosmic-hero-mobile-b9df223d.webp') left top / auto 460px no-repeat;
     -webkit-mask-image: linear-gradient(to right, #000 45%, transparent);
     mask-image: linear-gradient(to right, #000 45%, transparent);
   }
