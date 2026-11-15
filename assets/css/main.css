@@ -1339,10 +1339,10 @@ html .factum-app :is(.subject-emblem,.encyclopedia-emblem) {
 }
 
 /* Clean backdrop derived from the supplied reference: both planets remain visible. */
-.factum-home { position: relative; isolation: isolate; }
+.factum-home { position: relative; isolation: isolate; overflow-x: clip; }
 .home-cosmic-backdrop {
   position: fixed; inset: 73px 0 auto; z-index: -1; pointer-events: none;
-  height: clamp(420px, 37.5vw, 720px);
+  height: clamp(420px, 37.5vw, 720px); overflow: hidden;
   background: url('/images/optimized/cosmic-hero-desktop-052c61dc.webp') center top / 100% auto no-repeat;
   -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
@@ -1351,7 +1351,7 @@ html .factum-app .cosmic-hero { background: transparent; }
 @media (max-width: 800px) {
   .home-cosmic-backdrop {
     position: absolute;
-    top: calc(70px + env(safe-area-inset-top, 0px));
+    top: 0;
     height: 460px;
     background-image: url('/images/optimized/cosmic-hero-mobile-b9df223d.webp');
     background-size: auto 460px;
