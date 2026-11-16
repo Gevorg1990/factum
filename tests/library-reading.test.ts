@@ -36,6 +36,14 @@ test('verse collections keep a complete poem per page and expose selectable titl
  assert.deepEqual(splitBookPages(text,'prose',100),splitReadingPages(text,100))
  assert.deepEqual(splitBookPages('Վերնագիր\n\nԱռաջին տուն\n\nԵրկրորդ տուն','verse'),['Վերնագիր\n\nԱռաջին տուն\n\nԵրկրորդ տուն'])
 })
+test('unnumbered poem headings split pages and keep titles separate from verses',()=>{
+ const text='# Առաջին բանաստեղծություն\n\nԱռաջին տող\n\nԵրկրորդ տուն\n\n# Երկրորդ բանաստեղծություն\n\nԵրկրորդ տող'
+ const pages=splitBookPages(text,'verse')
+ assert.equal(pages.length,2)
+ assert.deepEqual(pages.map(readingPageTitle),['Առաջին բանաստեղծություն','Երկրորդ բանաստեղծություն'])
+ assert.equal(pages.join('\n\n'),text)
+ assert.deepEqual(splitBookPages('# Միակ վերնագիր\n\nՄեկ բանաստեղծություն','verse'),['# Միակ վերնագիր\n\nՄեկ բանաստեղծություն'])
+})
 test('different lines on the same page retain independent bookmarks and resume position',()=>{
  const state=parseReadingState({page:4,line:12,bookmarks:[{page:4,line:12,note:'շարունակել'},{page:4,line:2,note:'հիշել'},{page:4,line:12,note:'կրկնություն'}]})
  assert.equal(state.line,12)
