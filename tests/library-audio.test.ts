@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {audioTime,bookAudioChunks,estimatedBookAudioSeconds,parseBookAudioPosition} from '../utils/library/audio'
+import {audioTime,bookAudioChunks,bookDisplayText,bookSpeechText,estimatedBookAudioSeconds,parseBookAudioPosition} from '../utils/library/audio'
 
 test('book speech keeps the complete Armenian text in bounded, ordered requests',()=>{
  const text=Array.from({length:500},(_,i)=>`Նախադասություն ${i+1} ավարտվեց։`).join(' ')
@@ -11,6 +11,14 @@ test('book speech keeps the complete Armenian text in bounded, ordered requests'
  assert.equal(chunks.join(' '),text)
  assert.ok(estimatedBookAudioSeconds(chunks)>120)
  assert.equal(estimatedBookAudioSeconds(['մեկ երկու երեք չորս։']),3)
+})
+
+test('CMS pause marks stay in speech but disappear from book text, while և stays visible and is spoken as եվ',()=>{
+ const source='Վերնագիր...\n\nՍկիզբ և շարունակություն... Ավարտ։'
+ assert.equal(bookDisplayText(source),'Վերնագիր\n\nՍկիզբ և շարունակություն Ավարտ։')
+ assert.equal(bookSpeechText(source),'Վերնագիր...\n\nՍկիզբ եվ շարունակություն... Ավարտ։')
+ assert.equal(bookSpeechText(bookAudioChunks(source).join(' ')).includes('...'),true)
+ assert.equal(bookDisplayText('Բարև… մեկ. երկու.. երեք...'),'Բարև… մեկ. երկու.. երեք')
 })
 
 test('a saved book audio position survives storage and rejects invalid values',()=>{

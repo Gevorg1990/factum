@@ -1,6 +1,7 @@
 import type {BiographyVoice} from '../../../../utils/biographySpeech'
 import {synthesizeArmenianSpeech} from '../../../utils/armenianSpeech'
 import {librarySpeechChunks} from '../../../utils/librarySpeech'
+import {bookSpeechText} from '../../../../utils/library/audio'
 
 export default defineEventHandler(async event=>{
  const id=getRouterParam(event,'id')||''
@@ -9,7 +10,7 @@ export default defineEventHandler(async event=>{
  if(!Number.isSafeInteger(body?.part)||body.part!<0||!['male','female'].includes(body?.voice||''))throw createError({statusCode:400,statusMessage:'Ձայնի սխալ հարցում'})
  const chunks=await librarySpeechChunks(id)
  if(!chunks||body.part!>=chunks.length)throw createError({statusCode:404,statusMessage:'Գրքի հատվածը հասանելի չէ'})
- const audio=await synthesizeArmenianSpeech(chunks[body.part!]!,body.voice as BiographyVoice,useRuntimeConfig(event),fetch)
+ const audio=await synthesizeArmenianSpeech(bookSpeechText(chunks[body.part!]!),body.voice as BiographyVoice,useRuntimeConfig(event),fetch)
  setHeader(event,'Content-Type','audio/wav')
  setHeader(event,'Cache-Control','private, no-store')
  return audio
