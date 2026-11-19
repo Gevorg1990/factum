@@ -3,6 +3,7 @@ import {ArrowLeft,ArrowRight,BookOpen,Minus,Plus,X,Sun,Moon,Bookmark,Heart,Check
 import type {LibraryBook} from '~/data/library/catalog'
 import {splitBookPages,readingPageTitle} from '~/utils/library/navigation'
 import {readingLineChunks,latestReadingBookmark,bookmarkText} from '~/utils/library/reading'
+import {bookDisplayText} from '~/utils/library/audio'
 const props=defineProps<{book:LibraryBook;start?:'beginning'|'bookmark'|'resume';position?:{page:number;line:number};listen?:boolean}>(),emit=defineEmits<{close:[]}>()
 const {library,toggleBook}=useProgress()
 const {records,storageNotice,load,migrateVerse,hydrateExcerpts,savePage,saveBookmark,removeBookmark}=useLibraryReading()
@@ -64,7 +65,7 @@ onMounted(async()=>{
  try{
   const full=await $fetch<string>(props.book.file,{responseType:'text',signal:controller.signal})
   const start=full.match(/\*\*\* START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^\n]*\*\*\*/i)
-  const content=start?full.slice((start.index||0)+start[0].length).split(/\*\*\* END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK/i)[0]!:full
+  const content=bookDisplayText(start?full.slice((start.index||0)+start[0].length).split(/\*\*\* END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK/i)[0]!:full)
   if(isPoetry.value)migrateVerse(props.book.id,content.trim(),props.book.topic)
   pages.value=splitBookPages(content.trim(),props.book.topic,4400)
   hydrateExcerpts(props.book.id,pages.value)

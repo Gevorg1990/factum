@@ -2,6 +2,12 @@ import type {BiographyVoice} from '../biographySpeech'
 
 export type BookAudioPosition={part:number;seconds:number;elapsed:number;voice:BiographyVoice;updatedAt:number}
 
+// CMS authors can use three dots as a speech pause without showing them in the reader.
+export function bookDisplayText(text:string):string{return text.replace(/\.{3}/g,'')}
+
+// The Armenian voice skips the ligature in some books but pronounces its spelling.
+export function bookSpeechText(text:string):string{return text.replace(/և/g,'եվ')}
+
 export function bookAudioChunks(text:string):string[]{
  const content=text.replace(/\r\n?/g,'\n').replace(/\*\*\* START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^\n]*\*\*\*/i,'').split(/\*\*\* END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK/i)[0]!.trim()
  const chunks:string[]=[]
