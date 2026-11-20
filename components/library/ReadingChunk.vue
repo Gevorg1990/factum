@@ -16,10 +16,10 @@ function enter(event:PointerEvent,line:number){if(event.pointerType==='mouse')ho
 <style scoped>
 /* Eager, small layout blocks: no virtualized gaps or scroll-triggered text loading. */
 .reading-chunk{contain:layout style}
-.reading-line{position:relative;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.85em;padding-left:32px}
+.reading-line{position:relative;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.85em;padding-left:26px}
 .empty-line{min-height:.8em;height:.8em}
 .line-bookmark{position:absolute;left:0;top:.35em;color:#bc9c61;padding:4px;border-radius:4px;display:grid;place-items:center}
 .marked-line{background:#bc9c6112;border-radius:4px}.resume-line{background:#bc9c6128;box-shadow:inset 3px 0 #bc9c61;border-radius:4px}
 .reading-line:focus-visible,.line-bookmark:focus-visible{outline:2px solid #d9bd87;outline-offset:-2px}
-@media(pointer:coarse){.line-bookmark{width:36px;height:36px;top:0;padding:0}.reading-line{padding-left:40px}}
+@media(pointer:coarse){.line-bookmark{width:30px;height:36px;top:0;padding:0}.reading-line{padding-left:32px}}
 </style>

@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {audioTime,bookAudioChunks,bookDisplayText,bookSpeechText,estimatedBookAudioSeconds,parseBookAudioPosition} from '../utils/library/audio'
+import {audioTime,bookAudioChunks,bookDisplayText,bookSpeechText,estimatedBookAudioSeconds,locateBookAudioLine,parseBookAudioPosition} from '../utils/library/audio'
 
 test('book speech keeps the complete Armenian text in bounded, ordered requests',()=>{
  const text=Array.from({length:500},(_,i)=>`Նախադասություն ${i+1} ավարտվեց։`).join(' ')
@@ -19,6 +19,16 @@ test('CMS pause marks stay in speech but disappear from book text, while և stay
  assert.equal(bookSpeechText(source),'Վերնագիր...\n\nՍկիզբ եվ շարունակություն... Ավարտ։')
  assert.equal(bookSpeechText(bookAudioChunks(source).join(' ')).includes('...'),true)
  assert.equal(bookDisplayText('Բարև… մեկ. երկու.. երեք...'),'Բարև… մեկ. երկու.. երեք')
+})
+
+test('paused speech points to a nearby visible reading line across pages',()=>{
+ const chunks=['Վերնագիր... Մեկ երկու','երեք չորս և հինգ']
+ const pages=['Վերնագիր\n\nՄեկ երկու','երեք չորս\nև հինգ']
+ assert.deepEqual(locateBookAudioLine(chunks,pages,0,.9),{page:0,line:2})
+ assert.deepEqual(locateBookAudioLine(chunks,pages,1,.25),{page:1,line:0})
+ assert.deepEqual(locateBookAudioLine(chunks,pages,1,.75),{page:1,line:1})
+ assert.deepEqual(locateBookAudioLine(chunks,pages,2,1),{page:1,line:1})
+ assert.deepEqual(locateBookAudioLine(['Առաջին ... երկրորդ','երրորդ'],['Առաջին  երկրորդ\nերրորդ'],1,0),{page:0,line:1})
 })
 
 test('a saved book audio position survives storage and rejects invalid values',()=>{
