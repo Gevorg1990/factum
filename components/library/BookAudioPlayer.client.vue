@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import {Volume2,Play,Pause,RotateCcw,SkipBack,SkipForward} from 'lucide-vue-next'
+import {Volume2,Play,Pause,RotateCcw,LocateFixed} from 'lucide-vue-next'
 import {audioTime,parseBookAudioPosition} from '~/utils/library/audio'
 import type {BiographyVoice} from '~/utils/biographySpeech'
 
 const props=defineProps<{bookId:string}>()
+const emit=defineEmits<{locate:[part:number,fraction:number]}>()
 const player=ref<HTMLAudioElement>()
 const voice=ref<BiographyVoice>('male'),speed=ref(1)
 const state=ref<'idle'|'loading'|'reading'|'paused'|'finished'>('idle')
@@ -97,10 +98,12 @@ function ended(){
  if(part.value>=count.value){generation++;prepared?.controller.abort();prepared=undefined;release();state.value='finished';save(true)}
  else void playPart(generation)
 }
-function skip(amount:number){
- if(!player.value||!duration.value)return
- player.value.currentTime=Math.max(0,Math.min(player.value.currentTime+amount,duration.value))
- progress();save(true)
+function locate(){
+ progress()
+ if(state.value==='finished'||(count.value>0&&part.value>=count.value)){emit('locate',count.value-1,1);return}
+ const position=player.value?.currentTime??seconds.value
+ const length=duration.value||player.value?.duration||0
+ emit('locate',part.value,length>0?position/length:0)
 }
 function restart(){
  stop();part.value=0;seconds.value=0;elapsed.value=0;baseElapsed=0;state.value='idle';save(true);void play()
@@ -121,7 +124,7 @@ onBeforeUnmount(()=>{window.removeEventListener('pagehide',onPageHide);stop()})
   <div class="audio-heading"><Volume2 :size="18" aria-hidden="true"/><strong>Լսել գիրքը</strong></div>
   <div class="audio-settings"><VoiceChoice v-model="voice" :name="`book-audio-${bookId}`"/><label>Արագություն <select v-model.number="speed" aria-label="Լսելու արագություն"><option v-for="value in [0.8,1,1.25,1.5,1.75,2]" :key="value" :value="value">{{value}}×</option></select></label></div>
   <audio ref="player" preload="none" @timeupdate="progress" @ended="ended"/>
-  <div class="audio-actions"><button type="button" :disabled="state==='loading'||available===false" @click="state==='reading'?pause():play()"><Pause v-if="state==='reading'" :size="16"/><Play v-else :size="16"/>{{state==='loading'?'Պատրաստվում է…':state==='reading'?'Դադար տալ':state==='paused'?'Շարունակել':state==='finished'?'Կրկին լսել':hasPosition?'Շարունակել լսումը':'Սկսել լսել'}}</button><button type="button" :disabled="!duration" aria-label="15 վայրկյան հետ" @click="skip(-15)"><SkipBack :size="16"/>15 վրկ</button><button type="button" :disabled="!duration" aria-label="15 վայրկյան առաջ" @click="skip(15)">15 վրկ<SkipForward :size="16"/></button><button type="button" :disabled="state==='loading'" @click="restart"><RotateCcw :size="15"/>Սկզբից</button></div>
+  <div class="audio-actions"><button type="button" :disabled="state==='loading'||available===false" @click="state==='reading'?pause():play()"><Pause v-if="state==='reading'" :size="16"/><Play v-else :size="16"/>{{state==='loading'?'Պատրաստվում է…':state==='reading'?'Դադար տալ':state==='paused'?'Շարունակել':state==='finished'?'Կրկին լսել':hasPosition?'Շարունակել լսումը':'Սկսել լսել'}}</button><button type="button" :disabled="!hasPosition&&state!=='reading'&&state!=='paused'&&state!=='finished'" title="Տեղը մոտավոր է․ ձայնը բառերի ժամանակները չի փոխանցում" @click="locate"><LocateFixed :size="15"/>Տեսնել լսած հատվածը</button><button type="button" :disabled="state==='loading'" @click="restart"><RotateCcw :size="15"/>Սկզբից</button></div>
   <div class="audio-clock"><span>Լսված է</span><strong role="timer">{{audioTime(elapsed)}}</strong><span v-if="estimatedSeconds">/ {{state==='finished'?'Ընդհանուր՝ ':'Մոտավոր ամբողջ տևողությունը՝ '}}{{audioTime(displayedTotal)}}</span></div>
   <div v-if="estimatedSeconds" class="audio-progress-meta"><span>Լսման առաջընթաց</span><span>{{Math.floor(completion)}}%</span></div>
   <progress v-if="estimatedSeconds" class="audio-total-progress" :value="completion" max="100" :aria-label="`Լսված է գրքի մոտ ${Math.floor(completion)} տոկոսը`"/>
@@ -137,5 +140,5 @@ onBeforeUnmount(()=>{window.removeEventListener('pagehide',onPageHide);stop()})
 .audio-settings{justify-content:space-between;margin:12px 0}.audio-settings label{display:flex;align-items:center;gap:8px}.audio-settings select{padding:6px 8px;border:1px solid var(--reader-line);border-radius:7px;background:var(--reader-bg);color:var(--reader-text)}
 .audio-actions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:6px 9px;border:1px solid var(--reader-line);border-radius:7px;color:var(--reader-text)}.audio-actions button:first-child{border-color:#c7a568;background:#c7a56820;font-weight:700}.audio-actions button:hover:not(:disabled),.audio-actions button:focus-visible{border-color:#d9bd87}.audio-actions button:disabled{opacity:.45}
 .audio-clock{display:flex;align-items:baseline;gap:12px;margin-top:12px;padding:12px 14px;border:1px solid var(--reader-line);border-radius:8px;color:var(--reader-muted)}.audio-clock strong{color:#eacb91;font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:.04em;white-space:nowrap}.audio-clock>span:last-child{margin-left:auto}.audio-progress-meta{display:flex;justify-content:space-between;gap:12px;margin-top:10px;color:var(--reader-muted);font-size:10px}.audio-total-progress{display:block;width:100%;height:8px;margin-top:5px;border:0;border-radius:99px;overflow:hidden;appearance:none;background:#baa16c30}.audio-total-progress::-webkit-progress-bar{background:#baa16c30;border-radius:99px}.audio-total-progress::-webkit-progress-value{background:#d1ad70;border-radius:99px}.audio-total-progress::-moz-progress-bar{background:#d1ad70;border-radius:99px}.audio-estimate{margin-top:7px;color:var(--reader-muted);font-size:10px}.audio-position,.audio-warning{margin-top:9px;color:var(--reader-muted);line-height:1.5}.audio-warning{color:#e5ad8e}
-@media(max-width:600px){.book-audio{margin:0 12px 8px;padding:12px}.audio-actions{gap:6px}.audio-actions button{font-size:10px}.audio-clock{align-items:flex-start;flex-direction:column;gap:4px}}
+@media(max-width:600px){.book-audio{margin:0 12px 8px;padding:12px}.audio-actions{gap:6px}.audio-actions button{font-size:10px}.audio-clock{align-items:flex-start;flex-direction:column;gap:4px}.book-audio :deep(.voice-choice-option){width:82px;min-height:68px;padding:8px 11px;font-size:10px}.book-audio :deep(.voice-choice-avatar){font-size:23px}.book-audio :deep(.voice-choice-options){gap:7px}}
 </style>

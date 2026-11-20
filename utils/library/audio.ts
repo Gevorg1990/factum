@@ -23,6 +23,27 @@ export function bookAudioChunks(text:string):string[]{
  return chunks
 }
 
+// Azure's WAV response has no word timings. Use the current part and its playback
+// fraction to find a nearby visible line, without loading any other book.
+export function locateBookAudioLine(chunks:readonly string[],pages:readonly string[],part:number,fraction:number):{page:number;line:number}|null{
+ if(!chunks.length||!pages.length)return null
+ const countWords=(value:string)=>bookDisplayText(value).match(/\S+/gu)?.length||0
+ const safePart=Math.max(0,Math.min(chunks.length-1,Number.isFinite(part)?Math.floor(part):0))
+ const before=chunks.slice(0,safePart).reduce((total,chunk)=>total+countWords(chunk),0)
+ const inPart=countWords(chunks[safePart]||'')
+ const progress=Number.isFinite(fraction)?Math.max(0,Math.min(1,fraction)):0
+ const target=before+Math.max(0,Math.min(inPart-1,Math.floor(inPart*progress)))
+ let passed=0,last:{page:number;line:number}|null=null
+ for(let page=0;page<pages.length;page++)for(const [line,value] of pages[page]!.split('\n').entries()){
+  const words=countWords(value)
+  if(!words)continue
+  last={page,line}
+  if(passed+words>target)return last
+  passed+=words
+ }
+ return last
+}
+
 export function estimatedBookAudioSeconds(chunks:string[]):number{
  const words=chunks.reduce((total,chunk)=>total+(chunk.match(/\S+/gu)?.length||0),0)
  const pauses=chunks.reduce((total,chunk)=>total+(chunk.match(/[։.!?…]/gu)?.length||0),0)

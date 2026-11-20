@@ -3,7 +3,7 @@ import {ArrowLeft,ArrowRight,BookOpen,Minus,Plus,X,Sun,Moon,Bookmark,Heart,Check
 import type {LibraryBook} from '~/data/library/catalog'
 import {splitBookPages,readingPageTitle} from '~/utils/library/navigation'
 import {readingLineChunks,latestReadingBookmark,bookmarkText} from '~/utils/library/reading'
-import {bookDisplayText} from '~/utils/library/audio'
+import {bookAudioChunks,bookDisplayText,locateBookAudioLine} from '~/utils/library/audio'
 const props=defineProps<{book:LibraryBook;start?:'beginning'|'bookmark'|'resume';position?:{page:number;line:number};listen?:boolean}>(),emit=defineEmits<{close:[]}>()
 const {library,toggleBook}=useProgress()
 const {records,storageNotice,load,migrateVerse,hydrateExcerpts,savePage,saveBookmark,removeBookmark}=useLibraryReading()
@@ -22,6 +22,7 @@ const currentMark=computed(()=>marks.value.find(mark=>mark.page===page.value&&(m
 const dialog=ref<HTMLDialogElement>(),body=ref<HTMLElement>(),loading=ref(true),error=ref(''),pages=ref<string[]>([]),page=ref(0),fontSize=ref(19),paper=ref(false)
 const hasPoemHeading=computed(()=>isVerse.value&&/^(?:#\s+|\d+[.)]\s+)/.test(pages.value[page.value]||''))
 const controller=new AbortController()
+let audioSource='',audioChunks:string[]=[]
 let previousRootOverflow='',previousBodyOverflow=''
 function lockPageScroll(){previousRootOverflow=document.documentElement.style.overflow;previousBodyOverflow=document.body.style.overflow;document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'}
 function unlockPageScroll(){document.documentElement.style.overflow=previousRootOverflow;document.body.style.overflow=previousBodyOverflow}
@@ -61,12 +62,19 @@ function markLine(line:number){
 function deleteMark(markPage:number,line=0){removeBookmark(props.book.id,markPage,line);if(markPage===notePosition.value.page&&line===notePosition.value.line)note.value=''}
 function preserveNote(){if(!loading.value&&!error.value&&note.value.trim()&&note.value.trim()!==(editingMark.value?.note||''))saveBookmark(props.book.id,notePosition.value.page,note.value,notePosition.value.line,bookmarkText(pages.value,notePosition.value.page,notePosition.value.line))}
 function go(value:number,line=0,highlight=false){preserveNote();noteTarget.value=null;touchLine.value=-1;showContents.value=false;showBookmarks.value=false;page.value=Math.max(0,Math.min(pages.value.length-1,value));selectedLine.value=Math.max(0,Math.min(line,lines.value.length-1));savePage(props.book.id,page.value,selectedLine.value);note.value=currentMark.value?.note||'';bookmarkNotice.value='';resumeLine.value=highlight?selectedLine.value:-1;void scrollToLine(selectedLine.value)}
+function locateAudio(part:number,fraction:number){
+ if(loading.value||error.value)return
+ if(!audioChunks.length)audioChunks=bookAudioChunks(audioSource)
+ const place=locateBookAudioLine(audioChunks,pages.value,part,fraction)
+ if(place)go(place.page,place.line,true)
+}
 onMounted(async()=>{
  paper.value=document.documentElement.classList.contains('factum-light');load(props.book.id);lockPageScroll();dialog.value?.showModal()
  try{
   const full=await $fetch<string>(props.book.file,{responseType:'text',signal:controller.signal})
   const start=full.match(/\*\*\* START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^\n]*\*\*\*/i)
-  const content=bookDisplayText(start?full.slice((start.index||0)+start[0].length).split(/\*\*\* END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK/i)[0]!:full)
+  audioSource=start?full.slice((start.index||0)+start[0].length).split(/\*\*\* END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK/i)[0]!:full
+  const content=bookDisplayText(audioSource)
   if(isPoetry.value)migrateVerse(props.book.id,content.trim(),props.book.topic)
   pages.value=splitBookPages(content.trim(),props.book.topic,4400)
   hydrateExcerpts(props.book.id,pages.value)
@@ -84,7 +92,7 @@ function keyboard(e:KeyboardEvent){if(showContents.value||showBookmarks.value||l
   <header><div><small>COGNITIO · ԸՆԹԵՐՑԱՍՐԱՀ</small><h2 id="reader-title">{{book.title}}</h2><p>{{book.author}} · {{book.language}}</p></div><div class="reader-window-actions"><button type="button" :aria-label="expanded?'Վերադառնալ պատուհանին':'Ամբողջ էջով կարդալ'" :aria-pressed="expanded" @click="expanded=!expanded"><Minimize2 v-if="expanded" :size="20"/><Maximize2 v-else :size="20"/></button><button type="button" aria-label="Փակել գիրքը" @click="emit('close')"><X :size="21"/></button></div></header>
   <nav class="reader-tools" aria-label="Ընթերցման կարգավորումներ"><span><BookOpen :size="15"/>Հայերեն ամբողջական բնագիր</span><div><button type="button" :disabled="fontSize<=16" aria-label="Փոքրացնել տառերը" @click="fontSize=Math.max(16,fontSize-1)"><Minus :size="16"/></button><span>{{fontSize}}</span><button type="button" :disabled="fontSize>=28" aria-label="Մեծացնել տառերը" @click="fontSize=Math.min(28,fontSize+1)"><Plus :size="16"/></button><button type="button" :aria-label="paper?'Մուգ ընթերցման ֆոն':'Բաց ընթերցման ֆոն'" @click="paper=!paper"><Moon v-if="paper" :size="17"/><Sun v-else :size="17"/></button></div></nav>
   <div class="reader-personal-tools"><button type="button" class="save-control" :aria-pressed="library.includes(book.id)" @click="toggleBook(book.id)"><Heart :size="15" :fill="library.includes(book.id)?'currentColor':'none'"/>{{library.includes(book.id)?'Պահպանված է':'Պահպանել գիրքը'}}</button><button type="button" :aria-expanded="audioOpen" @click="audioOpen=!audioOpen"><Volume2 :size="15"/>{{audioOpen?'Փակել լսումը':'Լսել գիրքը'}}</button><button type="button" :aria-expanded="showBookmarks" @click="toggleBookmarks"><Bookmark :size="15"/>Էջանշաններ · {{marks.length}}</button><button v-if="isVerse" type="button" :disabled="loading||!!error" :aria-expanded="showContents" @click="toggleContents"><BookOpen :size="15"/>Բանաստեղծություններ · {{pages.length}}</button><span v-if="currentMark"><Check :size="13"/>Էջանշված տող</span></div>
-  <LazyLibraryBookAudioPlayer v-if="audioOpen" :book-id="book.id"/>
+  <LazyLibraryBookAudioPlayer v-if="audioOpen" :book-id="book.id" @locate="locateAudio"/>
 
   <div ref="body" class="reader-body" :style="{fontSize:fontSize+'px'}" lang="hy" tabindex="0"><p v-if="loading" class="reader-status">Բեռնվում է միայն ընտրված գիրքը…</p><p v-else-if="error" role="alert" class="reader-status">{{error}}</p><section v-else-if="showBookmarks" class="reader-bookmarks" aria-label="Գրքի էջանշաններն ու նշումները"><div class="bookmarks-heading"><div><h3>Իմ էջանշանները</h3><p>{{marks.length}} պահպանված հատված</p></div><button type="button" @click="toggleBookmarks"><ArrowLeft :size="16"/>Վերադառնալ ընթերցմանը</button></div><div class="bookmark-editor"><label>Քո նշումը<textarea ref="noteInput" v-model="note" maxlength="1000" rows="2" placeholder="Ինչի՞ն ես ուզում վերադառնալ…"/></label><button type="button" :disabled="loading||!note.trim()" @click="saveNote"><Bookmark :size="14"/>Պահպանել նշումը</button><span role="status">{{bookmarkNotice}}</span></div><div class="bookmark-list"><p v-if="!marks.length">Այս գրքում դեռ էջանշան չկա։</p><div v-for="mark in marks" :key="mark.page+':'+(mark.line??0)" :class="{'selected-bookmark':notePosition.page===mark.page&&notePosition.line===(mark.line??0)}"><button type="button" @click="go(mark.page,mark.line??0,true)"><strong>{{isPoetry?(isVerse?readingPageTitle(pages[mark.page]||'',mark.page):book.title):'Էջ '+(mark.page+1)}}</strong><span class="bookmark-excerpt">{{bookmarkExcerpt(mark.page,mark.line??0)}}</span><span v-if="mark.note" class="bookmark-note">{{mark.note}}</span></button><div class="bookmark-actions"><button type="button" class="bookmark-edit" :aria-pressed="notePosition.page===mark.page&&notePosition.line===(mark.line??0)" @click="editBookmark(mark.page,mark.line??0)"><SquarePen :size="14"/>{{mark.note?'Խմբագրել նշումը':'Նշում գրել'}}</button><button type="button" :aria-label="'Հեռացնել էջանշանը․ '+bookmarkExcerpt(mark.page,mark.line??0)" @click="deleteMark(mark.page,mark.line??0)"><X :size="14"/></button></div></div></div></section><section v-else-if="showContents" class="poem-contents" aria-label="Բանաստեղծությունների ցանկ"><h3>Ընտրիր բանաստեղծությունը</h3><p>{{contents.length}} բանաստեղծություն · յուրաքանչյուրն առանձին էջում</p><ol><li v-for="item in contents" :key="item.index"><button type="button" :aria-current="item.index===page?'page':undefined" @click="go(item.index)"><span>{{item.index+1}}</span><strong>{{item.title}}</strong><ArrowRight :size="16"/></button></li></ol></section><div v-else class="reading-text"><LibraryReadingChunk v-for="(chunk,index) in textChunks" :key="page+':'+index" :lines="chunk" :marks="pageMarks" :touch-line="touchLine" :resume-line="resumeLine" :poem-title="hasPoemHeading" @touch-line="touchLine=$event" @bookmark="markLine"/></div><div v-if="tailSpace&&!showBookmarks&&!showContents" aria-hidden="true" :style="{height:tailSpace+'px',flexShrink:0}"/></div>
   <footer><div v-if="!showContents&&!showBookmarks&&pages.length>1" class="reader-pagination"><button type="button" :disabled="loading||page===0" @click="go(page-1)"><ArrowLeft :size="16"/>Նախորդ</button><label>{{isVerse?'Բանաստեղծություն':'Էջ'}} <select :value="page" :disabled="loading" aria-label="Ընտրել ընթերցման էջը" @change="go(Number(($event.target as HTMLSelectElement).value))"><option v-for="(_,i) in pages" :key="i" :value="i">{{i+1}}</option></select> / {{pages.length||'…'}}</label><button type="button" :disabled="loading||page>=pages.length-1" @click="go(page+1)">Հաջորդ<ArrowRight :size="16"/></button></div><p v-if="storageNotice" role="status">Բրաուզերը չի թույլատրում պահպանել․ նշումները հիմա հասանելի են միայն այս բացված էջում։</p><p v-else>Ընթերցման տեղը և էջանշանները պահպանվում են այս սարքում։</p></footer>
@@ -108,4 +116,12 @@ function keyboard(e:KeyboardEvent){if(showContents.value||showBookmarks.value||l
 @media(hover:hover) and (pointer:fine){.bookmark-list>div>button:first-child:hover{color:inherit;filter:none;outline:none}}
 @media(hover:hover) and (pointer:fine){.reader-pagination button:not(:focus-visible):hover{outline:none}}
 .bookmarks-heading>button{padding:8px 10px;border-radius:8px;transition:color .16s ease,background-color .16s ease}@media(hover:hover) and (pointer:fine){.bookmarks-heading>button:not(:focus-visible):hover{outline:none;filter:none;color:#eed19a;background:#bc9c6114}}@media(prefers-reduced-motion:reduce){.bookmarks-heading>button{transition:none}}
+@media(max-width:600px){
+ .reader-personal-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:8px 10px}
+ .reader-personal-tools>button:nth-child(-n+3){min-width:0;min-height:34px;justify-content:center;gap:3px;padding:7px 4px;white-space:nowrap;font-size:clamp(8px,2.5vw,9px)}
+ .reader-personal-tools>button:nth-child(-n+3) svg{width:12px;height:12px;flex-shrink:0}
+ .reader-personal-tools>button:nth-child(4),.reader-personal-tools>span{grid-column:1/-1}
+}
+.reader-body:has(>.reading-text){padding-left:max(28px,6%);padding-right:max(28px,6%)}
+@media(max-width:600px){.reader-body:has(>.reading-text),.book-reader.expanded .reader-body:has(>.reading-text){padding-left:18px;padding-right:14px}}
 </style>
