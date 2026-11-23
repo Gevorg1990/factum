@@ -94,17 +94,17 @@ useHead({title:'Վիրտուալ գրադարան — COGNITIO'})
 
 /* Each card borrows its light and trim from the book's catalog cover color. */
 .edition-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.edition-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:222px;padding:17px;border:1px solid color-mix(in srgb,var(--book-accent) 42%,#8b815d);border-radius:16px;background:#101e2c;box-shadow:inset 0 1px #ffffff12,0 12px 30px #0003;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.edition-card{position:relative;isolation:isolate;display:flex;flex-direction:column;min-width:0;min-height:222px;padding:17px;border:1px solid color-mix(in srgb,var(--book-accent) 42%,#8b815d);border-radius:16px;background:#101e2c;box-shadow:inset 0 1px #ffffff12,0 12px 30px #0003;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
 .edition-card:hover,.edition-card:focus-within{transform:translateY(-3px);border-color:color-mix(in srgb,var(--book-accent) 78%,#ead6a6);box-shadow:inset 0 1px #ffffff20,0 18px 34px #0006}
 .edition-card::before{content:'';position:absolute;top:17px;bottom:17px;left:0;width:3px;border-radius:0 3px 3px 0;background:var(--book-accent)}
 .edition-card>.edition-main{display:flex;align-items:flex-start;gap:17px;width:100%;min-width:0;text-align:left}
 .edition-card>.edition-main:focus-visible,.edition-card>button:not(.edition-main):focus-visible{outline:2px solid #e8cc91;outline-offset:4px}
 .edition-card>.edition-main:disabled{opacity:1}
-.edition-card .edition-cover{display:block;position:relative;flex:0 0 108px;width:108px;height:154px;overflow:hidden;border:2px solid color-mix(in srgb,var(--book-accent) 60%,#152234);border-left-width:9px;border-radius:3px 6px 6px 3px;background:#142231;box-shadow:-3px 0 0 #091522,8px 14px 22px #000a,inset -2px 0 #ffffff22;transition:box-shadow .2s ease}
+.edition-card .edition-cover{display:block;position:relative;z-index:0;flex:0 0 108px;width:108px;height:154px;overflow:hidden;border:2px solid color-mix(in srgb,var(--book-accent) 60%,#152234);border-left-width:9px;border-radius:3px 6px 6px 3px;background:#142231;box-shadow:-3px 0 0 #091522,-5px 12px 12px #000a,inset -2px 0 #ffffff22;transition:box-shadow .2s ease}
 .edition-card .edition-cover::before{content:'';position:absolute;z-index:2;top:0;bottom:0;left:0;width:7px;background:linear-gradient(90deg,#000a,color-mix(in srgb,var(--book-accent) 48%,#152234) 55%,#ffffff36 85%,transparent);box-shadow:1px 0 2px #0009;pointer-events:none}
-.edition-card .edition-cover img{display:block;width:100%;height:100%;object-fit:cover;border-radius:0 2px 2px 0;box-shadow:none;background:transparent}
-.edition-card:hover .edition-cover,.edition-card:focus-within .edition-cover{box-shadow:-3px 0 0 #091522,10px 17px 27px #000b,inset -2px 0 #ffffff22}
-.edition-card .edition-details{display:flex;flex:1;flex-direction:column;align-self:stretch;gap:9px;min-width:0;min-height:154px;padding:11px 12px;border:1px solid #ffffff19;border-radius:9px;background:#061421;box-shadow:inset 0 1px #ffffff0c}
+.edition-card .edition-cover img{display:block;width:100%;max-width:100%;height:100%;object-fit:contain;object-position:center;border-radius:0 2px 2px 0;box-shadow:none;background:#142231}
+.edition-card:hover .edition-cover,.edition-card:focus-within .edition-cover{box-shadow:-3px 0 0 #091522,-5px 15px 14px #000b,inset -2px 0 #ffffff22}
+.edition-card .edition-details{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;align-self:stretch;gap:9px;min-width:0;min-height:154px;padding:11px 12px;border:1px solid #ffffff19;border-radius:9px;background:#061421;box-shadow:inset 0 1px #ffffff0c}
 .edition-card .edition-details small{align-self:flex-start;padding:0;color:#c8d5df;font-size:11px;font-weight:650;line-height:1.5}
 .edition-card .edition-details strong{font-size:clamp(16px,1.35vw,19px);line-height:1.5;font-weight:800;color:#fff;overflow-wrap:anywhere;text-shadow:0 1px 2px #000}
 .edition-card .edition-details>span{font-size:13px;line-height:1.65;font-weight:650;color:#f1f5f8}
