@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     '/images/geography/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/fonts/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/images/optimized/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    '/images/art/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/videos/previews/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
   },
   app: { head: { link: [

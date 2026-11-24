@@ -6,6 +6,7 @@ const cards = [
   { to: '/videos', name: '🎬 Տեսանյութեր', description: 'Կրթական տեսանյութերի բաժին' },
   { to: '/support', name: '❤️ Աջակցիր COGNITIO-ին', description: 'Կամավոր աջակցություն' },
   { to: '/library', name: '📚 Գրադարան', description: 'Պահպանիր սիրելի գրքերը' },
+  { to: '/art', name: '🎨 Արվեստ', description: 'Շրջիր եռաչափ պատկերասրահի սրահներում' },
 ]
 </script>
 

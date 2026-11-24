@@ -1,8 +1,9 @@
 import {geographyCategorySchema,geographyEntrySchema} from './geographyCms'
 import { millionSlotOf } from './millionStages'
+import {artCmsSchema} from './artCms'
 import {libraryTopics} from '../data/library/catalog'
 import { z } from 'zod'
-export const kinds = ['GEO_ENTRY','GEO_CATEGORY','BOOK','ARTICLE','CATEGORY','AUTHOR','PERSON','FACT','EVENT','GAME','MONUMENT','WORK','PAGE','VIDEO','SETTING'] as const
+export const kinds = ['GEO_ENTRY','GEO_CATEGORY','BOOK','ARTICLE','CATEGORY','AUTHOR','PERSON','FACT','EVENT','GAME','MONUMENT','WORK','ARTWORK','PAGE','VIDEO','SETTING'] as const
 export const kindSchema = z.enum(kinds)
 const text = z.string().max(200000)
 const section = z.object({ title: text, text })
@@ -23,6 +24,7 @@ const shapes = {
   }),
   MONUMENT: z.object({ id: text, personId: text, name: text.min(1), city: text, location: text, source }).passthrough(),
   WORK: z.object({ personId: text, index: z.number().int().nonnegative(), title: text.min(1), description: text }).passthrough(),
+  ARTWORK:artCmsSchema,
   PAGE: z.object({ title: text.min(1), text }).passthrough(),
   VIDEO: z.object({ title: text.min(1), url: z.string().url(), preview: text.optional() }).passthrough(),
   SETTING: z.object({ title: text.min(1), text }).passthrough(),
@@ -36,11 +38,11 @@ export function parseContent(value: unknown) {
   // The public title and key always agree with the editorial record.
   if ('title' in result.data) result.data.title = result.title
   if (result.kind==='GEO_ENTRY'&&!result.data.id) result.data.id=result.key
-  if (['GEO_CATEGORY','BOOK','ARTICLE','PERSON','FACT','MONUMENT'].includes(result.kind)) result.data.id = result.key
+  if (['GEO_CATEGORY','BOOK','ARTICLE','PERSON','FACT','MONUMENT','ARTWORK'].includes(result.kind)) result.data.id = result.key
   if (result.kind === 'ARTICLE' && result.data.listed === undefined) result.data.listed = true
   if (result.kind === 'EVENT') result.data.year = result.key
   if (result.kind === 'CATEGORY') result.data.slug = result.key
   if (result.kind === 'PERSON') result.data.name = result.title
   return result
 }
-export const kindLabels: Record<typeof kinds[number], string> = { GEO_ENTRY:'Երկրագունդ · նյութեր',GEO_CATEGORY:'Երկրագունդ · բաժիններ',BOOK:'Գրադարանի գրքեր',ARTICLE:'Հոդվածներ',CATEGORY:'Կատեգորիաներ',AUTHOR:'Հեղինակներ',PERSON:'Հայտնի մարդիկ',FACT:'Հետաքրքիր փաստեր',EVENT:'Պատմական իրադարձություններ',GAME:'Խաղերի հարցեր',MONUMENT:'Հուշարձաններ',WORK:'Ստեղծագործություններ',PAGE:'Էջեր',VIDEO:'Տեսանյութեր',SETTING:'Կայքի տեղեկություններ' }
+export const kindLabels: Record<typeof kinds[number], string> = { GEO_ENTRY:'Երկրագունդ · նյութեր',GEO_CATEGORY:'Երկրագունդ · բաժիններ',BOOK:'Գրադարանի գրքեր',ARTICLE:'Հոդվածներ',CATEGORY:'Կատեգորիաներ',AUTHOR:'Հեղինակներ',PERSON:'Հայտնի մարդիկ',FACT:'Հետաքրքիր փաստեր',EVENT:'Պատմական իրադարձություններ',GAME:'Խաղերի հարցեր',MONUMENT:'Հուշարձաններ',WORK:'Ստեղծագործություններ',ARTWORK:'Պատկերասրահի նկարներ',PAGE:'Էջեր',VIDEO:'Տեսանյութեր',SETTING:'Կայքի տեղեկություններ' }
