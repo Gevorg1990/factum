@@ -19,11 +19,22 @@ test('the CMS accepts a complete gallery work and keeps its stable ID',()=>{
   assert.equal(payload.data.creator,'Փորձնական հեղինակ')
 })
 
-test('the CMS rejects a gallery work without its image or portrait',()=>{
+test('the CMS requires the artwork image, biography and text',()=>{
   const missingImage=structuredClone(artwork)
   missingImage.data.image=''
   assert.throws(()=>parseContent(prepareContent(missingImage)))
-  const missingPortrait=structuredClone(artwork)
-  missingPortrait.data.creatorPortrait=''
-  assert.throws(()=>parseContent(prepareContent(missingPortrait)))
+  const missingBiography=structuredClone(artwork)
+  missingBiography.data.creatorInfo=''
+  assert.throws(()=>parseContent(prepareContent(missingBiography)))
+  const missingDescription=structuredClone(artwork)
+  missingDescription.data.description=''
+  assert.throws(()=>parseContent(prepareContent(missingDescription)))
+})
+
+test('museum and image credit links can be left blank',()=>{
+  const withoutLinks=structuredClone(artwork)
+  Object.assign(withoutLinks.data,{source:'',imageCredit:'',imageSource:'',imageLicense:'',creatorPortrait:'',creatorPortraitSource:''})
+  const payload=parseContent(prepareContent(withoutLinks))
+  assert.equal(payload.data.source,'')
+  assert.equal(payload.data.imageSource,'')
 })

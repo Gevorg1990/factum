@@ -27,6 +27,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node --env-file-if-exists=.env --import tsx scripts/seed.ts",
+    "db:import:art": "node --env-file-if-exists=.env --import tsx scripts/import-art-gallery.ts",
     "db:admin": "node --env-file-if-exists=.env --import tsx scripts/create-admin.ts",
     "test:video": "node --import tsx --test tests/video-preview.test.ts",
     "test:cms": "node --import tsx --test tests/cms.test.ts tests/cms-editor.test.ts tests/million-stages.test.ts",

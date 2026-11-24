@@ -32,11 +32,57 @@ function commonsImage(filename: string, alt: string, author: string, license = '
   return {
     src: `https://commons.wikimedia.org/wiki/Special:FilePath/${file}?width=960`,
     alt, credit: `${author} / Wikimedia Commons`, sourceUrl, license,
-    licenseUrl: license === 'CC BY-SA 4.0' ? 'https://creativecommons.org/licenses/by-sa/4.0/' : license === 'CC BY-SA 3.0' ? 'https://creativecommons.org/licenses/by-sa/3.0/' : license === 'CC BY 2.0' ? 'https://creativecommons.org/licenses/by/2.0/' : license === 'CC BY 4.0' ? 'https://creativecommons.org/licenses/by/4.0/' : `${sourceUrl}#Licensing`,
+    licenseUrl: license === 'CC BY-SA 4.0' ? 'https://creativecommons.org/licenses/by-sa/4.0/' : license === 'CC BY-SA 3.0' ? 'https://creativecommons.org/licenses/by-sa/3.0/' : license === 'CC BY 2.0' ? 'https://creativecommons.org/licenses/by/2.0/' : license === 'CC BY 4.0' ? 'https://creativecommons.org/licenses/by/4.0/' : license === 'CC0' ? 'https://creativecommons.org/publicdomain/zero/1.0/' : `${sourceUrl}#Licensing`,
   }
 }
 
 const monumentRecords: PersonMonument[] = [
+  {
+    id:'van-gogh-nuenen-memorial',personId:'vincent-van-gogh',name:'Վինսենթ վան Գոգի հուշաքար',city:'Նյունեն',location:'Berg 44, Նյունեն, Նիդեռլանդներ',
+    openedYear:1932,openedDate:'1932 թ. հուլիսի 30',sculptor:'Հիլդո Կրոպ',
+    image:commonsImage('Nuenen-Berg-Gedenksteen-Van-Gogh.jpg','Վան Գոգի հուշաքարը Նյունենի Բերգ հրապարակում','Wammes Waggel','CC BY-SA 3.0'),
+    source:{name:'Նիդեռլանդների մշակութային ժառանգության պետական ռեեստր',url:'https://monumentenregister.cultureelerfgoed.nl/monumenten/518014'},
+  },
+  {
+    id:'van-gogh-auvers-zadkine',personId:'vincent-van-gogh',name:'Վան Գոգի արձան',city:'Օվեր սյուր Ուազ',location:'Վան Գոգի հանրային այգի, Օվեր սյուր Ուազ, Ֆրանսիա',sculptor:'Օսիպ Զադկին',
+    image:commonsImage('Statue de Zadkine de Vincent Van Gogh à Auvers-sur-Oise.jpg','Օսիպ Զադկինի Վան Գոգի արձանը Օվերի այգում','LERUSTE','CC BY 4.0'),
+    source:{name:'Ֆրանսիայի պատմական հուշարձանների ռեեստր · PM95000851',url:'https://pop.culture.gouv.fr/notice/palissy/PM95000851'},
+  },
+  {
+    id:'monet-giverny-bust',personId:'claude-monet',name:'Կլոդ Մոնեի կիսանդրի',city:'Ժիվեռնի',location:'Parking de la Prairie, Էպտ գետի ափ, Ժիվեռնի, Ֆրանսիա',installedYear:2007,sculptor:'Դանիել Գուպիլ',
+    image:commonsImage('Statue du buste de Claude Monet.jpg','Կլոդ Մոնեի կիսանդրին Ժիվեռնիում','XioNoX'),
+    source:{name:'Նորմանդիայի զբոսաշրջության ծառայություն',url:'https://www.normandie-tourisme.fr/sites-lieux-de-visites/buste-de-claude-monet/'},
+  },
+  {
+    id:'monet-giverny-grave',personId:'claude-monet',name:'Կլոդ Մոնեի ընտանեկան գերեզման',city:'Ժիվեռնի',location:'Սուրբ Ռադեգոնդ եկեղեցու գերեզմանատուն, Ժիվեռնի, Ֆրանսիա',
+    image:commonsImage('Grave of impressionist painter Claude Monet (1).jpg','Կլոդ Մոնեի գերեզմանը Ժիվեռնիի գերեզմանատանը','Ibex73'),
+    source:{name:'Wikimedia Commons · տեղանքի լուսանկար',url:'https://commons.wikimedia.org/wiki/File:Grave_of_impressionist_painter_Claude_Monet_(1).jpg'},
+  },
+  {
+    id:'leonardo-milan-scala',personId:'leonardo-da-vinci',name:'Լեոնարդո դա Վինչիի հուշարձան',city:'Միլան',location:'Պիացա դելա Սկալա, Միլան, Իտալիա',installedYear:1872,sculptor:'Պիետրո Մանի',
+    image:commonsImage('Monumento Leonardo da Vinci PIazza della Scala Milano dic2024.jpg','Լեոնարդո դա Վինչիի հուշարձանը Միլանի Սկալա հրապարակում','AriannaGuaglione'),
+    source:{name:'Միլանի հանրային արվեստի տեղեկատու · MUDEC',url:'https://www.mudec.it/en/2022/05/10/monumento-a-leonardo-da-vinci/'},
+  },
+  {
+    id:'cassatt-mesnil-theribus-grave',personId:'mary-cassatt',name:'Մերի Կասատի ընտանեկան գերեզման',city:'Լե Մենիլ Տերիբյուս',location:'Սեն Լուի գերեզմանատուն, Լե Մենիլ Տերիբյուս, Ֆրանսիա',
+    image:commonsImage('2018 08 15 - Le Mesnil-Théribus - Tombe de Mary Cassatt et famille.jpg','Մերի Կասատի ընտանեկան գերեզմանը Լե Մենիլ Տերիբյուսում','Daniel Volpatti'),
+    source:{name:'Wikimedia Commons · տեղանքի լուսանկար',url:'https://commons.wikimedia.org/wiki/File:2018_08_15_-_Le_Mesnil-Th%C3%A9ribus_-_Tombe_de_Mary_Cassatt_et_famille.jpg'},
+  },
+  {
+    id:'seurat-pere-lachaise',personId:'georges-seurat',name:'Ժորժ Սյորայի ընտանեկան դամբարան',city:'Փարիզ',location:'Պեր Լաշեզ գերեզմանատուն, բաժին 66, Փարիզ, Ֆրանսիա',
+    image:commonsImage('Père-Lachaise - Division 66 - Seurat 01.jpg','Ժորժ Սյորայի ընտանեկան դամբարանը Պեր Լաշեզում','Pierre-Yves Beaudouin','CC BY-SA 3.0'),
+    source:{name:'Մետրոպոլիտեն թանգարանի Սյորայի կատալոգ',url:'https://libmma.contentdm.oclc.org/digital/api/collection/p15324coll10/id/73114/download'},
+  },
+  {
+    id:'caillebotte-pere-lachaise',personId:'gustave-caillebotte',name:'Գյուստավ Կայբոտի ընտանեկան դամբարան',city:'Փարիզ',location:'Պեր Լաշեզ գերեզմանատուն, բաժին 70, Փարիզ, Ֆրանսիա',
+    image:commonsImage('Père-Lachaise - Division 70 - Caillebotte 01.jpg','Գյուստավ Կայբոտի ընտանեկան դամբարանը Պեր Լաշեզում','Pierre-Yves Beaudouin','CC BY-SA 3.0'),
+    source:{name:'Պեր Լաշեզի բարեկամների ընկերակցություն',url:'https://www.appl-lachaise.net/caillebotte-gustave-1848-1894/'},
+  },
+  {
+    id:'renoir-essoyes-grave',personId:'pierre-auguste-renoir',name:'Օգյուստ Ռենուարի գերեզման և կիսանդրի',city:'Էսուա',location:'Էսուայի գերեզմանատուն, Օբ, Ֆրանսիա',sculptor:'Ռիշար Գինո',
+    image:commonsImage("Tombe d'Auguste Renoir (1841–1919), de Pierre Renoir (1885–1952) et de Jean Renoir (1894–1979) 2.jpg",'Օգյուստ Ռենուարի և նրա որդիների գերեզմանը Էսուայում','Antoine Rex','CC0'),
+    source:{name:'Էսուայի Ռենուարի կենտրոն',url:'https://renoir-essoyes.fr/en/your-visite/cemetery/'},
+  },
   {
     id: 'babajanyan-swan-lake', personId: 'babajanyan',
     name: 'Առնո Բաբաջանյանի հուշարձան', city: 'Երևան',

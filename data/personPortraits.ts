@@ -14,4 +14,13 @@ export const armenianPortraits: Record<string, string> = {
   'mashtots': '/images/armenian-people/Mesrop_Mashtots.jpg',
   'hambardzumyan': '/images/armenian-people/Viktor_Hambardzumyan.jpg',
 }
-export const localPortraits: Record<string, string> = { einstein: '/images/people/einstein.jpg', ...armenianPortraits }
+export const localPortraits: Record<string, string> = {
+  einstein: '/images/people/einstein.jpg', ...armenianPortraits,
+  'vincent-van-gogh':'/images/art/self-portrait.webp',
+  'claude-monet':'/images/art/artists/monet.webp',
+  'leonardo-da-vinci':'/images/art/artists/leonardo.webp',
+  'mary-cassatt':'/images/art/artists/cassatt.webp',
+  'georges-seurat':'/images/art/artists/seurat.webp',
+  'gustave-caillebotte':'/images/art/artists/caillebotte.webp',
+  'pierre-auguste-renoir':'/images/art/artists/renoir.webp',
+}
