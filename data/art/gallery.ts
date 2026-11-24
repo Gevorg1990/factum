@@ -24,6 +24,8 @@ export interface GalleryArtwork {
   creatorPortrait?: string
   creatorPortraitCredit?: string
   creatorPortraitSource?: string
+  gallerySlot?: number
+  displaySize?: 'regular'|'medium'|'large'
 }
 
 export const galleryRooms = [
@@ -40,15 +42,28 @@ export const galleryRooms = [
 export const galleryArtworks: readonly GalleryArtwork[] = [
   ...galleryAdditions,
   {
-    id: 'buddha-shakyamuni', room: 1, title: 'Մեդիտացիայի մեջ նստած Շաքյամունի Բուդդա',
-    originalTitle: 'Buddha Shakyamuni Seated in Meditation (Dhyanamudra)', creator: 'Անհայտ վարպետ · Չոլայի ժամանակաշրջան',
-    date: 'մոտ 12-րդ դար', medium: 'Քանդակ',
-    description: 'Նստած կերպարի ձեռքերի դիրքը՝ դհյանա մուդրան, խորհրդանշում է մեդիտացիան։ Ստեղծագործությունը ներկայացնում է հարավհնդկական Չոլայի շրջանի բուդդայական քանդակագործությունը։',
-    context: 'Հարավային Հնդկաստանի Չոլայի ժամանակաշրջանի կերպարը ցույց է տալիս, թե ինչպես էր մեդիտացիան դառնում քանդակագործական թեմա։ Այստեղ ներկայացված է Չիկագոյի արվեստի ինստիտուտի հավաքածուի գործը։',
-    lookFor: 'Ուշադրություն դարձրու ձեռքերի հանգիստ դիրքին և մարմնի հավասարակշռված կառուցվածքին։',
-    location: 'Չիկագոյի արվեստի ինստիտուտ',
-    image: '/images/art/buddha-shakyamuni.webp', source: 'https://www.artic.edu/artworks/21023/buddha-shakyamuni-seated-in-meditation-dhyanamudra',
-    imageCredit: 'Art Institute of Chicago · CC0', imageSource: 'https://commons.wikimedia.org/wiki/File:Buddha_Shakyamuni_Seated_in_Meditation_(Dhyanamudra).jpg',
+    id: 'greek-slave', room: 0, title: 'Հույն ստրկուհին', originalTitle: 'Model of the Greek Slave',
+    creator: 'Հայրամ Փաուերս', creatorInfo: 'Հայրամ Փաուերսը ամերիկացի քանդակագործ էր, որի «Հույն ստրկուհին» լայն ճանաչում ստացավ 19-րդ դարում։',
+    date: '1843', medium: 'Գիպսե քանդակ',
+    description: 'Փաուերսի «Հույն ստրկուհու» այս գիպսե մոդելը ստեղծվել է 1843 թվականին։ Քանդակի շուրջը կարելի է պտտվել և դիտել կերպարի դիրքը տարբեր կողմերից։',
+    context: 'Սրահում ցուցադրված է Սմիթսոնյան ամերիկյան արվեստի թանգարանի գիպսե մոդելի եռաչափ սկանը։ Վիրտուալ սրահում մոդելը մեծացված է դիտման հարմարության համար։',
+    lookFor: 'Դիտիր մարմնի ծանրության հենումը և ձեռքերի դիրքը տարբեր դիտանկյուններից։',
+    location: 'Սմիթսոնյան ամերիկյան արվեստի թանգարան',
+    image: '/images/art/greek-slave.webp', source: 'https://americanart.si.edu/artwork/model-of-the-greek-slave-20060',
+    imageCredit: 'Smithsonian American Art Museum · CC0', imageSource: 'https://americanart.si.edu/artwork/model-of-the-greek-slave-20060', imageLicense: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    modelCredit: 'Smithsonian 3D · CC0', modelSource: 'https://3d.si.edu/object/3d/model-greek-slave:8edffe56-c358-4c3a-a61f-019f615ccef0',
+  },
+  {
+    id: 'girl-skating', room: 5, title: 'Սահող աղջիկը', originalTitle: 'Girl Skating',
+    creator: 'Աբաստենիա Սենտ Լեժե Էբերլե', creatorInfo: 'Աբաստենիա Սենտ Լեժե Էբերլեն ամերիկացի քանդակագործ էր, որի ստեղծագործություններում հաճախ պատկերված են առօրյա շարժման պահեր։',
+    date: 'մոդելավորված՝ 1906', medium: 'Բրոնզե քանդակ',
+    description: 'Սահող աղջկա շարժումը փոխանցվում է մարմնի թեքված դիրքով և առաջ մեկնած ձեռքերով։',
+    context: 'Սրահում ցուցադրված է Սմիթսոնյան ամերիկյան արվեստի թանգարանի քանդակի եռաչափ սկանը։ Վիրտուալ սրահում փոքր բնօրինակը մեծացված է դիտման հարմարության համար։',
+    lookFor: 'Շրջիր քանդակի շուրջը և հետևիր, թե ինչպես է մարմնի շարժումն ընթանում ոտքերից դեպի ձեռքերը։',
+    location: 'Սմիթսոնյան ամերիկյան արվեստի թանգարան',
+    image: '/images/art/girl-skating.webp', source: 'https://americanart.si.edu/artwork/girl-skating-80645',
+    imageCredit: 'Smithsonian American Art Museum · CC0', imageSource: 'https://americanart.si.edu/artwork/girl-skating-80645', imageLicense: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    modelCredit: 'Smithsonian 3D · CC0', modelSource: 'https://3d.si.edu/object/3d/girl-skating:e8d1f790-28a8-492d-84f5-cf2817f8cdcf',
   },
   {
     id: 'thinker', room: 1, title: 'Մտածողը', originalTitle: 'The Thinker', creator: 'Օգյուստ Ռոդեն · ձուլվածքը՝ Ալեքսի Ռյուդիե',

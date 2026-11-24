@@ -23,6 +23,10 @@ export const artCmsSchema=z.object({
   imageCredit:z.string().trim().max(5000).default(''),
   imageSource:z.union([z.string().url(),z.literal('')]).default(''),
   imageLicense:z.string().trim().max(2000).default(''),
+  modelCredit:z.string().trim().max(5000).default(''),
+  modelSource:z.union([z.string().url(),z.literal('')]).default(''),
   room:z.number().int().min(0).max(5).optional(),
+  gallerySlot:z.number().int().min(0).max(1023).optional(),
+  displaySize:z.enum(['regular','medium','large']).default('regular'),
 })
 export type ArtCmsInput=z.infer<typeof artCmsSchema>

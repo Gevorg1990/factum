@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
+import {galleryAvailableSlots,galleryPlacement,galleryRoomForSlot} from '../utils/art/galleryLayout'
 
 const artwork={...newContent('ARTWORK'),title:'Փորձնական նկար'}
 artwork.data={...artwork.data,
@@ -37,4 +38,20 @@ test('museum and image credit links can be left blank',()=>{
   const payload=parseContent(prepareContent(withoutLinks))
   assert.equal(payload.data.source,'')
   assert.equal(payload.data.imageSource,'')
+})
+
+test('gallery artworks keep an explicit wall or column position and display size',()=>{
+  const placed=structuredClone(artwork)
+  placed.data.gallerySlot=624
+  placed.data.displaySize='large'
+  const payload=parseContent(prepareContent(placed))
+  assert.equal(payload.data.gallerySlot,624)
+  assert.equal(payload.data.displaySize,'large')
+  assert.equal(galleryRoomForSlot(624),6)
+  assert.equal(galleryPlacement(624).column,true)
+  assert.equal(galleryPlacement(1).room,6)
+  assert.ok(galleryAvailableSlots(6).includes(600))
+  assert.ok(galleryAvailableSlots(6).includes(0))
+  placed.data.gallerySlot=1024
+  assert.throws(()=>parseContent(prepareContent(placed)))
 })

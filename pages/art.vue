@@ -1,36 +1,78 @@
 <script setup lang="ts">
-import {ArrowLeft, ExternalLink, Images, Landmark, Move3D, X} from 'lucide-vue-next'
-import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
+import {ArrowLeft, ExternalLink, Images, Move3D, Search, X} from 'lucide-vue-next'
+import {galleryArtworks,galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {artistPortraits} from '~/data/art/artistPortraits'
+import {galleryRoomForSlot} from '~/utils/art/galleryLayout'
 
 const requestFetch=useRequestFetch()
 const {data:cmsPage}=await useAsyncData('art-gallery-cms',async()=>{
   try{return await requestFetch<{core:GalleryArtwork[];items:GalleryArtwork[];total:number}>('/api/art/gallery',{query:{offset:0,limit:24}})}
-  catch{return {core:[],items:[],total:0}}
+  catch{return {core:[...galleryArtworks],items:[],total:0}}
 })
 const coreArtworks=ref<GalleryArtwork[]>(cmsPage.value?.core||[])
 const cmsArtworks=ref<GalleryArtwork[]>(cmsPage.value?.items||[])
 const cmsTotal=ref(cmsPage.value?.total||0)
 const loadingMore=ref(false)
 const allArtworks=computed(()=>[...coreArtworks.value,...cmsArtworks.value])
-const rooms=computed(()=>[...galleryRooms,...Array.from({length:Math.ceil(cmsArtworks.value.length/6)},(_,i)=>({id:i+6,name:`Պատկերասրահի նոր սրահ ${i+1}`,era:'ՆՈՐ ՍՐԱՀ',summary:'CMS-ից հրապարակված գործեր',direction:'արևելք'}))])
-
-const gallery=ref<{visit:(index:number)=>void;reset:()=>void;focusArtwork:(id:string)=>void}>()
-const frame=ref<HTMLElement>()
-const selected=ref<GalleryArtwork|null>(null)
-const closeButton=ref<HTMLButtonElement>()
-let previousFocus:HTMLElement|null=null
-const room=ref(0)
-const ready=ref(false)
-const filter=ref<number|null>(null)
-const artistGroups=computed(()=>Array.from(allArtworks.value.filter(item=>!['buddha-shakyamuni','thinker','venus-de-milo'].includes(item.id)).reduce((groups,item)=>{
+const searchQuery=ref('')
+const searchResults=ref<GalleryArtwork[]>([])
+const searchGroups=computed(()=>Array.from(searchResults.value.reduce((groups,item)=>{
   const works=groups.get(item.creator)||[]
   works.push(item)
   groups.set(item.creator,works)
   return groups
 },new Map<string,GalleryArtwork[]>())).sort((a,b)=>b[1].length-a[1].length))
+const searchLoading=ref(false)
+const searchError=ref(false)
+const searchHasMore=ref(false)
+let searchTimer:ReturnType<typeof setTimeout>|undefined
+let searchVersion=0
+const rooms=computed(()=>[...galleryRooms,...Array.from({length:Math.max(0,...cmsArtworks.value.map((item,index)=>galleryRoomForSlot(item.gallerySlot??index)-5))},(_,i)=>({id:i+6,name:`Պատկերասրահի նոր սրահ ${i+1}`,era:'ՆՈՐ ՍՐԱՀ',summary:'CMS-ից հրապարակված գործեր',direction:'արևելք'}))])
+
+const gallery=ref<{focusArtwork:(id:string)=>boolean}>()
+const modalTarget=shallowRef<HTMLElement|'body'>('body')
+const frame=ref<HTMLElement>()
+const selected=ref<GalleryArtwork|null>(null)
+const closeButton=ref<HTMLButtonElement>()
+let previousFocus:HTMLElement|null=null
+let previousRootOverflow=''
+let previousBodyOverflow=''
+const room=ref(0)
+const ready=ref(false)
+const artistGroups=computed(()=>Array.from(allArtworks.value.reduce((groups,item)=>{
+  const works=groups.get(item.creator)||[]
+  works.push(item)
+  groups.set(item.creator,works)
+  return groups
+},new Map<string,GalleryArtwork[]>())).sort((a,b)=>b[1].length-a[1].length))
+function roomName(index?:number){return index===undefined?'Պատկերասրահ':rooms.value[index]?.name||'Պատկերասրահ'}
 function portraitFor(creator:string,works:GalleryArtwork[]){return artistPortraits[creator]?.image||works.find(item=>item.creatorPortrait)?.creatorPortrait}
-function roomName(index:number){return rooms.value[index]?.name||''}
+function loadedArtwork(id:string){return allArtworks.value.find(item=>item.id===id)}
+async function searchWorks(version:number,reset:boolean){
+  const q=searchQuery.value.trim()
+  if(!q||searchLoading.value&&!reset)return
+  searchLoading.value=true
+  searchError.value=false
+  try{
+    const page=await $fetch<{items:GalleryArtwork[];hasMore:boolean}>('/api/art/search',{query:{q,offset:reset?0:searchResults.value.length}})
+    if(version!==searchVersion)return
+    searchResults.value=reset?page.items:[...searchResults.value,...page.items]
+    searchHasMore.value=page.hasMore
+  }catch{
+    if(version===searchVersion)searchError.value=true
+  }finally{
+    if(version===searchVersion)searchLoading.value=false
+  }
+}
+watch(searchQuery,()=>{
+  clearTimeout(searchTimer)
+  const version=++searchVersion
+  searchResults.value=[]
+  searchHasMore.value=false
+  searchError.value=false
+  searchLoading.value=Boolean(searchQuery.value.trim())
+  if(searchQuery.value.trim())searchTimer=setTimeout(()=>searchWorks(version,true),250)
+})
 async function loadMore(){
   if(loadingMore.value||cmsArtworks.value.length>=cmsTotal.value)return
   loadingMore.value=true
@@ -41,13 +83,25 @@ async function loadMore(){
     cmsArtworks.value=[...cmsArtworks.value,...page.items]
   }finally{loadingMore.value=false}
 }
-function visit(index:number){gallery.value?.visit(index);filter.value=index===0?null:index;frame.value?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'center'})}
-function jumpToArtwork(item:GalleryArtwork){gallery.value?.focusArtwork(item.id);filter.value=item.room;frame.value?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'center'})}
-function open(item:GalleryArtwork){previousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;selected.value=item.id==='thinker'&&cmsArtworks.value.length?{...item,room:rooms.value.length-1}:item;nextTick(()=>closeButton.value?.focus())}
+function jumpToArtwork(item:GalleryArtwork){if(gallery.value?.focusArtwork(item.id))frame.value?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'center'});else open(item)}
+function open(item:GalleryArtwork){previousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;selected.value=item;nextTick(()=>closeButton.value?.focus())}
+function openSearchResult(item:GalleryArtwork){open(loadedArtwork(item.id)||item)}
+function visitSearchResult(item:GalleryArtwork){const loaded=loadedArtwork(item.id);if(loaded&&ready.value)jumpToArtwork(loaded);else openSearchResult(item)}
 function select(id:string){const item=allArtworks.value.find(item=>item.id===id);if(item)open(item)}
 function close(){selected.value=null;nextTick(()=>previousFocus?.focus({preventScroll:true}))}
+watch(selected,(item,previous)=>{
+  if(item&&!previous){
+    previousRootOverflow=document.documentElement.style.overflow
+    previousBodyOverflow=document.body.style.overflow
+    document.documentElement.style.overflow='hidden'
+    document.body.style.overflow='hidden'
+  }else if(!item&&previous){
+    document.documentElement.style.overflow=previousRootOverflow
+    document.body.style.overflow=previousBodyOverflow
+  }
+},{flush:'sync'})
 onMounted(()=>window.addEventListener('keydown',escape))
-onUnmounted(()=>window.removeEventListener('keydown',escape))
+onUnmounted(()=>{clearTimeout(searchTimer);searchVersion++;window.removeEventListener('keydown',escape);if(selected.value){document.documentElement.style.overflow=previousRootOverflow;document.body.style.overflow=previousBodyOverflow}})
 function escape(event:KeyboardEvent){if(event.key==='Escape')close()}
 useHead({title:'Արվեստի վիրտուալ պատկերասրահ — COGNITIO',meta:[{name:'description',content:'Շրջիր COGNITIO-ի եռաչափ արվեստի սրահներում և բացահայտիր նշանավոր քանդակներ, նկարներ ու փորագրություններ։'}]})
 </script>
@@ -60,19 +114,23 @@ useHead({title:'Արվեստի վիրտուալ պատկերասրահ — COGNI
       <div class="hero-mark" aria-hidden="true"><Images :size="43" :stroke-width="1"/><span>COGNITIO</span></div>
     </header>
     <section ref="frame" class="art-frame" aria-label="Եռաչափ արվեստի պատկերասրահ">
-      <ClientOnly><LazyArtVirtualGallery :key="`${coreArtworks.length}-${cmsArtworks.length}`" ref="gallery" :core-artworks="coreArtworks" :cms-artworks="cmsArtworks" @ready="ready=true" @room="room=$event" @select="select"/><template #fallback><div class="art-placeholder">Բացվում են արվեստի սրահները…</div></template></ClientOnly>
+      <ClientOnly><LazyArtVirtualGallery :key="`${coreArtworks.length}-${cmsArtworks.length}`" ref="gallery" :core-artworks="coreArtworks" :cms-artworks="cmsArtworks" @ready="ready=true" @room="room=$event" @select="select" @fullscreen="modalTarget=$event||'body'"/><template #fallback><div class="art-placeholder">Բացվում են արվեստի սրահները…</div></template></ClientOnly>
     </section>
     <div class="art-frame-caption"><span><Move3D :size="17"/> Կրկնակի սեղմիր հատակին՝ քայլելու համար․ անցումները միշտ բաց են</span><span>Ընթացիկ սրահ՝ {{roomName(room)}}</span></div>
-    <nav class="art-room-nav" aria-label="Ընտրել սրահ">
-      <button type="button" :class="{active:filter===null}" :aria-pressed="filter===null" @click="filter=null;gallery?.reset()"><Landmark :size="19"/><span>Բոլոր գործերը</span></button>
-      <button v-for="item in rooms.slice(1)" :key="item.id" type="button" :class="{active:filter===item.id}" :aria-pressed="filter===item.id" :disabled="!ready" @click="visit(item.id)"><small>{{item.era}}</small><span>{{item.name}}</span></button>
-    </nav>
     <button v-if="cmsArtworks.length<cmsTotal" type="button" class="art-load-rooms" :disabled="loadingMore" @click="loadMore">{{loadingMore?'Բեռնվում են…':`Բացել հաջորդ սրահները (${cmsTotal-cmsArtworks.length} գործ)`}}</button>
     <section class="artist-section" aria-label="Նկարիչների գործերը">
-      <div class="collection-heading"><div><p class="eyebrow">ՆԿԱՐԻՉՆԵՐ ԵՎ ԳՈՐԾԵՐ</p><h2>Ընտրիր հեղինակին, մտիր սրահ</h2></div><p>Սեղմիր գործի անունը՝ 3D սրահում նրա դիմաց կանգնելու համար</p></div>
-      <div class="artist-grid"><article v-for="[creator,works] in artistGroups" :key="creator" class="artist-card"><div class="artist-preview"><img v-if="portraitFor(creator,works)" :src="portraitFor(creator,works)" :alt="`${creator}՝ դիմանկար`" width="115" height="105" loading="lazy" decoding="async"/><div><small>{{works.length}} գործ</small><h3>{{creator}}</h3><a v-if="artistPortraits[creator]||works.find(work=>work.creatorPortraitSource)" :href="artistPortraits[creator]?.source||works.find(work=>work.creatorPortraitSource)?.creatorPortraitSource" :title="artistPortraits[creator]?.credit||works.find(work=>work.creatorPortraitCredit)?.creatorPortraitCredit" target="_blank" rel="noopener noreferrer" class="artist-credit">Դիմանկարի աղբյուր ↗</a><p v-if="works.find(work=>work.creatorInfo)?.creatorInfo||artistPortraits[creator]?.bio" class="artist-bio">{{works.find(work=>work.creatorInfo)?.creatorInfo||artistPortraits[creator]?.bio}}</p></div></div><div class="artist-works"><button v-for="work in works" :key="work.id" type="button" :disabled="!ready" @click="jumpToArtwork(work)"><span>{{work.title}}</span><small>{{work.date}} ↗</small></button></div></article></div>
+      <div class="collection-heading"><div><p class="eyebrow">ԳՈՐԾԵՐԻ ՈՐՈՆՈՒՄ</p><h2>Գտիր նկարը կամ հեղինակին</h2></div></div>
+      <div class="art-search"><label for="artwork-search">Որոնել բոլոր գործերում</label><div class="art-search-field"><Search :size="19" aria-hidden="true"/><input id="artwork-search" v-model="searchQuery" type="search" maxlength="100" autocomplete="off" placeholder="Գործի անունը կամ հեղինակը"/></div></div>
+      <template v-if="searchQuery.trim()">
+        <p v-if="searchLoading && !searchResults.length" class="art-search-status" role="status">Որոնվում է…</p>
+        <p v-else-if="searchError" class="art-search-status" role="status">Որոնումը չհաջողվեց։ Փորձիր կրկին։</p>
+        <p v-else-if="!searchResults.length" class="art-search-status" role="status">Համընկնող գործ չի գտնվել։</p>
+        <div v-if="searchResults.length" class="artist-grid" aria-label="Որոնման արդյունքներ"><article v-for="[creator,works] in searchGroups" :key="creator" class="artist-card"><div class="artist-preview"><img v-if="portraitFor(creator,works)" :src="portraitFor(creator,works)" :alt="`${creator}՝ դիմանկար`" width="115" height="105" loading="lazy" decoding="async"/><div><small>{{works.length}} գտնված գործ</small><h3>{{creator}}</h3><a v-if="artistPortraits[creator]||works.find(work=>work.creatorPortraitSource)" :href="artistPortraits[creator]?.source||works.find(work=>work.creatorPortraitSource)?.creatorPortraitSource" :title="artistPortraits[creator]?.credit||works.find(work=>work.creatorPortraitCredit)?.creatorPortraitCredit" target="_blank" rel="noopener noreferrer" class="artist-credit">Դիմանկարի աղբյուր ↗</a><p v-if="works.find(work=>work.creatorInfo)?.creatorInfo||artistPortraits[creator]?.bio" class="artist-bio">{{works.find(work=>work.creatorInfo)?.creatorInfo||artistPortraits[creator]?.bio}}</p></div></div><div class="artist-works"><button v-for="work in works" :key="work.id" type="button" @click="visitSearchResult(work)"><span>{{work.title}}</span><small>{{work.date}} ↗</small></button></div></article></div>
+        <button v-if="searchHasMore" type="button" class="art-show-more" :disabled="searchLoading" @click="searchWorks(searchVersion,false)">{{searchLoading?'Բեռնվում է…':'Ցույց տալ ավելին'}}</button>
+      </template>
+      <div v-else class="artist-grid"><article v-for="[creator,works] in artistGroups" :key="creator" class="artist-card"><div class="artist-preview"><img v-if="portraitFor(creator,works)" :src="portraitFor(creator,works)" :alt="`${creator}՝ դիմանկար`" width="115" height="105" loading="lazy" decoding="async"/><div><small>{{works.length}} գործ</small><h3>{{creator}}</h3><a v-if="artistPortraits[creator]||works.find(work=>work.creatorPortraitSource)" :href="artistPortraits[creator]?.source||works.find(work=>work.creatorPortraitSource)?.creatorPortraitSource" :title="artistPortraits[creator]?.credit||works.find(work=>work.creatorPortraitCredit)?.creatorPortraitCredit" target="_blank" rel="noopener noreferrer" class="artist-credit">Դիմանկարի աղբյուր ↗</a><p v-if="works.find(work=>work.creatorInfo)?.creatorInfo||artistPortraits[creator]?.bio" class="artist-bio">{{works.find(work=>work.creatorInfo)?.creatorInfo||artistPortraits[creator]?.bio}}</p></div></div><div class="artist-works"><button v-for="work in works" :key="work.id" type="button" :disabled="!ready" @click="jumpToArtwork(work)"><span>{{work.title}}</span><small>{{work.date}} ↗</small></button></div></article></div>
     </section>
-    <Teleport to="body"><div v-if="selected" class="art-modal-backdrop" @click.self="close"><section class="art-detail" role="dialog" aria-modal="true" :aria-label="selected.title"><button ref="closeButton" type="button" class="art-detail-close" aria-label="Փակել" @click="close"><div aria-hidden="true"><X :size="20"/></div></button><div class="art-detail-image"><img :src="selected.image" :alt="selected.originalTitle" width="600" height="500"/><p v-if="selected.imageCredit">{{selected.imageCredit}}</p></div><div class="art-detail-copy"><p class="eyebrow">{{roomName(selected.room)}} · {{selected.medium}}</p><h2>{{selected.title}}</h2><p class="original-title">{{selected.originalTitle}}</p><dl><div><dt>Հեղինակ</dt><dd>{{selected.creator}}</dd></div><div><dt>Թվագրում</dt><dd>{{selected.date}}</dd></div><div v-if="selected.location"><dt>Գտնվելու վայր</dt><dd>{{selected.location}}</dd></div><div v-if="selected.dimensions"><dt>Չափեր</dt><dd>{{selected.dimensions}}</dd></div></dl><h3>Գործի մասին</h3><p class="art-description">{{selected.description}}</p><p v-if="selected.context" class="art-description">{{selected.context}}</p><div v-if="selected.lookFor" class="art-look"><strong>Ինչ նկատել սրահում</strong><p>{{selected.lookFor}}</p></div><a v-if="selected.source" :href="selected.source" target="_blank" rel="noopener noreferrer"><ExternalLink :size="16"/> Թանգարանի կամ արխիվի գրառումը</a><p v-if="selected.imageSource||selected.imageLicense" class="image-credit">Պատկեր՝ <a v-if="selected.imageSource" :href="selected.imageSource" target="_blank" rel="noopener noreferrer">աղբյուր</a><template v-if="selected.imageLicense"><span v-if="selected.imageSource"> · </span><a :href="selected.imageLicense" target="_blank" rel="noopener noreferrer">արտոնագիր</a></template></p><p v-if="selected.modelSource" class="image-credit">3D մոդել՝ {{selected.modelCredit}} · <a :href="selected.modelSource" target="_blank" rel="noopener noreferrer">աղբյուր</a></p></div></section></div></Teleport>
+    <Teleport :to="modalTarget"><div v-if="selected" class="art-modal-backdrop" @click.self="close"><section class="art-detail" role="dialog" aria-modal="true" :aria-label="selected.title"><button ref="closeButton" type="button" class="art-detail-close" aria-label="Փակել" @click="close"><div aria-hidden="true"><X :size="20"/></div></button><div class="art-detail-image"><img :src="selected.image" :alt="selected.originalTitle" width="600" height="500"/><p v-if="selected.imageCredit">{{selected.imageCredit}}</p></div><div class="art-detail-copy"><p class="eyebrow">{{roomName(selected.room)}} · {{selected.medium}}</p><h2>{{selected.title}}</h2><p class="original-title">{{selected.originalTitle}}</p><dl><div><dt>Հեղինակ</dt><dd>{{selected.creator}}</dd></div><div><dt>Թվագրում</dt><dd>{{selected.date}}</dd></div><div v-if="selected.location"><dt>Գտնվելու վայր</dt><dd>{{selected.location}}</dd></div><div v-if="selected.dimensions"><dt>Չափեր</dt><dd>{{selected.dimensions}}</dd></div></dl><h3>Գործի մասին</h3><p class="art-description">{{selected.description}}</p><p v-if="selected.context" class="art-description">{{selected.context}}</p><div v-if="selected.lookFor" class="art-look"><strong>Ինչ նկատել սրահում</strong><p>{{selected.lookFor}}</p></div><a v-if="selected.source" :href="selected.source" target="_blank" rel="noopener noreferrer"><ExternalLink :size="16"/> Թանգարանի կամ արխիվի գրառումը</a><p v-if="selected.imageSource||selected.imageLicense" class="image-credit">Պատկեր՝ <a v-if="selected.imageSource" :href="selected.imageSource" target="_blank" rel="noopener noreferrer">աղբյուր</a><template v-if="selected.imageLicense"><span v-if="selected.imageSource"> · </span><a :href="selected.imageLicense" target="_blank" rel="noopener noreferrer">արտոնագիր</a></template></p><p v-if="selected.modelSource" class="image-credit">3D մոդել՝ {{selected.modelCredit}} · <a :href="selected.modelSource" target="_blank" rel="noopener noreferrer">աղբյուր</a></p></div></section></div></Teleport>
   </main>
 </template>
 
@@ -86,4 +144,13 @@ useHead({title:'Արվեստի վիրտուալ պատկերասրահ — COGNI
 @media(max-width:1000px){.artist-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.artist-grid{grid-template-columns:1fr}.artist-preview{grid-template-columns:95px 1fr}.artist-preview img{width:95px;height:90px}}
 .art-load-rooms{display:block;margin:-24px auto 38px;padding:12px 20px;border:1px solid #c7a877;border-radius:9px;background:#263749;color:#f4dfb8;font-size:14px}.art-load-rooms:focus-visible{outline:2px solid #efd49f;outline-offset:3px}.art-load-rooms:disabled{opacity:.5}
 .artist-bio{margin-top:9px;color:#b6c4ce;font-size:12px;line-height:1.6}
+.art-search{max-width:620px;margin:0 0 25px}.art-search label{display:block;margin-bottom:9px;color:#d7c6a8;font-size:13px}.art-search-field{display:flex;align-items:center;gap:10px;padding:0 14px;border:1px solid #c9ae7880;border-radius:10px;background:#111f2e;color:#d9bd83}.art-search-field:focus-within{outline:2px solid #efd49f;outline-offset:2px}.art-search-field input{width:100%;height:48px;border:0;outline:0;background:transparent;color:#f4ede0;font:inherit}.art-search-field input::placeholder{color:#9caab3}.art-search-status{padding:20px 0;color:#b8c6cc}.art-search-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.art-search-result{display:flex;justify-content:space-between;align-items:center;gap:18px;min-width:0;padding:16px;border:1px solid #c9ae785c;border-radius:10px;background:#111f2e}.art-search-result>div:first-child{display:flex;flex-direction:column;gap:5px;min-width:0}.art-search-result strong{color:#f5ead5;font-size:16px}.art-search-result small,.art-search-result span{color:#b6c4ce;font-size:12px}.art-search-actions{display:flex;flex-direction:column;gap:7px;flex-shrink:0}.art-search-actions button{padding:8px 11px;border:1px solid #c9ae7880;border-radius:7px;color:#f4dfb8;font-size:12px}.art-search-actions button:hover{background:#354b60}.art-search-actions button:focus-visible{outline:2px solid #efd49f;outline-offset:2px}.art-search-actions button:disabled{opacity:.5}
+@media(max-width:800px){.art-search-results{grid-template-columns:1fr}}@media(max-width:480px){.art-search-result{align-items:flex-start;flex-direction:column}.art-search-actions{flex-direction:row}}
+.art-modal-backdrop{overflow:hidden;overscroll-behavior:contain}
+.art-detail{grid-template-columns:minmax(0,48%) minmax(0,1fr);height:min(90dvh,800px);max-height:calc(100dvh - 40px);overflow:hidden}
+.art-detail-image{min-width:0;min-height:0;overflow:hidden}
+.art-detail-image img{min-height:0;max-height:calc(90dvh - 100px)}
+.art-detail-copy{min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.art-detail-close{z-index:2}
+@media(max-width:650px){.art-detail{display:flex;flex-direction:column;height:92dvh;max-height:calc(100dvh - 24px)}.art-detail-image{flex:0 0 auto;max-height:35dvh;padding:12px 18px}.art-detail-image img{max-height:calc(35dvh - 38px)}.art-detail-copy{flex:1;padding:25px 20px}}
 </style>

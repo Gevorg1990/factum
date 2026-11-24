@@ -23,7 +23,7 @@ export const editorTemplates:Record<CmsKind,Record<string,any>> = {
   GEO_CATEGORY:{id:'',title:'',area:'world-facts',sortOrder:0},
   GEO_ENTRY:{id:'',title:'',area:'world-facts',category:'',detail:'',answer:'',measure:'',location:'',longitude:null,latitude:null,countryCode:'',dataYear:null,source:{name:'',url:''},sortOrder:0,includeInFacts:false,globeSearch:false,livePopulation:false},
   BOOK:{id:'',title:'',author:'',topic:'',description:'',cover:'',text:''},
-  ARTWORK:{id:'',title:'',originalTitle:'',creator:'',creatorInfo:'',creatorPortrait:'',creatorPortraitCredit:'',date:'',medium:'',description:'',context:'',lookFor:'',location:'',dimensions:'',image:'',source:'',imageCredit:'',imageSource:'',imageLicense:''},
+  ARTWORK:{id:'',title:'',originalTitle:'',creator:'',creatorInfo:'',creatorPortrait:'',creatorPortraitCredit:'',creatorPortraitSource:'',gallerySlot:undefined,displaySize:'regular',date:'',medium:'',description:'',context:'',lookFor:'',location:'',dimensions:'',image:'',source:'',imageCredit:'',imageSource:'',imageLicense:''},
   ARTICLE:{id:'',title:'',subject:'',answer:'',detail:'',image:'',video:'',listed:true,sections:[],example:'',takeaway:''},
   CATEGORY:{slug:'',name:'',image:'',cardVideo:''},AUTHOR:{name:'',bio:''},
   PERSON:{id:'',name:'',years:'',role:'',category:'Գրականություն',bio:'',portrait:'',isArmenian:true,works:[],biographySections:[],timeline:[]},
@@ -45,7 +45,7 @@ export const fieldHints:Record<string,string> = {
 export function newContent(kind:CmsKind) {
   return {kind,key:kind==='SETTING'?'footer':`${kind.toLowerCase()}-${crypto.randomUUID().slice(0,8)}`,title:'',summary:'',body:'',categoryId:null,authorId:null,data:structuredClone(editorTemplates[kind])}
 }
-export function editorRecord(record:any){const value=JSON.parse(JSON.stringify(record));if(value.kind==='ARTICLE'){value.data.video ??='';value.data.sections=(value.data.sections||[]).map((section:any)=>({...section,image:section.image||''}));}if(value.kind==='GEO_ENTRY'||value.kind==='GEO_CATEGORY')value.data={...structuredClone(editorTemplates[value.kind as CmsKind]),...value.data};if(value.kind==='CATEGORY'){const media=categoryMedia(value.data);value.data.image ??='';value.data.cardVideo ??=media.video;if(!value.data.cardVideoPoster)value.data.cardVideoPoster=media.poster;}if(value.kind==='GAME'){value.title=value.data.mode==='genius'?value.data.statement:value.data.question;if(value.data.mode==='million')value.data.slot=millionSlotOf(value.data);}return value}
+export function editorRecord(record:any){const value=JSON.parse(JSON.stringify(record));if(value.kind==='ARTICLE'){value.data.video ??='';value.data.sections=(value.data.sections||[]).map((section:any)=>({...section,image:section.image||''}));}if(value.kind==='GEO_ENTRY'||value.kind==='GEO_CATEGORY'||value.kind==='ARTWORK')value.data={...structuredClone(editorTemplates[value.kind as CmsKind]),...value.data};if(value.kind==='CATEGORY'){const media=categoryMedia(value.data);value.data.image ??='';value.data.cardVideo ??=media.video;if(!value.data.cardVideoPoster)value.data.cardVideoPoster=media.poster;}if(value.kind==='GAME'){value.title=value.data.mode==='genius'?value.data.statement:value.data.question;if(value.data.mode==='million')value.data.slot=millionSlotOf(value.data);}return value}
 // Keep the UI's single title consistent with legacy payload shapes without losing extra fields.
 export function prepareContent(record:any) {
   const value=JSON.parse(JSON.stringify(record))
