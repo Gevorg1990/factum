@@ -1,4 +1,11 @@
 import { biography as kirkKerkorianBiography } from './Kirk_Kerkorian_Biography'
+import {biography as artistVanGogh} from './Vincent_Van_Gogh_Biography'
+import {biography as artistMonet} from './Claude_Monet_Biography'
+import {biography as artistLeonardo} from './Leonardo_Da_Vinci_Biography'
+import {biography as artistCassatt} from './Mary_Cassatt_Biography'
+import {biography as artistSeurat} from './Georges_Seurat_Biography'
+import {biography as artistCaillebotte} from './Gustave_Caillebotte_Biography'
+import {biography as artistRenoir} from './Pierre_Auguste_Renoir_Biography'
 import type { Person } from '../personTypes'
 import { biography as biography0 } from './Albert_Einstein_Biography'
 import { biography as biography1 } from './Mesrop_Mashtots_Biography'
@@ -207,4 +214,11 @@ export const biographies: Record<string, Partial<Person>> = {
   "hambardzumyan": hambardzumyanBiography,
   "vazgen-sargsyan": vazgenSargsyan,
   'kirk-kerkorian': kirkKerkorianBiography,
+  'vincent-van-gogh':artistVanGogh,
+  'claude-monet':artistMonet,
+  'leonardo-da-vinci':artistLeonardo,
+  'mary-cassatt':artistCassatt,
+  'georges-seurat':artistSeurat,
+  'gustave-caillebotte':artistCaillebotte,
+  'pierre-auguste-renoir':artistRenoir,
 }

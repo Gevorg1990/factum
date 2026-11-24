@@ -16,9 +16,9 @@ export interface GalleryArtwork {
   modelCredit?: string
   modelSource?: string
   image: string
-  source: string
-  imageCredit: string
-  imageSource: string
+  source?: string
+  imageCredit?: string
+  imageSource?: string
   imageLicense?: string
   creatorInfo?: string
   creatorPortrait?: string
@@ -49,16 +49,6 @@ export const galleryArtworks: readonly GalleryArtwork[] = [
     location: 'Չիկագոյի արվեստի ինստիտուտ',
     image: '/images/art/buddha-shakyamuni.webp', source: 'https://www.artic.edu/artworks/21023/buddha-shakyamuni-seated-in-meditation-dhyanamudra',
     imageCredit: 'Art Institute of Chicago · CC0', imageSource: 'https://commons.wikimedia.org/wiki/File:Buddha_Shakyamuni_Seated_in_Meditation_(Dhyanamudra).jpg',
-  },
-  {
-    id: 'buddha-indra-brahma', room: 1, title: 'Բուդդան՝ Ինդրայի և Բրահմայի երկրպագությամբ',
-    originalTitle: 'Buddha Worshipped by Indra and Brahma', creator: 'Անհայտ վարպետ · Գանդհարա',
-    date: '2–3-րդ դարեր', medium: 'Քարե ռելիեֆ',
-    description: 'Գանդհարայի քանդակագործությունը միավորում էր հարավասիական և հելլենիստական պատկերային ավանդույթները։ Այս ռելիեֆում Բուդդան պատկերված է երկրպագության տեսարանում։',
-    context: 'Գանդհարայի շրջանում պատմողական քանդակները հաճախ ներկայացնում էին բուդդայական թեմաները բազմաֆիգուր հորինվածքով։ Այս ռելիեֆի լուսանկարը տեսանելի է նաև բնօրինակ պատկերի աղբյուրում։',
-    lookFor: 'Համեմատիր կենտրոնական կերպարի դիրքը նրա շուրջը կանգնած կերպարների հետ։',
-    image: '/images/art/buddha-relief.webp', source: 'https://commons.wikimedia.org/wiki/File:Gandhara,_rilievo_con_buddha_adorato_da_indra_e_brahma,_II-III_secolo.jpg',
-    imageCredit: 'Sailko · Wikimedia Commons · CC BY 3.0 · փոքրացված WebP', imageSource: 'https://commons.wikimedia.org/wiki/File:Gandhara,_rilievo_con_buddha_adorato_da_indra_e_brahma,_II-III_secolo.jpg', imageLicense: 'https://creativecommons.org/licenses/by/3.0/',
   },
   {
     id: 'thinker', room: 1, title: 'Մտածողը', originalTitle: 'The Thinker', creator: 'Օգյուստ Ռոդեն · ձուլվածքը՝ Ալեքսի Ռյուդիե',

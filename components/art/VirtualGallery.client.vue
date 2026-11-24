@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import * as THREE from 'three'
 import {Maximize2,Minimize2} from 'lucide-vue-next'
-import {galleryArtworks, galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
+import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {galleryCenter,galleryRoomAt,galleryRoute,galleryWalkable,type GalleryPoint} from '~/utils/art/galleryNavigation'
 import {EYE_HEIGHT,smoothJourneyProgress} from '~/utils/library/navigation'
 
 const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]}>()
-const props=defineProps<{cmsArtworks?:GalleryArtwork[]}>()
+const props=defineProps<{coreArtworks?:GalleryArtwork[];cmsArtworks?:GalleryArtwork[]}>()
 const extraRooms=computed(()=>Math.ceil((props.cmsArtworks?.length||0)/6))
-const allArtworks=computed(()=>[...galleryArtworks,...(props.cmsArtworks||[])])
+const allArtworks=computed(()=>[...(props.coreArtworks||[]),...(props.cmsArtworks||[])])
 const host = ref<HTMLElement>()
 const canvasHost = ref<HTMLElement>()
 const loading = ref(true)
@@ -158,7 +158,8 @@ async function toggleFullscreen(){
 }
 
 function addArtwork(id:string,x:number,z:number,rotation:number,width:number,height:number,room:number,centerY=4.5) {
-  const artwork=allArtworks.value.find(item=>item.id===id)!
+  const artwork=allArtworks.value.find(item=>item.id===id)
+  if(!artwork)return
   artworkViews.set(id,{room,x,z,rotation,width:width+.2,height:height+.2,centerY})
   pendingArtworks.push({room,load:()=>{
     const loader=new THREE.TextureLoader()
@@ -213,7 +214,7 @@ function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,
 }
 
 async function loadVenusModel() {
-  if(sculptureLoading)return
+  if(sculptureLoading||!allArtworks.value.some(item=>item.id==='venus-de-milo'))return
   sculptureLoading=true
   try {
     const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js')
@@ -319,7 +320,6 @@ function buildScene() {
   }
   else addArtwork('thinker',23.76,0,-Math.PI/2,2.4,3.2,1)
   addArtwork('buddha-shakyamuni',17,-6.75,0,2.25,3.3,1)
-  addArtwork('buddha-indra-brahma',17,6.75,Math.PI,3.1,3.5,1)
   addArtwork('impression-sunrise',13,-6.75,0,2.7,2.1,1,4.4)
   addArtwork('bathers',21,-6.75,0,2.7,1.8,1,4.4)
   addArtwork('blue-armchair',13,6.75,Math.PI,2.7,1.8,1,4.4)
@@ -382,7 +382,21 @@ function keyDown(event:KeyboardEvent) {
 }
 function keyUp(event:KeyboardEvent){keys.delete(event.code)}
 function down(event:PointerEvent){if(event.button!==0)return;host.value?.focus({preventScroll:true});drag={x:event.clientX,y:event.clientY,moved:false};renderer?.domElement.setPointerCapture(event.pointerId)}
-function move(event:PointerEvent){if(!drag)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;drag.x=event.clientX;drag.y=event.clientY;if(Math.abs(dx)+Math.abs(dy)>1){drag.moved=true;journey=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined}yaw-=dx*.004;pitch=THREE.MathUtils.clamp(pitch-dy*.003,-.75,.75)}
+function move(event:PointerEvent){
+  if(!drag){
+    if(renderer&&camera){
+      const rect=renderer.domElement.getBoundingClientRect()
+      pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1)
+      raycaster.setFromCamera(pointer,camera)
+      renderer.domElement.style.cursor=raycaster.intersectObjects(selectable,true).some(hit=>typeof hit.object.userData.artworkId==='string')?'pointer':'grab'
+    }
+    return
+  }
+  const dx=event.clientX-drag.x,dy=event.clientY-drag.y
+  drag.x=event.clientX;drag.y=event.clientY
+  if(Math.abs(dx)+Math.abs(dy)>1){drag.moved=true;journey=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined}
+  yaw-=dx*.004;pitch=THREE.MathUtils.clamp(pitch-dy*.003,-.75,.75)
+}
 function up(event:PointerEvent){
   if(drag&&!drag.moved){
     if(event.pointerType==='touch'){

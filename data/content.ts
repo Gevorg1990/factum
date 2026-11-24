@@ -5,6 +5,7 @@ import { komitasBiography } from './biographies/Komitas_Biography'
 import { tumanyanBiography, tumanyanAdditionalWorks } from './biographies/Hovhannes_Tumanyan_Biography'
 import type { Person, PersonCategory } from './personTypes'
 import { additionalArmenianPeople } from './armenianPeople'
+import { artistPeople } from './artistPeople'
 import { collectionQuestions } from './collectionQuestions'
 import { encyclopediaQuestions } from './encyclopediaQuestions'
 import { expandedQuestions } from './encyclopedia'
@@ -127,6 +128,7 @@ for (const person of catalogPeople) {
   person.category = originalPersonCategories[person.id] || 'Գիտություն և տեխնոլոգիա'
 }
 catalogPeople.push(...additionalArmenianPeople)
+catalogPeople.push(...artistPeople)
 for (const person of catalogPeople) Object.assign(person, biographies[person.id])
 export const people = catalogPeople.filter(person => !person.isArmenian || Boolean(armenianPortraits[person.id]))
 export const armenianPeople = people.filter(person => person.isArmenian)

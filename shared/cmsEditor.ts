@@ -23,7 +23,7 @@ export const editorTemplates:Record<CmsKind,Record<string,any>> = {
   GEO_CATEGORY:{id:'',title:'',area:'world-facts',sortOrder:0},
   GEO_ENTRY:{id:'',title:'',area:'world-facts',category:'',detail:'',answer:'',measure:'',location:'',longitude:null,latitude:null,countryCode:'',dataYear:null,source:{name:'',url:''},sortOrder:0,includeInFacts:false,globeSearch:false,livePopulation:false},
   BOOK:{id:'',title:'',author:'',topic:'',description:'',cover:'',text:''},
-  ARTWORK:{id:'',title:'',originalTitle:'',creator:'',creatorInfo:'',creatorPortrait:'',creatorPortraitCredit:'',creatorPortraitSource:'',date:'',medium:'',description:'',context:'',lookFor:'',location:'',dimensions:'',image:'',source:'',imageCredit:'',imageSource:'',imageLicense:''},
+  ARTWORK:{id:'',title:'',originalTitle:'',creator:'',creatorInfo:'',creatorPortrait:'',creatorPortraitCredit:'',date:'',medium:'',description:'',context:'',lookFor:'',location:'',dimensions:'',image:'',source:'',imageCredit:'',imageSource:'',imageLicense:''},
   ARTICLE:{id:'',title:'',subject:'',answer:'',detail:'',image:'',video:'',listed:true,sections:[],example:'',takeaway:''},
   CATEGORY:{slug:'',name:'',image:'',cardVideo:''},AUTHOR:{name:'',bio:''},
   PERSON:{id:'',name:'',years:'',role:'',category:'Գրականություն',bio:'',portrait:'',isArmenian:true,works:[],biographySections:[],timeline:[]},
