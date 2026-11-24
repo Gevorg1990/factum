@@ -24,6 +24,7 @@ enum ContentKind {
   GAME
   MONUMENT
   WORK
+  ARTWORK
   PAGE
   VIDEO
   SETTING

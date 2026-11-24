@@ -24,7 +24,7 @@ const media = ref<any[]>([]), mediaTotal = ref(0), mediaPage = ref(1), mediaQuer
 const mediaForm = ref({ url:'', alt:'', credit:'', license:'', sourceUrl:'' }), editingMedia = ref<string|null>(null), showMediaForm = ref(false), mediaFormElement = ref<HTMLFormElement>()
 const confirmDialog = ref<HTMLDialogElement>(), pendingNavigation = ref<(()=>void)|null>(null)
 const copied = ref('')
-const icons:Record<string,any> = {BookOpen,Sparkles,UsersRound,Landmark,Gamepad2,Video,FolderOpen,PenLine,MapPin,LibraryBig,FileText,Settings2}
+const icons:Record<string,any> = {BookOpen,Sparkles,UsersRound,Landmark,Gamepad2,Video,FolderOpen,PenLine,MapPin,LibraryBig,FileText,Settings2,Images}
 const groups = [...new Set(contentSections.map(x=>x.group))]
 const section = computed(()=>contentSections.find(x=>x.kind===kind.value)!)
 const statusLabels:Record<string,string> = {DRAFT:'Սևագիր',PUBLISHED:'Հրապարակված',ARCHIVED:'Արխիվացված'}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Brain, UserRound, Menu, X, House, BookOpen, Atom, Globe2, BookMarked, LibraryBig } from 'lucide-vue-next'
+import { Brain, UserRound, Menu, X, House, BookOpen, Atom, Globe2, BookMarked, LibraryBig, Palette } from 'lucide-vue-next'
 import { SAVE_ANIMATION_EVENT, animateSaveFlight, type SaveAnimationDetail, type SaveFlight } from '~/utils/saveAnimation'
-const nav=[{to:'/',label:'Գլխավոր',icon:House,color:'#efc984'},{to:'/subjects',label:'Հանրագիտարան',icon:BookOpen,color:'#82c6eb'},{to:'/periodic-table',label:'Մենդելեևի աղյուսակ',icon:Atom,color:'#b2a2f4'},{to:'/globe',label:'Երկրագունդ',icon:Globe2,color:'#83d5b6'},{to:'/bible',label:'Աստվածաշունչ',icon:BookMarked,color:'#edb48a'},{to:'/library',label:'Գրադարան',icon:LibraryBig,color:'#d9b783'}]
+const nav=[{to:'/',label:'Գլխավոր',icon:House,color:'#efc984'},{to:'/subjects',label:'Հանրագիտարան',icon:BookOpen,color:'#82c6eb'},{to:'/periodic-table',label:'Մենդելեևի աղյուսակ',icon:Atom,color:'#b2a2f4'},{to:'/globe',label:'Երկրագունդ',icon:Globe2,color:'#83d5b6'},{to:'/bible',label:'Աստվածաշունչ',icon:BookMarked,color:'#edb48a'},{to:'/library',label:'Գրադարան',icon:LibraryBig,color:'#d9b783'},{to:'/art',label:'Արվեստ',icon:Palette,color:'#e2ad94'}]
 const mobile=ref(false)
 function menuBeforeEnter(element: Element) { (element as HTMLElement).style.height = '0px' }
 function menuEnter(element: Element) {
