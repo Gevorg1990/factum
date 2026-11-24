@@ -3,11 +3,12 @@ import * as THREE from 'three'
 import {Maximize2,Minimize2} from 'lucide-vue-next'
 import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {galleryCenter,galleryRoomAt,galleryRoute,galleryWalkable,type GalleryPoint} from '~/utils/art/galleryNavigation'
+import {galleryPlacement,galleryRoomForSlot,gallerySizeWidth} from '~/utils/art/galleryLayout'
 import {EYE_HEIGHT,smoothJourneyProgress} from '~/utils/library/navigation'
 
-const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]}>()
+const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]; fullscreen:[element:HTMLElement|null]}>()
 const props=defineProps<{coreArtworks?:GalleryArtwork[];cmsArtworks?:GalleryArtwork[]}>()
-const extraRooms=computed(()=>Math.ceil((props.cmsArtworks?.length||0)/6))
+const extraRooms=computed(()=>Math.max(0,...(props.cmsArtworks||[]).map((item,index)=>galleryRoomForSlot(item.gallerySlot??index)-5)))
 const allArtworks=computed(()=>[...(props.coreArtworks||[]),...(props.cmsArtworks||[])])
 const host = ref<HTMLElement>()
 const canvasHost = ref<HTMLElement>()
@@ -30,6 +31,7 @@ let yaw = 0
 let pitch = 0
 let drag: {x:number;y:number;moved:boolean} | undefined
 let journey: {points:THREE.Vector3[];lengths:number[];total:number;started:number;duration:number} | undefined
+let pendingSelection: string | undefined
 const walkVelocity = new THREE.Vector2()
 const movementTarget = new THREE.Vector2()
 let touchId: number | undefined
@@ -38,9 +40,9 @@ const keys = new Set<string>()
 const selectable: THREE.Object3D[] = []
 const walkGround: THREE.Object3D[] = []
 const pendingArtworks: {room:number;load:()=>void}[] = []
-const artworkViews = new Map<string,{room:number;x:number;z:number;rotation:number;width:number;height:number;centerY:number}>()
+const artworkViews = new Map<string,{room:number;x:number;z:number;rotation:number;width:number;height:number;centerY:number;stand?:GalleryPoint}>()
 const loadedRooms = new Set<number>()
-let sculptureLoading = false
+const sculptureLoading = new Set<string>()
 const textures: THREE.Texture[] = []
 const geometries: THREE.BufferGeometry[] = []
 const materials: THREE.Material[] = []
@@ -75,6 +77,7 @@ function moveTo(x:number,z:number) {
   if(galleryWalkable(camera.position.x,z,extraRooms.value))camera.position.z=z
 }
 function routeTo(destination:GalleryPoint,room:number):GalleryPoint|undefined {
+  pendingSelection=undefined
   const route=galleryRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value)
   if(!route)return
   const points=[camera.position.clone(),...route.map(item=>new THREE.Vector3(item.x,EYE_HEIGHT,item.z))]
@@ -98,9 +101,13 @@ function loadRoom(index:number) {
   if(loadedRooms.has(index))return
   loadedRooms.add(index)
   pendingArtworks.filter(item=>item.room===index).forEach(item=>item.load())
-  if(index===1)loadVenusModel()
+  for(const sculpture of sculptureModels)if(sculpture.room===index)loadSculptureModel(sculpture)
 }
 function loadNearbyRooms(){
+  for(let index=0;index<6;index++){
+    const center=galleryCenter(index)!
+    if(Math.hypot(center.x-camera.position.x,center.z-camera.position.z)<22)loadRoom(index)
+  }
   const nearest=Math.round((camera.position.x-34)/17)+6
   for(let index=Math.max(6,nearest-2);index<=Math.min(5+extraRooms.value,nearest+2);index++){
     if(loadedRooms.has(index))continue
@@ -117,7 +124,7 @@ function visit(index:number) {
 function reset(){visit(0);pitch=0}
 function focusArtwork(id:string) {
   const view=artworkViews.get(id)
-  if(!view||!camera)return
+  if(!view||!camera)return false
   const fov=mobile.value?88:70
   const vertical=THREE.MathUtils.degToRad(fov)
   const horizontal=2*Math.atan(Math.tan(vertical/2)*camera.aspect)
@@ -131,20 +138,21 @@ function focusArtwork(id:string) {
     distance+=.2
   }
   distance=Math.min(distance,11.8)
-  const endpoint=routeTo({x:view.x+Math.sin(view.rotation)*distance,z:view.z+Math.cos(view.rotation)*distance},view.room)
-  if(!endpoint)return
+  const endpoint=routeTo(view.stand||{x:view.x+Math.sin(view.rotation)*distance,z:view.z+Math.cos(view.rotation)*distance},view.room)
+  if(!endpoint)return false
   const actualDistance=Math.hypot(endpoint.x-view.x,endpoint.z-view.z)
   // Aim midway between the top and bottom of the full framed artwork.
   targetYaw=Math.atan2(endpoint.x-view.x,endpoint.z-view.z)
   targetPitch=(Math.atan2(top,actualDistance)+Math.atan2(bottom,actualDistance))/2
   targetFov=fov
+  return true
 }
 let targetYaw:number|undefined
 let targetPitch:number|undefined
 let targetFov:number|undefined
 defineExpose({visit,reset,focusArtwork})
 
-function syncFullscreen(){fullscreen.value=document.fullscreenElement===host.value||fullscreenFallback.value}
+function syncFullscreen(){fullscreen.value=document.fullscreenElement===host.value||fullscreenFallback.value;emit('fullscreen',fullscreen.value?host.value||null:null)}
 async function toggleFullscreen(){
   if(document.fullscreenElement===host.value){await document.exitFullscreen();return}
   if(fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen();return}
@@ -185,9 +193,9 @@ function addArtwork(id:string,x:number,z:number,rotation:number,width:number,hei
   }})
 }
 
-function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,room:number,maxWidth:number) {
+function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,room:number,maxWidth:number,maxHeight:number) {
   const centerY=4.5
-  artworkViews.set(artwork.id,{room,x,z,rotation,width:maxWidth,height:5.6,centerY})
+  artworkViews.set(artwork.id,{room,x,z,rotation,width:maxWidth,height:maxHeight,centerY})
   pendingArtworks.push({room,load:()=>{
     new THREE.TextureLoader().load(artwork.image,texture=>{
       if(disposed){texture.dispose();return}
@@ -196,7 +204,7 @@ function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,
       textures.push(texture)
       const source=texture.image as HTMLImageElement
       const ratio=source.width/source.height||1
-      const width=Math.min(maxWidth,5.6*ratio)
+      const width=Math.min(maxWidth,maxHeight*ratio)
       const height=width/ratio
       artworkViews.set(artwork.id,{room,x,z,rotation,width:width+.2,height:height+.2,centerY})
       const frame=box(width+.2,height+.2,.13,x,centerY,z,material(0xa78652,{metalness:.55,roughness:.32}))
@@ -213,32 +221,43 @@ function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,
   }})
 }
 
-async function loadVenusModel() {
-  if(sculptureLoading||!allArtworks.value.some(item=>item.id==='venus-de-milo'))return
-  sculptureLoading=true
-  try {
+const sculptureModels=[
+  {id:'venus-de-milo',room:1,x:17,z:0,height:2.75,baseY:1.03,stand:{x:20,z:3.1},url:'/models/art/venus-smk.glb',draco:false},
+  {id:'greek-slave',room:0,x:-4,z:-4,height:3.05,baseY:.94,stand:{x:-2.5,z:-2.5},url:'/models/art/greek-slave-smithsonian.glb',draco:true},
+  {id:'girl-skating',room:5,x:-34,z:-3.9,height:2.75,baseY:.94,stand:{x:-34,z:-2.5},url:'/models/art/girl-skating-smithsonian.glb',draco:true},
+] as const
+
+async function loadSculptureModel(spec:typeof sculptureModels[number]){
+  if(sculptureLoading.has(spec.id))return
+  sculptureLoading.add(spec.id)
+  try{
     const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js')
-    const gltf=await new GLTFLoader().loadAsync('/models/art/venus-smk.glb')
+    const loader=new GLTFLoader()
+    if(spec.draco){
+      const {DRACOLoader}=await import('three/addons/loaders/DRACOLoader.js')
+      loader.setDRACOLoader(new DRACOLoader().setDecoderPath('/models/art/draco/'))
+    }
+    const gltf=await loader.loadAsync(spec.url)
+    loader.dracoLoader?.dispose()
     if(disposed)return
     const model=gltf.scene
     const bounds=new THREE.Box3().setFromObject(model)
-    const size=bounds.getSize(new THREE.Vector3())
-    const center=bounds.getCenter(new THREE.Vector3())
-    const scale=2.75/Math.max(size.y,.001)
+    const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3())
+    const scale=spec.height/Math.max(size.y,.001)
     model.scale.setScalar(scale)
-    model.position.set(17-center.x*scale,1.03-bounds.min.y*scale,-center.z*scale)
+    model.position.set(spec.x-center.x*scale,spec.baseY-bounds.min.y*scale,spec.z-center.z*scale)
     model.traverse(object=>{
       if(object instanceof THREE.Mesh){
         object.castShadow=false
         geometries.push(object.geometry)
         const source=Array.isArray(object.material)?object.material:[object.material]
         source.forEach(item=>{materials.push(item);if(item instanceof THREE.MeshStandardMaterial&&item.map)textures.push(item.map)})
-        object.userData.artworkId='venus-de-milo'
+        object.userData.artworkId=spec.id
         selectable.push(object)
       }
     })
     scene.add(model)
-  } catch(error) {console.warn('Venus sculpture model unavailable',error)}
+  }catch(error){console.warn('Sculpture model unavailable',spec.id,error)}
 }
 
 function buildScene() {
@@ -279,6 +298,10 @@ function buildScene() {
       if(!open){
         if(wallX)box(.3,9,14,wx,4.5,cz,stone)
         else box(14,9,.3,cx,4.5,wz,stone)
+      }else if(wallX){
+        for(const offset of [-5.35,5.35])box(.3,9,3.3,wx,4.5,cz+offset,stone)
+      }else{
+        for(const offset of [-5.35,5.35])box(3.3,9,.3,cx+offset,4.5,wz,stone)
       }
       if(wallX) {
         if(!open){box(.1,.15,14,wx-sign*.19,.38,cz,gold);box(.1,.16,14,wx-sign*.19,8.05,cz,gold)}
@@ -293,13 +316,19 @@ function buildScene() {
     walkGround.push(box(14,.18,3.9,0,-.08,sign*8.5,floor))
     box(3.9,.3,14,sign*8.5,9.27,0,ceiling)
     box(14,.3,3.9,0,9.27,sign*8.5,ceiling)
+    for(const edge of [-3.85,3.85]){
+      box(3.9,9,.3,sign*8.5,4.5,edge,stone)
+      box(.3,9,3.9,edge,4.5,sign*8.5,stone)
+    }
   }
   walkGround.push(box(3.9,.18,14,-25.5,-.08,0,floor))
   box(3.9,.3,14,-25.5,9.27,0,ceiling)
+  for(const edge of [-3.85,3.85])box(3.9,9,.3,-25.5,4.5,edge,stone)
   for(let index=0;index<extraRooms.value;index++){
     const x=25.5+index*17
     walkGround.push(box(3.9,.18,14,x,-.08,0,floor))
     box(3.9,.3,14,x,9.27,0,ceiling)
+    for(const edge of [-3.85,3.85])box(3.9,9,.3,x,4.5,edge,stone)
   }
   // A circular marble inlay anchors the crossroads without blocking walking.
   const discGeo=new THREE.CylinderGeometry(2.55,2.55,.025,48)
@@ -314,16 +343,13 @@ function buildScene() {
   box(3.15,.72,3.15,17,.36,0,dark)
   box(3.35,.14,3.35,17,.79,0,gold)
   box(2.7,.18,2.7,17,.94,0,stone)
-  if(extraRooms.value){
-    const lastRoom=5+extraRooms.value
-    addArtwork('thinker',34+(lastRoom-6)*17+6.75,0,-Math.PI/2,2.4,3.2,lastRoom)
+  for(const spec of sculptureModels){
+    if(spec.id!=='venus-de-milo'){
+      box(2.25,.68,2.25,spec.x,.4,spec.z,dark)
+      box(2.4,.14,2.4,spec.x,.82,spec.z,gold)
+    }
+    artworkViews.set(spec.id,{room:spec.room,x:spec.x,z:spec.z,rotation:Math.atan2(spec.stand.x-spec.x,spec.stand.z-spec.z),width:2.5,height:spec.height,centerY:spec.baseY+spec.height/2,stand:spec.stand})
   }
-  else addArtwork('thinker',23.76,0,-Math.PI/2,2.4,3.2,1)
-  addArtwork('buddha-shakyamuni',17,-6.75,0,2.25,3.3,1)
-  addArtwork('impression-sunrise',13,-6.75,0,2.7,2.1,1,4.4)
-  addArtwork('bathers',21,-6.75,0,2.7,1.8,1,4.4)
-  addArtwork('blue-armchair',13,6.75,Math.PI,2.7,1.8,1,4.4)
-  addArtwork('floor-scrapers',21,6.75,Math.PI,2.7,1.8,1,4.4)
   addArtwork('grande-jatte',-17,-6.75,0,7.8,5.25,2,4.55)
   addArtwork('bedroom',-17,6.75,Math.PI,5.2,4.15,2,4.55)
   addArtwork('paris-rain',-21.3,6.75,Math.PI,2.8,2.17,2,4.55)
@@ -333,10 +359,14 @@ function buildScene() {
   addArtwork('irises',-6.75,-13.5,Math.PI/2,3.7,2.86,3,4.55)
   addArtwork('moulin',6.75,-20.5,-Math.PI/2,3.7,2.76,3,4.55)
   addArtwork('poppies',6.75,-13.5,-Math.PI/2,3.7,2.82,3,4.55)
+  addArtwork('impression-sunrise',-6.75,-17,Math.PI/2,2.7,2.1,3,4.4)
+  addArtwork('bathers',6.75,-17,-Math.PI/2,2.7,1.8,3,4.4)
   addArtwork('mona-lisa',-6.75,17,Math.PI/2,4.05,6.12,4,4.45)
   addArtwork('lady-ermine',6.75,13.5,-Math.PI/2,3.2,4.3,4,4.45)
   addArtwork('virgin-rocks',6.75,20.5,-Math.PI/2,3.2,5.23,4,4.45)
   addArtwork('last-supper',0,23.75,Math.PI,10.8,5.7,4,4.45)
+  addArtwork('blue-armchair',-6.75,13.5,Math.PI/2,2.7,1.8,4,4.4)
+  addArtwork('floor-scrapers',-6.75,20.5,Math.PI/2,2.7,1.8,4,4.4)
   addArtwork('self-portrait',-37.5,-6.75,0,3.6,5.0,5,4.5)
   addArtwork('poets-garden',-30.5,-6.75,0,4.8,3.8,5,4.5)
   addArtwork('stack-wheat',-37.5,6.75,Math.PI,4.8,3.75,5,4.5)
@@ -344,10 +374,9 @@ function buildScene() {
   addArtwork('childs-bath',-40.75,-3.5,Math.PI/2,3.55,5.25,5,4.5)
   addArtwork('woman-bathing',-40.75,3.5,Math.PI/2,3.55,5.25,5,4.5)
   props.cmsArtworks?.forEach((artwork,index)=>{
-    const room=6+Math.floor(index/6)
-    const position=index%6
-    const x=34+(room-6)*17+[-4.5,0,4.5][position%3]!
-    addCmsArtwork(artwork,x,position<3?-6.75:6.75,position<3?0:Math.PI,room,position%3===1?3.8:3.0)
+    const {room,x,z,rotation,column}=galleryPlacement(artwork.gallerySlot??index)
+    const size=artwork.displaySize||'regular'
+    addCmsArtwork(artwork,x,z,rotation,room,column?(size==='large'?2.4:size==='medium'?2:1.6):gallerySizeWidth[size],column?(size==='large'?4.2:size==='medium'?3.6:3):size==='large'?6.4:size==='medium'?5.8:5.2)
   })
 }
 
@@ -358,7 +387,7 @@ function pick(clientX:number,clientY:number) {
   raycaster.setFromCamera(pointer,camera)
   const hit=raycaster.intersectObjects(selectable,true)[0]
   const id=hit?.object.userData.artworkId
-  if(typeof id==='string')emit('select',id)
+  if(typeof id==='string'&&focusArtwork(id))pendingSelection=id
 }
 function walkAt(clientX:number,clientY:number) {
   if(!renderer||!camera)return
@@ -375,9 +404,9 @@ function walkAt(clientX:number,clientY:number) {
 }
 function keyDown(event:KeyboardEvent) {
   if(event.key==='Escape'&&fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen()}
-  if(!host.value?.contains(document.activeElement))return
+  if(!host.value?.contains(document.activeElement)||document.activeElement instanceof Element&&document.activeElement.closest('[role="dialog"]'))return
   if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) {
-    event.preventDefault();keys.add(event.code);journey=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined
+    event.preventDefault();keys.add(event.code);journey=undefined;pendingSelection=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined
   }
 }
 function keyUp(event:KeyboardEvent){keys.delete(event.code)}
@@ -394,7 +423,7 @@ function move(event:PointerEvent){
   }
   const dx=event.clientX-drag.x,dy=event.clientY-drag.y
   drag.x=event.clientX;drag.y=event.clientY
-  if(Math.abs(dx)+Math.abs(dy)>1){drag.moved=true;journey=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined}
+  if(Math.abs(dx)+Math.abs(dy)>1){drag.moved=true;journey=undefined;pendingSelection=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined}
   yaw-=dx*.004;pitch=THREE.MathUtils.clamp(pitch-dy*.003,-.75,.75)
 }
 function up(event:PointerEvent){
@@ -409,9 +438,8 @@ function up(event:PointerEvent){
 }
 function doubleClick(event:MouseEvent){event.preventDefault();walkAt(event.clientX,event.clientY)}
 function touchStart(event:PointerEvent){event.preventDefault();touchId=event.pointerId;host.value?.focus({preventScroll:true});(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);touchMove(event)}
-function touchMove(event:PointerEvent){if(event.pointerId!==touchId)return;const rect=(event.currentTarget as HTMLElement).getBoundingClientRect();joystick.value={x:THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/38,-1,1),y:THREE.MathUtils.clamp((event.clientY-rect.top-rect.height/2)/38,-1,1)};journey=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined}
+function touchMove(event:PointerEvent){if(event.pointerId!==touchId)return;const rect=(event.currentTarget as HTMLElement).getBoundingClientRect();joystick.value={x:THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/38,-1,1),y:THREE.MathUtils.clamp((event.clientY-rect.top-rect.height/2)/38,-1,1)};journey=undefined;pendingSelection=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined}
 function touchEnd(event:PointerEvent){if(event.pointerId===touchId){joystick.value={x:0,y:0};touchId=undefined}}
-function turn(amount:number){journey=undefined;targetYaw=undefined;targetPitch=undefined;targetFov=undefined;yaw+=amount}
 
 onMounted(()=>{
   try {
@@ -426,8 +454,6 @@ onMounted(()=>{
     camera.position.set(0,EYE_HEIGHT,3.7)
     camera.rotation.order='YXZ'
     buildScene()
-    // The fixed collection is small enough to show immediately from every open sightline.
-    for(let index=0;index<6;index++)loadRoom(index)
     loadNearbyRooms()
     const resize=()=>{if(!canvasHost.value||!renderer)return;const {width,height}=canvasHost.value.getBoundingClientRect();if(!width||!height)return;renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile.value?1.5:2,Math.sqrt(2_400_000/(width*height))));renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix()}
     observer=new ResizeObserver(resize);observer.observe(canvasHost.value!);resize()
@@ -453,6 +479,11 @@ onMounted(()=>{
         const t=Math.min(1,(distance-travelled)/segment)
         const from=journey.points[index]!,to=journey.points[index+1]!
         camera.position.lerpVectors(from,to,t)
+        const dx=to.x-from.x,dz=to.z-from.z
+        if(Math.hypot(dx,dz)>.001){
+          const travelYaw=Math.atan2(-dx,-dz)
+          yaw+=Math.atan2(Math.sin(travelYaw-yaw),Math.cos(travelYaw-yaw))*(1-Math.exp(-dt*6))
+        }
         if(progress>=1){
           journey=undefined
         }
@@ -464,7 +495,7 @@ onMounted(()=>{
         walkVelocity.lerp(movementTarget,1-Math.exp(-dt*((forward||strafe)?2.6:8)))
         if(walkVelocity.lengthSq()>.0001)moveTo(camera.position.x+walkVelocity.x*dt,camera.position.z+walkVelocity.y*dt)
       }
-      if(targetYaw!==undefined&&targetPitch!==undefined&&targetFov!==undefined){
+      if(!journey&&targetYaw!==undefined&&targetPitch!==undefined&&targetFov!==undefined){
         const ease=1-Math.exp(-dt*2.4)
         yaw+=Math.atan2(Math.sin(targetYaw-yaw),Math.cos(targetYaw-yaw))*ease
         pitch=THREE.MathUtils.lerp(pitch,targetPitch,ease)
@@ -473,6 +504,7 @@ onMounted(()=>{
           targetYaw=undefined;targetPitch=undefined;targetFov=undefined
         }
       }
+      if(pendingSelection&&!journey&&targetYaw===undefined){const id=pendingSelection;pendingSelection=undefined;emit('select',id)}
       camera.rotation.set(pitch,yaw,0,'YXZ')
       loadNearbyRooms()
       const nextRoom=galleryRoomAt(camera.position.x,camera.position.z,extraRooms.value)
@@ -484,6 +516,7 @@ onMounted(()=>{
 })
 onUnmounted(()=>{
   disposed=true
+  emit('fullscreen',null)
   cleanup.forEach(fn=>fn())
   observer?.disconnect();intersection?.disconnect()
   renderer?.setAnimationLoop(null)
@@ -505,7 +538,6 @@ onUnmounted(()=>{
     <button type="button" class="gallery-fullscreen" :aria-label="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" :aria-pressed="fullscreen" :title="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" @click="toggleFullscreen"><Minimize2 v-if="fullscreen" :size="19"/><Maximize2 v-else :size="19"/></button>
     <div v-if="mobile && !failed" class="gallery-touch-controls">
       <div class="gallery-joystick" aria-label="Քայլելու կառավարում" @pointerdown="touchStart" @pointermove="touchMove" @pointerup="touchEnd" @pointercancel="touchEnd"><span :style="{transform:`translate(${joystick.x*28}px,${joystick.y*28}px)`}"/></div>
-      <div class="gallery-turn"><button type="button" aria-label="Պտտվել ձախ" @click="turn(-.35)">↶</button><button type="button" aria-label="Պտտվել աջ" @click="turn(.35)">↷</button></div>
     </div>
   </div>
 </template>

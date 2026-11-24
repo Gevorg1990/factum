@@ -80,16 +80,32 @@ export default defineEventHandler(async event => {
     if (id && !(await db.content.findFirst({where:{id,kind}}))) throw createError({statusCode:400,statusMessage:'Սխալ հեղինակ կամ կատեգորիա'})
   }
   const status = action === 'archive' ? 'ARCHIVED' : action === 'publish' ? 'PUBLISHED' : 'DRAFT'
-  const publish = action === 'publish' ? {publishedData:data as Prisma.InputJsonValue,publishedAt:new Date()} : action === 'archive' ? {publishedData:Prisma.DbNull} : {}
   try {
     return await db.$transaction(async tx => {
+      let contentData=data
+      if(input.kind==='ARTWORK'&&action==='publish'&&data.room===undefined){
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(241106)`
+        const occupied=await tx.$queryRaw<{key:string;slot:number}[]>`
+          SELECT key, ("publishedData"->>'gallerySlot')::integer AS slot
+          FROM "Content" WHERE kind = 'ARTWORK' AND status = 'PUBLISHED'
+            AND "publishedData" ? 'gallerySlot' AND key <> ${input.key}
+        `
+        const taken=new Set(occupied.map(item=>item.slot))
+        let slot=typeof data.gallerySlot==='number'?data.gallerySlot:undefined
+        const automaticSlot=slot===undefined
+        if(slot===undefined){slot=0;while(taken.has(slot))slot++}
+        if(slot>1023||automaticSlot&&slot>=600)throw createError({statusCode:400,statusMessage:'Պատկերասրահում ազատ տեղ չի մնացել։'})
+        if(taken.has(slot))throw createError({statusCode:409,statusMessage:'Այդ տեղն արդեն զբաղեցված է։ Ընտրիր ազատ տեղ և կրկին հրապարակի՛ր։'})
+        contentData={...data,gallerySlot:slot}
+      }
+      const publish=action==='publish'?{publishedData:contentData as Prisma.InputJsonValue,publishedAt:new Date()}:action==='archive'?{publishedData:Prisma.DbNull}:{}
       let record
-      if (event.method === 'POST') record = await tx.content.create({data:{...fields,data:data as Prisma.InputJsonValue,status,...publish,editorId:user.id}})
+      if (event.method === 'POST') record = await tx.content.create({data:{...fields,data:contentData as Prisma.InputJsonValue,status,...publish,editorId:user.id}})
       else {
         const id = z.string().min(1).parse(query.id)
         const current = await tx.content.findUniqueOrThrow({where:{id}})
         if (current.kind !== fields.kind || current.key !== fields.key) throw createError({statusCode:400,statusMessage:'Նյութի տեսակը և սկզբնական ID-ն անփոփոխ են'})
-        const updated = await tx.content.updateMany({where:{id,version:version || 0},data:{...fields,data:data as Prisma.InputJsonValue,status,...publish,editorId:user.id,version:{increment:1}}})
+        const updated = await tx.content.updateMany({where:{id,version:version || 0},data:{...fields,data:contentData as Prisma.InputJsonValue,status,...publish,editorId:user.id,version:{increment:1}}})
         if (!updated.count) throw createError({statusCode:409,statusMessage:'Նյութը մեկ ուրիշն արդեն փոփոխել է։ Վերաբացիր այն ցանկից՝ վերջին տարբերակը ստանալու համար։'})
         record = await tx.content.findUniqueOrThrow({where:{id}})
       }
