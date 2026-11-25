@@ -23,7 +23,7 @@ export default defineEventHandler(async event=>{
       FROM "Content" WHERE kind = 'ARTWORK' AND status = 'PUBLISHED' AND "publishedData" IS NOT NULL
         AND key NOT IN (${Prisma.join(coreIds)})
       ORDER BY CASE WHEN ("publishedData"->>'gallerySlot')::integer >= 600
-        THEN (("publishedData"->>'gallerySlot')::integer-600)/4
+        THEN 6+(("publishedData"->>'gallerySlot')::integer-600)/4
         ELSE 6+("publishedData"->>'gallerySlot')::integer/6 END NULLS LAST,
         slot NULLS LAST, "createdAt", key LIMIT ${query.limit} OFFSET ${query.offset}
     `),

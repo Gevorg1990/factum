@@ -6,6 +6,7 @@ import { fieldLabels } from '../../../shared/cmsEditor'
 import { parseContent, kindSchema } from '../../../shared/cms'
 import { db } from '../../utils/db'
 import { requireUser } from '../../utils/auth'
+import {galleryAutomaticSlot} from '../../../utils/art/galleryLayout'
 export default defineEventHandler(async event => {
   const user = await requireUser(event, ['ADMIN','EDITOR'])
   const query = getQuery(event)
@@ -91,10 +92,8 @@ export default defineEventHandler(async event => {
             AND "publishedData" ? 'gallerySlot' AND key <> ${input.key}
         `
         const taken=new Set(occupied.map(item=>item.slot))
-        let slot=typeof data.gallerySlot==='number'?data.gallerySlot:undefined
-        const automaticSlot=slot===undefined
-        if(slot===undefined){slot=0;while(taken.has(slot))slot++}
-        if(slot>1023||automaticSlot&&slot>=600)throw createError({statusCode:400,statusMessage:'Պատկերասրահում ազատ տեղ չի մնացել։'})
+        const slot=typeof data.gallerySlot==='number'?data.gallerySlot:galleryAutomaticSlot(taken)
+        if(slot===undefined)throw createError({statusCode:400,statusMessage:'Պատկերասրահում ազատ տեղ չի մնացել։'})
         if(taken.has(slot))throw createError({statusCode:409,statusMessage:'Այդ տեղն արդեն զբաղեցված է։ Ընտրիր ազատ տեղ և կրկին հրապարակի՛ր։'})
         contentData={...data,gallerySlot:slot}
       }

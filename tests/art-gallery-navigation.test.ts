@@ -30,6 +30,14 @@ test('walking to the sculpture entrance goes around its pedestal',()=>{
   routeIsOpen([start,...route])
 })
 
+test('central sculpture plinths leave their room passages walkable',()=>{
+  assert.equal(galleryWalkable(-2.2,-2.2),false)
+  assert.equal(galleryWalkable(-34,-2.2),false)
+  const route=galleryRoute(galleryCenters[0]!,galleryCenters[5]!)
+  assert.ok(route)
+  routeIsOpen([galleryCenters[0]!,...route])
+})
+
 test('a floor click on a wall edge stops at the nearest open floor',()=>{
   const start={x:0,z:0},clickedWall={x:7,z:6.5}
   assert.equal(galleryWalkable(clickedWall.x,clickedWall.z),false)

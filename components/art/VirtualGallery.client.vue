@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import {Maximize2,Minimize2} from 'lucide-vue-next'
 import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {galleryCenter,galleryRoomAt,galleryRoute,galleryWalkable,type GalleryPoint} from '~/utils/art/galleryNavigation'
-import {galleryPlacement,galleryRoomForSlot,gallerySizeWidth} from '~/utils/art/galleryLayout'
+import {galleryPlacement,galleryRoomForSlot,gallerySizeHeight,gallerySizeWidth} from '~/utils/art/galleryLayout'
 import {EYE_HEIGHT,smoothJourneyProgress} from '~/utils/library/navigation'
 
 const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]; fullscreen:[element:HTMLElement|null]}>()
@@ -193,8 +193,7 @@ function addArtwork(id:string,x:number,z:number,rotation:number,width:number,hei
   }})
 }
 
-function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,room:number,maxWidth:number,maxHeight:number) {
-  const centerY=4.5
+function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,room:number,centerY:number,maxWidth:number,maxHeight:number) {
   artworkViews.set(artwork.id,{room,x,z,rotation,width:maxWidth,height:maxHeight,centerY})
   pendingArtworks.push({room,load:()=>{
     new THREE.TextureLoader().load(artwork.image,texture=>{
@@ -223,8 +222,8 @@ function addCmsArtwork(artwork:GalleryArtwork,x:number,z:number,rotation:number,
 
 const sculptureModels=[
   {id:'venus-de-milo',room:1,x:17,z:0,height:2.75,baseY:1.03,stand:{x:20,z:3.1},url:'/models/art/venus-smk.glb',draco:false},
-  {id:'greek-slave',room:0,x:-4,z:-4,height:3.05,baseY:.94,stand:{x:-2.5,z:-2.5},url:'/models/art/greek-slave-smithsonian.glb',draco:true},
-  {id:'girl-skating',room:5,x:-34,z:-3.9,height:2.75,baseY:.94,stand:{x:-34,z:-2.5},url:'/models/art/girl-skating-smithsonian.glb',draco:true},
+  {id:'greek-slave',room:0,x:-2.2,z:-2.2,height:3.05,baseY:.94,stand:{x:0,z:2.5},url:'/models/art/greek-slave-smithsonian.glb',draco:true},
+  {id:'girl-skating',room:5,x:-34,z:-2.2,height:2.75,baseY:.94,stand:{x:-31.5,z:2.5},url:'/models/art/girl-skating-smithsonian.glb',draco:true},
 ] as const
 
 async function loadSculptureModel(spec:typeof sculptureModels[number]){
@@ -374,9 +373,9 @@ function buildScene() {
   addArtwork('childs-bath',-40.75,-3.5,Math.PI/2,3.55,5.25,5,4.5)
   addArtwork('woman-bathing',-40.75,3.5,Math.PI/2,3.55,5.25,5,4.5)
   props.cmsArtworks?.forEach((artwork,index)=>{
-    const {room,x,z,rotation,column}=galleryPlacement(artwork.gallerySlot??index)
+    const {room,x,z,rotation,centerY}=galleryPlacement(artwork.gallerySlot??index)
     const size=artwork.displaySize||'regular'
-    addCmsArtwork(artwork,x,z,rotation,room,column?(size==='large'?2.4:size==='medium'?2:1.6):gallerySizeWidth[size],column?(size==='large'?4.2:size==='medium'?3.6:3):size==='large'?6.4:size==='medium'?5.8:5.2)
+    addCmsArtwork(artwork,x,z,rotation,room,centerY,gallerySizeWidth[size],gallerySizeHeight[size])
   })
 }
 

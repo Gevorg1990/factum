@@ -22,6 +22,8 @@ export function galleryRoomAt(x:number,z:number,extraRooms=0) {
 export function galleryWalkable(x:number,z:number,extraRooms=0) {
   // Treat the visitor as a person with shoulder width and keep space from walls and columns.
   if(Math.abs(x-17)<2.1 && Math.abs(z)<2.1)return false
+  if(Math.abs(x+2.2)<1.5 && Math.abs(z+2.2)<1.5)return false
+  if(Math.abs(x+34)<1.5 && Math.abs(z+2.2)<1.5)return false
   const insideRoom=(cx:number,cz:number)=>Math.abs(x-cx)<=3.7 && Math.abs(z-cz)<=3.7
   if(insideRoom(0,0)||insideRoom(17,0)||insideRoom(-17,0)||insideRoom(0,-17)||insideRoom(0,17)||insideRoom(-34,0))return true
   const annex=Math.round((x-34)/17)

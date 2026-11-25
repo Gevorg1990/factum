@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
-import {galleryAvailableSlots,galleryPlacement,galleryRoomForSlot} from '../utils/art/galleryLayout'
+import {galleryAutomaticSlot,galleryAvailableSlots,galleryPlacement,galleryRoomForSlot,gallerySizeHeight,gallerySizeWidth} from '../utils/art/galleryLayout'
 
 const artwork={...newContent('ARTWORK'),title:'Փորձնական նկար'}
 artwork.data={...artwork.data,
@@ -40,18 +40,35 @@ test('museum and image credit links can be left blank',()=>{
   assert.equal(payload.data.imageSource,'')
 })
 
-test('gallery artworks keep an explicit wall or column position and display size',()=>{
+test('gallery artworks keep an explicit lower or upper wall position and display size',()=>{
   const placed=structuredClone(artwork)
   placed.data.gallerySlot=624
   placed.data.displaySize='large'
   const payload=parseContent(prepareContent(placed))
   assert.equal(payload.data.gallerySlot,624)
   assert.equal(payload.data.displaySize,'large')
-  assert.equal(galleryRoomForSlot(624),6)
-  assert.equal(galleryPlacement(624).column,true)
+  assert.equal(galleryRoomForSlot(624),12)
+  assert.equal(galleryPlacement(624).upper,true)
+  assert.equal(galleryPlacement(624).z,-6.75)
   assert.equal(galleryPlacement(1).room,6)
+  assert.equal(galleryPlacement(1).upper,false)
   assert.ok(galleryAvailableSlots(6).includes(600))
   assert.ok(galleryAvailableSlots(6).includes(0))
   placed.data.gallerySlot=1024
   assert.throws(()=>parseContent(prepareContent(placed)))
+})
+
+test('even large framed works have clear space on shared flat walls',()=>{
+  const slots=galleryAvailableSlots(6)
+  assert.equal(slots.length,10)
+  for(let i=0;i<slots.length;i++)for(let j=i+1;j<slots.length;j++){
+    const a=galleryPlacement(slots[i]!),b=galleryPlacement(slots[j]!)
+    assert.equal(a.room,6)
+    if(a.z!==b.z)continue
+    const dx=Math.abs(a.x-b.x),dy=Math.abs(a.centerY-b.centerY)
+    const width=gallerySizeWidth.large+.2,height=gallerySizeHeight.large+.2
+    assert.ok(dx>width+.1||dy>height+.1,`Frames overlap: ${slots[i]} and ${slots[j]}`)
+  }
+  assert.equal(galleryAutomaticSlot(new Set([0,1,2,3,4,5])),600)
+  assert.equal(galleryAutomaticSlot(new Set([1,2])),0)
 })
