@@ -84,7 +84,7 @@ export default defineEventHandler(async event => {
     return await db.$transaction(async tx => {
       let contentData=data
       if(input.kind==='ARTWORK'&&action==='publish'&&data.room===undefined){
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(241106)`
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(241106)::text AS lock_status`
         const occupied=await tx.$queryRaw<{key:string;slot:number}[]>`
           SELECT key, ("publishedData"->>'gallerySlot')::integer AS slot
           FROM "Content" WHERE kind = 'ARTWORK' AND status = 'PUBLISHED'
