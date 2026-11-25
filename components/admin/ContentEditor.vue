@@ -2,7 +2,7 @@
 import { Archive, ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, Eye, FileText, Globe2, Info, LoaderCircle, Plus, Save, ShieldCheck, Trash2, X } from 'lucide-vue-next'
 import { millionSlots } from '~/shared/millionStages'
 import { contentSections, contentUrl, editorTemplates, editorRecord, prepareContent, type CmsKind } from '~/shared/cmsEditor'
-import {galleryAvailableSlots,galleryRoomForSlot,gallerySlotLabel} from '~/utils/art/galleryLayout'
+import {firstCmsGalleryRoom,galleryAvailableSlots,galleryIsSculpture,galleryRoomForSlot,gallerySlotLabel,galleryWallPercent} from '~/utils/art/galleryLayout'
 const props=defineProps<{record:any}>()
 const emit=defineEmits(['close','saved','dirty','deleted'])
 const {user}=useAuth()
@@ -23,11 +23,22 @@ const occupiedGallerySlots=ref<{key:string;title:string;slot:number}[]>([])
 const galleryLayoutError=ref(false)
 let artistTimer:ReturnType<typeof setTimeout>|undefined
 let artistSearchVersion=0
-const gallerySlots=computed(()=>{
- const highestRoom=Math.max(6,...occupiedGallerySlots.value.map(item=>galleryRoomForSlot(item.slot)),form.value.data.gallerySlot===undefined?6:galleryRoomForSlot(Number(form.value.data.gallerySlot)))
- return galleryAvailableSlots(highestRoom+1)
+const galleryWalls=computed(()=>{
+ const current=form.value.data.gallerySlot as number|undefined
+ const occupied=new Map(occupiedGallerySlots.value.filter(item=>item.key!==form.value.key).map(item=>[item.slot,item]))
+ const highestRoom=occupiedGallerySlots.value.reduce((room,item)=>Math.max(room,galleryRoomForSlot(item.slot)),current===undefined?firstCmsGalleryRoom:galleryRoomForSlot(current))
+ const walls=new Map<string,{label:string;slot:number;free:boolean}>()
+ for(const slot of galleryAvailableSlots(highestRoom+1)){
+  const label=gallerySlotLabel(slot)
+  const free=!occupied.has(slot)
+  const wall=walls.get(label)
+  if(!wall||slot===current||(free&&!wall.free))walls.set(label,{label,slot,free})
+ }
+ return [...walls.values()]
 })
-function occupyingArtwork(slot:number){return occupiedGallerySlots.value.find(item=>item.slot===slot&&item.key!==form.value.key)}
+const artworkDefaultPercent=computed(()=>galleryWallPercent({
+ id:form.value.key,displaySize:form.value.data.displaySize,
+}))
 async function loadGalleryLayout(){
  try{const result=await $fetch<{occupied:{key:string;title:string;slot:number}[]}>('/api/admin/art-layout');occupiedGallerySlots.value=result.occupied;galleryLayoutError.value=false}
  catch{galleryLayoutError.value=true}
@@ -51,7 +62,7 @@ onMounted(()=>{if(kind.value==='ARTWORK')loadGalleryLayout()})
 onUnmounted(()=>{clearTimeout(artistTimer);artistSearchVersion++})
 const rootTitleLabel=computed(()=>kind.value==='PERSON'||kind.value==='AUTHOR'?'Անուն, ազգանուն':kind.value==='CATEGORY'?'Բաժնի անվանում':kind.value==='MONUMENT'?'Հուշարձանի անվանում':kind.value==='GAME'?(form.value.data.mode==='genius'?'Պնդումը':'Հարցը'):'Վերնագիր')
 const rootTitlePlaceholder=computed(()=>({ARTICLE:'Օրինակ՝ Ինչպե՞ս են առաջանում ամպերը',FACT:'Օրինակ՝ Հետաքրքիր փաստ ջրի մասին',PERSON:'Օրինակ՝ Անուն Ազգանուն',CATEGORY:'Օրինակ՝ Աշխարհագրություն',GAME:'Գրիր ամբողջական հարցը…'} as Record<string,string>)[kind.value]||'Գրիր հասկանալի և հակիրճ անվանում')
-const hiddenKeys=computed(()=>['id','slug',...(kind.value==='BOOK'?['source','textLicense','coverCredit','coverSource','coverLicense','edition','rightsConfirmed']:[]),...(kind.value==='ARTWORK'?['room','creator','gallerySlot','displaySize']:[]),...(kind.value==='CATEGORY'?['img','cardVideoPoster']:[]),...(['PERSON','AUTHOR','CATEGORY','MONUMENT'].includes(kind.value)?['name']:[]),...(['GEO_ENTRY','GEO_CATEGORY','BOOK','ARTICLE','FACT','EVENT','WORK','ARTWORK','PAGE','VIDEO','SETTING'].includes(kind.value)?['title']:[]),...(kind.value==='GAME'?['mode','question','statement','slot','variant','stage']:[]),...(kind.value==='PERSON'?['portraitTitle','portraitLanguage','workInformation']:[])])
+const hiddenKeys=computed(()=>['id','slug',...(kind.value==='BOOK'?['source','textLicense','coverCredit','coverSource','coverLicense','edition','rightsConfirmed']:[]),...(kind.value==='ARTWORK'?['room','creator','gallerySlot','displaySize','wallPercent']:[]),...(kind.value==='CATEGORY'?['img','cardVideoPoster']:[]),...(['PERSON','AUTHOR','CATEGORY','MONUMENT'].includes(kind.value)?['name']:[]),...(['GEO_ENTRY','GEO_CATEGORY','BOOK','ARTICLE','FACT','EVENT','WORK','ARTWORK','PAGE','VIDEO','SETTING'].includes(kind.value)?['title']:[]),...(kind.value==='GAME'?['mode','question','statement','slot','variant','stage']:[]),...(kind.value==='PERSON'?['portraitTitle','portraitLanguage','workInformation']:[])])
 const requiredFields=computed(()=>({GEO_ENTRY:['area','category','detail','source',...(form.value.data.area==='world-facts'?['answer']:form.value.data.area==='records'?['measure','location']:[])],GEO_CATEGORY:['area'],BOOK:['author','topic','description','text'],ARTWORK:['creator','creatorInfo','date','medium','description','image'],ARTICLE:['subject','answer','detail'],FACT:['category','text'],PERSON:['years','role','bio'],EVENT:['year','era'],GAME:['explanation'],MONUMENT:['personId','city','location','name','url'],WORK:['personId','description'],PAGE:['text'],VIDEO:['url'],SETTING:['text']} as Record<string,string[]>)[kind.value]||[])
 const optionalFields=computed(()=>{
  const definitions:Record<string,{key:string;label:string;value:any}[]>={
@@ -120,8 +131,20 @@ function submit(actionName:string){action.value=actionName;formElement.value?.re
           <section class="editor-panel"><div class="panel-heading"><span class="panel-number">02</span><div><h2>Նյութի բովանդակությունը</h2><p>Լրացրու տեքստը, ընտրիր համապատասխան թեման և ավելացրու նկար։</p></div></div>
             <div v-if="kind==='ARTWORK'" class="artwork-settings">
               <div class="artwork-setting"><label for="artwork-creator">Նկարի հեղինակ <span>*</span></label><input id="artwork-creator" v-model="form.data.creator" required maxlength="5000" autocomplete="off" placeholder="Գրիր կամ ընտրիր արդեն օգտագործված հեղինակին"><div v-if="existingArtists.length" class="artist-suggestions"><button v-for="artist in existingArtists" :key="artist.creator" type="button" @click="chooseArtist(artist)">{{artist.creator}} <small>Օգտագործել պահպանված դիմանկարն ու տվյալները</small></button></div><p>Ընտրիր արդեն օգտագործված հեղինակին՝ դիմանկարը և նրա մասին տեղեկությունը կրկին չլրացնելու համար։</p></div>
-              <div v-if="form.data.room===undefined" class="artwork-setting"><label for="artwork-size">Նկարի զբաղեցրած տարածքը</label><select id="artwork-size" v-model="form.data.displaySize"><option value="regular">Փոքր</option><option value="medium">Միջին</option><option value="large">Մեծ</option></select></div>
-              <div v-if="form.data.room===undefined" class="artwork-setting"><label for="artwork-slot">Տեղը 3D սրահում</label><select id="artwork-slot" v-model="form.data.gallerySlot"><option :value="undefined">Առաջին ազատ պատային տեղը՝ ավտոմատ</option><option v-for="slot in gallerySlots" :key="slot" :value="slot" :disabled="!!occupyingArtwork(slot)">{{gallerySlotLabel(slot)}}{{occupyingArtwork(slot)?` · զբաղված՝ ${occupyingArtwork(slot)?.title}`:''}}</option></select><p>Ընտրիր հարթ պատի ստորին կամ վերին տեղը։ Նկարը կհարմարվի ընտրված չափին՝ հարևան նկարներից բաց տարածություն պահելով։ Ջնջված նկարի տեղն ազատվում է, իսկ գործող նկարը կարող ես տեղափոխել։</p><p v-if="galleryLayoutError" class="artwork-setting-error">Տեղերի ցանկը չբեռնվեց։ Փորձիր նորից էջը բացել։</p></div>
+              <div v-if="!galleryIsSculpture(form.key)" class="artwork-setting">
+                <label for="artwork-size">Պատի լայնության տոկոսը</label>
+                <input id="artwork-size" v-model.number="form.data.wallPercent" type="number" min="1" max="100" step="1" :placeholder="String(artworkDefaultPercent)" aria-describedby="artwork-size-hint">
+                <p id="artwork-size-hint">Օրինակ՝ 40 նշանակում է պատի հասանելի լայնության մինչև 40%։ Եթե նույն պատի նկարները միասին չեն տեղավորվում, դրանք համաչափ փոքրանում են։</p>
+              </div>
+              <div v-if="form.data.room===undefined" class="artwork-setting">
+                <label for="artwork-slot">Պատը 3D սրահում</label>
+                <select id="artwork-slot" v-model="form.data.gallerySlot">
+                  <option :value="undefined">Ավտոմատ ընտրել ազատ տեղով պատը</option>
+                  <option v-for="wall in galleryWalls" :key="wall.label" :value="wall.slot" :disabled="!wall.free">{{wall.label}}{{wall.free?'':' · ազատ տեղ չկա'}}</option>
+                </select>
+                <p>Մեկ պատին կարող է լինել մինչև չորս նկար։ Նկարների շարքը կենտրոնանում է պատի վրա։</p>
+                <p v-if="galleryLayoutError" class="artwork-setting-error">Պատերի ցանկը չբեռնվեց։ Փորձիր նորից էջը բացել։</p>
+              </div>
             </div>
             <AdminFields v-model="form.data" :kind="kind" :hidden-keys="hiddenKeys" :required-fields="requiredFields" :disabled-fields="form.id?['year','index','personId',...(kind==='GEO_CATEGORY'?['area']:[])]:[]"/><div v-if="optionalFields.length" class="optional-fields"><p>Կարող ես նաև ավելացնել</p><button v-for="item in optionalFields" :key="item.key" type="button" @click="addOptional(item)"><Plus :size="14"/>{{item.label}}</button></div></section>
           <section v-if="kind==='ARTICLE'" class="editor-panel"><div class="panel-heading"><span class="panel-number">03</span><div><h2>Հեղինակ</h2><p>Լրացրու, եթե ցանկանում ես նշել նյութի հեղինակին։</p></div></div><AdminReferenceField v-model="form.authorId" kind="AUTHOR" value-key="id" placeholder="Առանց նշված հեղինակի"/></section>
