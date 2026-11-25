@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
-import {galleryAutomaticSlot,galleryAvailableSlots,galleryPlacement,galleryRoomForSlot,gallerySizeHeight,gallerySizeWidth} from '../utils/art/galleryLayout'
+import {galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryIsSculpture,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth} from '../utils/art/galleryLayout'
+import {galleryArtworks} from '../data/art/gallery'
 
 const artwork={...newContent('ARTWORK'),title:'Փորձնական նկար'}
 artwork.data={...artwork.data,
@@ -40,35 +41,76 @@ test('museum and image credit links can be left blank',()=>{
   assert.equal(payload.data.imageSource,'')
 })
 
-test('gallery artworks keep an explicit lower or upper wall position and display size',()=>{
-  const placed=structuredClone(artwork)
-  placed.data.gallerySlot=624
-  placed.data.displaySize='large'
-  const payload=parseContent(prepareContent(placed))
+test('CMS saves a wall percentage for both new and existing gallery paintings',()=>{
+  const artworkWithSize=structuredClone(artwork)
+  artworkWithSize.data.gallerySlot=624
+  artworkWithSize.data.wallPercent=35
+  const payload=parseContent(prepareContent(artworkWithSize))
   assert.equal(payload.data.gallerySlot,624)
-  assert.equal(payload.data.displaySize,'large')
-  assert.equal(galleryRoomForSlot(624),12)
-  assert.equal(galleryPlacement(624).upper,true)
-  assert.equal(galleryPlacement(624).z,-6.75)
-  assert.equal(galleryPlacement(1).room,6)
-  assert.equal(galleryPlacement(1).upper,false)
-  assert.ok(galleryAvailableSlots(6).includes(600))
-  assert.ok(galleryAvailableSlots(6).includes(0))
-  placed.data.gallerySlot=1024
-  assert.throws(()=>parseContent(prepareContent(placed)))
+  assert.equal(payload.data.wallPercent,35)
+  assert.equal(galleryWallPercent({id:'existing',wallPercent:35,displaySize:'large'}),35)
+  assert.ok(galleryWallPercent({id:'existing',displaySize:'medium'})>galleryWallPercent({id:'existing',displaySize:'regular'}))
+  artworkWithSize.data.room=4
+  assert.equal(parseContent(prepareContent(artworkWithSize)).data.wallPercent,35)
+  for(const invalid of [0,101,12.5]){
+    artworkWithSize.data.wallPercent=invalid
+    assert.throws(()=>parseContent(prepareContent(artworkWithSize)))
+  }
+  artworkWithSize.data.wallPercent=''
+  assert.equal(parseContent(prepareContent(artworkWithSize)).data.wallPercent,undefined)
+  artworkWithSize.data.gallerySlot=1024
+  assert.throws(()=>parseContent(prepareContent(artworkWithSize)))
 })
 
-test('even large framed works have clear space on shared flat walls',()=>{
+test('all published slot IDs map to centered wall rows with up to four pictures per wall',()=>{
   const slots=galleryAvailableSlots(6)
-  assert.equal(slots.length,10)
-  for(let i=0;i<slots.length;i++)for(let j=i+1;j<slots.length;j++){
-    const a=galleryPlacement(slots[i]!),b=galleryPlacement(slots[j]!)
-    assert.equal(a.room,6)
-    if(a.z!==b.z)continue
-    const dx=Math.abs(a.x-b.x),dy=Math.abs(a.centerY-b.centerY)
-    const width=gallerySizeWidth.large+.2,height=gallerySizeHeight.large+.2
-    assert.ok(dx>width+.1||dy>height+.1,`Frames overlap: ${slots[i]} and ${slots[j]}`)
+  assert.deepEqual(slots,[0,1,2,3,4,5,600,601])
+  assert.equal(galleryAutomaticSlot(new Set(slots)),602)
+  for(const slot of slots){
+    const placement=galleryPlacement(slot)
+    assert.equal(placement.x,34)
+    assert.equal(placement.centerY,4.5)
+    assert.equal(galleryRoomForSlot(slot),6)
   }
-  assert.equal(galleryAutomaticSlot(new Set([0,1,2,3,4,5])),600)
-  assert.equal(galleryAutomaticSlot(new Set([1,2])),0)
+  assert.equal(gallerySlotLabel(0),gallerySlotLabel(3))
+  assert.notEqual(gallerySlotLabel(3),gallerySlotLabel(4))
+  assert.equal(gallerySlotLabel(4),gallerySlotLabel(601))
+  const allSlots=galleryAvailableSlots(1000)
+  assert.equal(new Set(allSlots).size,1024)
+  const paintingsPerWall=new Map<string,number>()
+  for(const artwork of galleryArtworks){
+    const placement=galleryCorePlacement(artwork.id)
+    if(galleryIsSculpture(artwork.id)){
+      assert.equal(placement,undefined)
+      continue
+    }
+    assert.ok(placement,artwork.id)
+    assert.equal(placement.room,artwork.room)
+    assert.equal(placement.centerY,4.5)
+    const key=`${placement.room}:${placement.wall}`
+    const count=(paintingsPerWall.get(key)??0)+1
+    assert.ok(count<=4)
+    paintingsPerWall.set(key,count)
+  }
+})
+
+test('percentage controls frame width and multiple images stay centered with clear margins',()=>{
+  const close=(a:number,b:number)=>assert.ok(Math.abs(a-b)<1e-9)
+  const [single]=galleryWallFrames([{percent:40,aspectRatio:1.4}])
+  close(single!.offset,0)
+  close(single!.width+single!.border,galleryWallWidth*.4)
+  const [full]=galleryWallFrames([{percent:100,aspectRatio:2}])
+  close(full!.width+full!.border,galleryWallWidth)
+  for(const count of [2,3,4]){
+    const ratios=[.45,1.3,1.75,1]
+    const frames=galleryWallFrames(ratios.slice(0,count).map(aspectRatio=>({percent:70,aspectRatio})))
+    const halfWidth=(index:number)=>(frames[index]!.width+frames[index]!.border)/2
+    close(frames[0]!.offset-halfWidth(0),-(frames[count-1]!.offset+halfWidth(count-1)))
+    for(const [index,frame] of frames.entries()){
+      close(frame.width/frame.height,ratios[index]!)
+      assert.ok(frame.height+frame.border<=galleryWallHeight+1e-9)
+      assert.ok(Math.abs(frame.offset)+halfWidth(index)<=galleryWallWidth/2+1e-9)
+      if(index)close(frame.offset-halfWidth(index)-(frames[index-1]!.offset+halfWidth(index-1)),.3)
+    }
+  }
 })

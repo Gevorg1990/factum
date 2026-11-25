@@ -1,5 +1,12 @@
 export interface GalleryPoint { x:number; z:number }
 
+const passageHalfWidth=3.7
+const sculptureClearances=[
+  {x:17,z:0,radius:2.1},
+  {x:-2.2,z:-2.2,radius:1.5},
+  {x:-34,z:-2.2,radius:1.5},
+]
+
 export const galleryCenters: readonly GalleryPoint[] = [
   {x:0,z:0}, {x:11.8,z:0}, {x:-17,z:0},
   {x:0,z:-17}, {x:0,z:17}, {x:-34,z:0},
@@ -21,17 +28,15 @@ export function galleryRoomAt(x:number,z:number,extraRooms=0) {
 
 export function galleryWalkable(x:number,z:number,extraRooms=0) {
   // Treat the visitor as a person with shoulder width and keep space from walls and columns.
-  if(Math.abs(x-17)<2.1 && Math.abs(z)<2.1)return false
-  if(Math.abs(x+2.2)<1.5 && Math.abs(z+2.2)<1.5)return false
-  if(Math.abs(x+34)<1.5 && Math.abs(z+2.2)<1.5)return false
-  const insideRoom=(cx:number,cz:number)=>Math.abs(x-cx)<=3.7 && Math.abs(z-cz)<=3.7
+  if(sculptureClearances.some(item=>Math.abs(x-item.x)<item.radius&&Math.abs(z-item.z)<item.radius))return false
+  const insideRoom=(cx:number,cz:number)=>Math.abs(x-cx)<=passageHalfWidth && Math.abs(z-cz)<=passageHalfWidth
   if(insideRoom(0,0)||insideRoom(17,0)||insideRoom(-17,0)||insideRoom(0,-17)||insideRoom(0,17)||insideRoom(-34,0))return true
   const annex=Math.round((x-34)/17)
   if(annex>=0&&annex<extraRooms&&insideRoom(34+annex*17,0))return true
-  if(extraRooms&&Math.abs(z)<=3.7&&x>20.7&&x<34+(extraRooms-1)*17-3.7)return true
+  if(extraRooms&&Math.abs(z)<=passageHalfWidth&&x>20.7&&x<34+(extraRooms-1)*17-passageHalfWidth)return true
   // Broad, continuous bridges connect the halls like a museum nave.
-  return (Math.abs(z)<=3.7 && x>-30.4 && x<13.4)
-    || (Math.abs(x)<=3.7 && Math.abs(z)<13.4)
+  return (Math.abs(z)<=passageHalfWidth && x>-30.4 && x<13.4)
+    || (Math.abs(x)<=passageHalfWidth && Math.abs(z)<13.4)
 }
 
 const grid=.5
@@ -62,6 +67,95 @@ function nearestCell(position:GalleryPoint,extraRooms:number) {
       if(!closest||d<closest.distance)closest={i,j,distance:d}
     }
     if(closest)return closest
+  }
+}
+
+const clearance=.001
+const artworkWaypoints: GalleryPoint[]=[]
+for(const xSign of [-1,1])for(const zSign of [-1,1]){
+  artworkWaypoints.push({x:xSign*(passageHalfWidth-clearance),z:zSign*(passageHalfWidth-clearance)})
+  for(const {x,z,radius} of sculptureClearances){
+    artworkWaypoints.push({x:x+xSign*(radius+clearance),z:z+zSign*(radius+clearance)})
+  }
+}
+const xBoundaries=[-passageHalfWidth,passageHalfWidth,...sculptureClearances.flatMap(({x,radius})=>[x-radius,x+radius])]
+const zBoundaries=[-passageHalfWidth,passageHalfWidth,...sculptureClearances.flatMap(({z,radius})=>[z-radius,z+radius])]
+
+function artworkSegmentClear(start:GalleryPoint,end:GalleryPoint,extraRooms:number) {
+  // Between passage and pedestal edges the segment stays in the same floor region.
+  const dx=end.x-start.x,dz=end.z-start.z
+  const crossings=[0,1]
+  for(const x of xBoundaries){const t=(x-start.x)/dx;if(t>0&&t<1)crossings.push(t)}
+  for(const z of zBoundaries){const t=(z-start.z)/dz;if(t>0&&t<1)crossings.push(t)}
+  crossings.sort((a,b)=>a-b)
+  for(let i=1;i<crossings.length;i++){
+    const t=(crossings[i-1]!+crossings[i]!)/2
+    if(!galleryWalkable(start.x+dx*t,start.z+dz*t,extraRooms))return false
+  }
+  return true
+}
+
+export function gallerySculptureStand(start:GalleryPoint,center:GalleryPoint,viewingDistance:number,extraRooms=0):GalleryPoint {
+  const currentDistance=distance(start,center)
+  if(currentDistance<=viewingDistance)return start
+
+  const positionAt=(t:number):GalleryPoint=>({
+    x:start.x+(center.x-start.x)*t,
+    z:start.z+(center.z-start.z)*t
+  })
+  let limit=1-viewingDistance/currentDistance
+  const canApproach=(t:number)=>{
+    const end=positionAt(t)
+    return galleryWalkable(end.x,end.z,extraRooms)&&artworkSegmentClear(start,end,extraRooms)
+  }
+  if(canApproach(limit))return positionAt(limit)
+
+  // Stop on the approach line if a wall or pedestal blocks the preferred distance.
+  let reachable=0
+  while((limit-reachable)*currentDistance>.01){
+    const mid=(reachable+limit)/2
+    if(canApproach(mid))reachable=mid
+    else limit=mid
+  }
+  return positionAt(reachable)
+}
+
+export function galleryArtworkRoute(start:GalleryPoint,destination:GalleryPoint,extraRooms=0):GalleryPoint[]|undefined {
+  if(!galleryWalkable(start.x,start.z,extraRooms))return galleryRoute(start,destination,extraRooms)
+  let end=destination
+  if(!galleryWalkable(end.x,end.z,extraRooms)){
+    const cell=nearestCell(end,extraRooms)
+    if(!cell)return
+    end=point(cell.i,cell.j)
+  }
+  if(artworkSegmentClear(start,end,extraRooms))return [end]
+
+  // The shortest clear route bends only at passage or obstacle corners.
+  const nodes=[start,end,...artworkWaypoints.filter(({x,z})=>galleryWalkable(x,z,extraRooms))]
+  const costs=nodes.map(()=>Infinity)
+  const previous=nodes.map(()=>-1)
+  const remaining=new Set(nodes.keys())
+  costs[0]=0
+  while(remaining.size){
+    let current=-1
+    let best=Infinity
+    for(const index of remaining){
+      if(costs[index]!<best){current=index;best=costs[index]!}
+    }
+    if(current<0)return
+    if(current===1){
+      const route:GalleryPoint[]=[]
+      for(let index=current;index>0;index=previous[index]!)route.push(nodes[index]!)
+      return route.reverse()
+    }
+    remaining.delete(current)
+    for(const next of remaining){
+      const from=nodes[current]!,to=nodes[next]!
+      const cost=best+distance(from,to)
+      if(cost>=costs[next]!||!artworkSegmentClear(from,to,extraRooms))continue
+      costs[next]=cost
+      previous[next]=current
+    }
   }
 }
 

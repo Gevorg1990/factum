@@ -25,6 +25,7 @@ export interface GalleryArtwork {
   creatorPortraitCredit?: string
   creatorPortraitSource?: string
   gallerySlot?: number
+  wallPercent?: number
   displaySize?: 'regular'|'medium'|'large'
 }
 

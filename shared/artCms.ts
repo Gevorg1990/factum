@@ -1,4 +1,5 @@
 import {z} from 'zod'
+import {maxGallerySlot} from '../utils/art/galleryLayout'
 
 const text=z.string().trim().min(1).max(5000)
 const image=z.string().trim().min(1).max(2000).refine(value=>/^\/(?!\/)/.test(value)||/^https:\/\//.test(value),'Ընտրիր կամ վերբեռնիր նկար')
@@ -26,7 +27,8 @@ export const artCmsSchema=z.object({
   modelCredit:z.string().trim().max(5000).default(''),
   modelSource:z.union([z.string().url(),z.literal('')]).default(''),
   room:z.number().int().min(0).max(5).optional(),
-  gallerySlot:z.number().int().min(0).max(1023).optional(),
-  displaySize:z.enum(['regular','medium','large']).default('regular'),
+  gallerySlot:z.number().int().min(0).max(maxGallerySlot).optional(),
+  wallPercent:z.number().int().min(1).max(100).optional(),
+  displaySize:z.enum(['regular','medium','large']).optional(),
 })
 export type ArtCmsInput=z.infer<typeof artCmsSchema>
