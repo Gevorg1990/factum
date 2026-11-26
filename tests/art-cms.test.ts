@@ -4,6 +4,7 @@ import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
 import {firstGalleryFrontSlot,galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryIsBranchSlot,galleryIsFrontSlot,galleryIsSculpture,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth,maxGallerySlot} from '../utils/art/galleryLayout'
 import {galleryBranchId} from '../utils/art/galleryBranches'
+import {galleryEditorLayout} from '../utils/art/galleryEditorLayout'
 import {galleryArtworks,visibleGalleryArtworks} from '../data/art/gallery'
 
 const artwork={...newContent('ARTWORK'),title:'Փորձնական նկար'}
@@ -144,6 +145,31 @@ test('the chosen branch moves only the pictures on the new passage wall',()=>{
   assert.equal(galleryCorePlacement('thinker',new Set([galleryBranchId(1,'north')]))?.room,galleryBranchId(1,'north'))
   const eastHallSouthSlot=galleryAvailableSlots(1).find(slot=>galleryPlacement(slot).wall==='south')!
   assert.equal(galleryPlacement(eastHallSouthSlot,6,open).room,eastHallSouth)
+})
+
+test('the CMS map groups free places by physical wall and keeps the current selection',()=>{
+  const occupied=[{key:'editing',slot:1},{key:'existing',slot:0},{key:'third',slot:2},{key:'fourth',slot:3}]
+  const layout=galleryEditorLayout(occupied,'editing',1,true)
+  const north=layout.walls.find(wall=>wall.room===6&&wall.side==='north')
+  assert.deepEqual({slot:north?.slot,available:north?.available},{slot:1,available:1})
+  assert.equal(galleryEditorLayout(occupied,'new',undefined,true).walls.find(wall=>wall.room===6&&wall.side==='north')?.available,0)
+})
+
+test('the map previews new branch directions and the artwork that would move',()=>{
+  const front={key:'front',slot:firstGalleryFrontSlot}
+  const north=galleryBranchId(1,'north')
+  const preview=galleryEditorLayout([front],'new',undefined,true)
+  assert.equal(preview.rooms.find(room=>room.id===6)?.moving,1)
+  assert.deepEqual(preview.rooms.find(room=>room.id===north),{
+    id:north,name:'Արևելյան սրահ · Ձախ սրահ',parent:1,planned:true,moving:1,entrance:'south',
+  })
+  const branchSlot=preview.walls.find(wall=>wall.room===north)!.slot
+  const opened=galleryEditorLayout([front,{key:'branch',slot:branchSlot}],'new',undefined,true)
+  assert.equal(opened.rooms.find(room=>room.id===north)?.planned,false)
+  assert.ok(opened.walls.some(wall=>wall.room===north&&wall.side==='north'))
+  assert.ok(opened.walls.some(wall=>wall.room===1&&wall.side==='east'&&wall.available===3))
+  assert.ok(!opened.walls.some(wall=>wall.room===1&&wall.side==='north'))
+  assert.equal(galleryEditorLayout([front],'front',front.slot,false).rooms.find(room=>room.id===6)?.moving,0)
 })
 
 test('percentage controls frame width and multiple images stay centered with clear margins',()=>{

@@ -1,15 +1,17 @@
 import {db} from '../../utils/db'
 import {requireUser} from '../../utils/auth'
 
-type SlotRow={key:string;title:string;slot:number}
+type GalleryRow={key:string;slot:number|null}
 
 export default defineEventHandler(async event=>{
   await requireUser(event,['ADMIN','EDITOR'])
-  const occupied=await db.$queryRaw<SlotRow[]>`
-    SELECT key, title, ("publishedData"->>'gallerySlot')::integer AS slot
+  const rows=await db.$queryRaw<GalleryRow[]>`
+    SELECT key, ("publishedData"->>'gallerySlot')::integer AS slot
     FROM "Content"
-    WHERE kind = 'ARTWORK' AND status = 'PUBLISHED' AND "publishedData" ? 'gallerySlot'
+    WHERE kind = 'ARTWORK' AND status = 'PUBLISHED' AND "publishedData" IS NOT NULL
+      AND (key = 'thinker' OR "publishedData" ? 'gallerySlot')
     ORDER BY slot
   `
-  return {occupied}
+  const occupied=rows.flatMap(({key,slot})=>slot===null?[]:[{key,slot}])
+  return {occupied,thinkerPublished:rows.some(row=>row.key==='thinker')}
 })

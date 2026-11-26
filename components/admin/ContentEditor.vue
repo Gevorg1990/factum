@@ -2,8 +2,8 @@
 import { Archive, ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, Eye, FileText, Globe2, Info, LoaderCircle, Plus, Save, ShieldCheck, Trash2, X } from 'lucide-vue-next'
 import { millionSlots } from '~/shared/millionStages'
 import { contentSections, contentUrl, editorTemplates, editorRecord, prepareContent, type CmsKind } from '~/shared/cmsEditor'
-import {firstCmsGalleryRoom,galleryAvailableSlots,galleryIsBranchSlot,galleryIsSculpture,galleryRoomForSlot,gallerySlotLabel,galleryWallPercent} from '~/utils/art/galleryLayout'
-import {galleryBranch} from '~/utils/art/galleryBranches'
+import {galleryIsSculpture,galleryWallPercent} from '~/utils/art/galleryLayout'
+import {galleryEditorLayout,type GalleryEditorSlot} from '~/utils/art/galleryEditorLayout'
 const props=defineProps<{record:any}>()
 const emit=defineEmits(['close','saved','dirty','deleted'])
 const {user}=useAuth()
@@ -20,34 +20,24 @@ watch(dirty,value=>emit('dirty',value),{immediate:true})
 const kind=computed<CmsKind>(()=>form.value.kind)
 type ExistingArtist={creator:string;creatorInfo:string;creatorPortrait:string;creatorPortraitCredit:string;creatorPortraitSource:string}
 const existingArtists=ref<ExistingArtist[]>([])
-const occupiedGallerySlots=ref<{key:string;title:string;slot:number}[]>([])
+const occupiedGallerySlots=ref<GalleryEditorSlot[]>([])
+const galleryLayoutLoaded=ref(false)
 const galleryLayoutError=ref(false)
+const thinkerPublished=ref(false)
 let artistTimer:ReturnType<typeof setTimeout>|undefined
 let artistSearchVersion=0
-const galleryWalls=computed(()=>{
- const current=form.value.data.gallerySlot as number|undefined
- const occupied=new Map(occupiedGallerySlots.value.filter(item=>item.key!==form.value.key).map(item=>[item.slot,item]))
- const branches=new Set(occupiedGallerySlots.value.map(item=>galleryRoomForSlot(item.slot)).filter(room=>galleryBranch(room)))
- const highestRoom=occupiedGallerySlots.value.reduce((highest,item)=>{
-  const room=galleryRoomForSlot(item.slot)
-  return Math.max(highest,galleryBranch(room)?.parent??room)
- },firstCmsGalleryRoom-1)
- const currentRoom=current===undefined?0:galleryRoomForSlot(current)
- const highestSelectableRoom=Math.max(highestRoom, galleryBranch(currentRoom)?.parent??currentRoom)
- const walls=new Map<string,{label:string;slot:number;free:boolean}>()
- for(const slot of galleryAvailableSlots(highestSelectableRoom+1,highestSelectableRoom)){
-  const label=gallerySlotLabel(slot,branches)+(galleryIsBranchSlot(slot)&&!branches.has(galleryRoomForSlot(slot))?' · նոր անցում':'')
-  const free=!occupied.has(slot)
-  const wall=walls.get(label)
-  if(!wall||slot===current||(free&&!wall.free))walls.set(label,{label,slot,free})
- }
- return [...walls.values()]
-})
+const galleryMap=computed(()=>galleryEditorLayout(occupiedGallerySlots.value,form.value.key,form.value.data.gallerySlot,thinkerPublished.value))
 const artworkDefaultPercent=computed(()=>galleryWallPercent({
  id:form.value.key,displaySize:form.value.data.displaySize,
 }))
 async function loadGalleryLayout(){
- try{const result=await $fetch<{occupied:{key:string;title:string;slot:number}[]}>('/api/admin/art-layout');occupiedGallerySlots.value=result.occupied;galleryLayoutError.value=false}
+ try{
+  const result=await $fetch<{occupied:GalleryEditorSlot[];thinkerPublished:boolean}>('/api/admin/art-layout')
+  occupiedGallerySlots.value=result.occupied
+  thinkerPublished.value=result.thinkerPublished
+  galleryLayoutLoaded.value=true
+  galleryLayoutError.value=false
+ }
  catch{galleryLayoutError.value=true}
 }
 function chooseArtist(artist:ExistingArtist){
@@ -73,7 +63,7 @@ const hiddenKeys=computed(()=>['id','slug',...(kind.value==='BOOK'?['source','te
 const requiredFields=computed(()=>({GEO_ENTRY:['area','category','detail','source',...(form.value.data.area==='world-facts'?['answer']:form.value.data.area==='records'?['measure','location']:[])],GEO_CATEGORY:['area'],BOOK:['author','topic','description','text'],ARTWORK:['creator','creatorInfo','date','medium','description','image'],ARTICLE:['subject','answer','detail'],FACT:['category','text'],PERSON:['years','role','bio'],EVENT:['year','era'],GAME:['explanation'],MONUMENT:['personId','city','location','name','url'],WORK:['personId','description'],PAGE:['text'],VIDEO:['url'],SETTING:['text']} as Record<string,string[]>)[kind.value]||[])
 const optionalFields=computed(()=>{
  const definitions:Record<string,{key:string;label:string;value:any}[]>={
- ARTICLE:[{key:'video',label:'Մանրամասն բաժնի վիդեո',value:''},{key:'image',label:'Հոդվածի նկար',value:''},{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}}],
+ ARTICLE:[{key:'image',label:'Հոդվածի նկար',value:''},{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}}],
  CATEGORY:[{key:'image',label:'Բաժնի նկար',value:''},{key:'cardVideo',label:'Քարտի շարժվող նախադիտում',value:''}],
  FACT:[{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}}],
  PERSON:[{key:'source',label:'Տեղեկության աղբյուր',value:{name:'',url:''}},{key:'biographyDocument',label:'Կենսագրության փաստաթուղթ',value:{name:'',url:''}}],
@@ -144,12 +134,15 @@ function submit(actionName:string){action.value=actionName;formElement.value?.re
                 <p id="artwork-size-hint">Օրինակ՝ 40 նշանակում է պատի հասանելի լայնության մինչև 40%։ Եթե նույն պատի նկարները միասին չեն տեղավորվում, դրանք համաչափ փոքրանում են։</p>
               </div>
               <div v-if="form.data.room===undefined" class="artwork-setting">
-                <label for="artwork-slot">Պատը 3D սրահում</label>
+                <strong class="artwork-placement-heading">Պատը 3D սրահում</strong>
+                <LazyAdminGalleryWallPicker v-if="galleryLayoutLoaded" v-model="form.data.gallerySlot" :rooms="galleryMap.rooms" :walls="galleryMap.walls" :image="form.data.image"/>
+                <p v-else-if="!galleryLayoutError" role="status">Բեռնվում է սրահների քարտեզը…</p>
+                <label for="artwork-slot">Պատերի ամբողջ ցանկը</label>
                 <select id="artwork-slot" v-model="form.data.gallerySlot">
                   <option :value="undefined">Ավտոմատ ընտրել ազատ տեղով պատը</option>
-                  <option v-for="wall in galleryWalls" :key="wall.label" :value="wall.slot" :disabled="!wall.free">{{wall.label}}{{wall.free?'':' · ազատ տեղ չկա'}}</option>
+                  <option v-for="wall in galleryLayoutLoaded?galleryMap.walls:[]" :key="wall.slot" :value="wall.slot" :disabled="!wall.available">{{wall.label}}{{wall.available?'':' · ազատ տեղ չկա'}}</option>
+                  <option v-if="!galleryLayoutLoaded&&form.data.gallerySlot!==undefined" :value="form.data.gallerySlot">Պահպանված պատը</option>
                 </select>
-                <p>Ձախ կամ աջ սրահի առաջին նկարը բացում է դեպի այդ սրահ անցում։ Բացված պատի նկարները տեղափոխվում են նույն ճյուղի դիմացի պատին։</p>
                 <p v-if="galleryLayoutError" class="artwork-setting-error">Պատերի ցանկը չբեռնվեց։ Փորձիր նորից էջը բացել։</p>
               </div>
             </div>
@@ -157,7 +150,7 @@ function submit(actionName:string){action.value=actionName;formElement.value?.re
           <section v-if="kind==='ARTICLE'" class="editor-panel"><div class="panel-heading"><span class="panel-number">03</span><div><h2>Հեղինակ</h2><p>Լրացրու, եթե ցանկանում ես նշել նյութի հեղինակին։</p></div></div><AdminReferenceField v-model="form.authorId" kind="AUTHOR" value-key="id" placeholder="Առանց նշված հեղինակի"/></section>
           <details class="technical-details"><summary>Լրացուցիչ կարգավորումներ</summary><div><label>Նյութի հասցեի նշում<input v-model="form.key" :disabled="!!form.id||kind==='EVENT'||kind==='WORK'" maxlength="200" required></label><p>Ստեղծվում է ինքնաշխատ։ Փոփոխելը պարտադիր չէ։ Գործող նյութի հասցեն չի փոխվում, որպեսզի հին հղումները պահպանվեն։</p><label>Ներքին ամփոփում<textarea v-model="form.summary" rows="2" maxlength="5000"/></label><p>Սա խմբագրի նշումն է․ հանրային տեքստը լրացրու հիմնական բովանդակության դաշտերում։</p></div></details>
         </div>
-        <section v-if="step===2" class="editor-panel preview-panel"><div class="panel-heading"><span class="panel-number"><Eye :size="19"/></span><div><h2>Նախադիտում</h2><p>Ստուգիր բովանդակությունը։ Այստեղ ներկայացված է ընդհանուր նախադիտում․ կայքի իրական էջի դասավորությունը կարող է տարբերվել։</p></div></div><article class="article-preview"><p class="preview-label">COGNITIO · {{section.label}}</p><img v-if="previewImage" :src="previewImage" :alt="form.title" loading="lazy"><h2>{{form.title||'Նյութի վերնագիրը'}}</h2><p v-if="kind==='GEO_ENTRY'&&preview.data.measure" class="preview-lead">{{preview.data.measure}} · {{preview.data.location}}</p><p v-if="preview.data.answer" class="preview-lead">{{preview.data.answer}}</p><p class="preview-text">{{previewText||'Այստեղ կհայտնվի քո լրացրած տեքստը։'}}</p><section v-for="(block,i) in preview.data.sections||preview.data.biographySections||preview.data.details?.sections||[]" :key="i"><h3>{{block.title||block.heading}}</h3><p>{{block.text||block.body}}</p><img v-if="block.image" :src="block.image" :alt="block.title||form.title" loading="lazy"></section><p v-if="preview.data.example" class="preview-example"><strong>Օրինակ</strong>{{preview.data.example}}</p><ul v-if="preview.data.answers"><li v-for="(answer,i) in preview.data.answers" :key="i" :class="{correct:preview.data.correct===i}"><Check v-if="preview.data.correct===i" :size="16"/>{{answer||`Տարբերակ ${i+1}`}}</li></ul><p v-if="typeof preview.data.correct==='boolean'">Ճիշտ պատասխանը՝ {{preview.data.correct?'Ճիշտ է':'Սխալ է'}}</p><a v-if="preview.data.source?.url" :href="preview.data.source.url" target="_blank" rel="noopener noreferrer">Աղբյուր՝ {{preview.data.source.name||preview.data.source.url}} ↗</a></article><button type="button" class="editor-secondary" @click="step=1"><ArrowLeft :size="15"/>Վերադառնալ խմբագրմանը</button></section>
+        <section v-if="step===2" class="editor-panel preview-panel"><div class="panel-heading"><span class="panel-number"><Eye :size="19"/></span><div><h2>Նախադիտում</h2><p>Ստուգիր բովանդակությունը։ Այստեղ ներկայացված է ընդհանուր նախադիտում․ կայքի իրական էջի դասավորությունը կարող է տարբերվել։</p></div></div><article class="article-preview"><p class="preview-label">COGNITIO · {{section.label}}</p><img v-if="previewImage" :src="previewImage" :alt="form.title" loading="lazy"><h2>{{form.title||'Նյութի վերնագիրը'}}</h2><p v-if="kind==='GEO_ENTRY'&&preview.data.measure" class="preview-lead">{{preview.data.measure}} · {{preview.data.location}}</p><p v-if="preview.data.answer" class="preview-lead">{{preview.data.answer}}</p><p class="preview-text">{{previewText||'Այստեղ կհայտնվի քո լրացրած տեքստը։'}}</p><section v-for="(block,i) in preview.data.sections||preview.data.biographySections||preview.data.details?.sections||[]" :key="i"><h3>{{block.title||block.heading}}</h3><p>{{block.text||block.body}}</p></section><p v-if="preview.data.example" class="preview-example"><strong>Օրինակ</strong>{{preview.data.example}}</p><ul v-if="preview.data.answers"><li v-for="(answer,i) in preview.data.answers" :key="i" :class="{correct:preview.data.correct===i}"><Check v-if="preview.data.correct===i" :size="16"/>{{answer||`Տարբերակ ${i+1}`}}</li></ul><p v-if="typeof preview.data.correct==='boolean'">Ճիշտ պատասխանը՝ {{preview.data.correct?'Ճիշտ է':'Սխալ է'}}</p><a v-if="preview.data.source?.url" :href="preview.data.source.url" target="_blank" rel="noopener noreferrer">Աղբյուր՝ {{preview.data.source.name||preview.data.source.url}} ↗</a></article><button type="button" class="editor-secondary" @click="step=1"><ArrowLeft :size="15"/>Վերադառնալ խմբագրմանը</button></section>
       </div>
       <aside class="editor-sidebar">
         <section class="editor-panel publish-panel"><div class="publish-icon"><Globe2 :size="23"/></div><h2>Պատրա՞ստ է քո նյութը</h2><p>Պահպանիր որպես սևագիր կամ նախադիտումից հետո հրապարակիր կայքում։</p><div class="publish-checklist"><span><Check :size="14"/>Ստուգիր անվանումն ու տեքստը</span><span><Check :size="14"/>Համոզվիր, որ աղբյուրը ճիշտ է</span><span><Check :size="14"/>Ստուգիր նկարի օգտագործման իրավունքը</span></div><button v-if="step===1" type="button" class="editor-primary" :disabled="saving||pendingUploads>0" @click="next"><Eye :size="17"/>Նախադիտել նյութը<ArrowRight :size="16"/></button><button v-else type="button" class="editor-primary" :disabled="saving||pendingUploads>0" @click="submit('publish')"><LoaderCircle v-if="saving" class="spinning" :size="17"/><Globe2 v-else :size="17"/>{{saving?'Պահպանվում է…':'Հրապարակել կայքում'}}</button><button type="button" class="editor-secondary" :disabled="saving||pendingUploads>0" @click="submit('save')"><Save :size="16"/>Պահպանել սևագիր</button><a v-if="form.status!=='ARCHIVED'&&(form.publishedAt||form.publishedData)&&link" class="view-live" :href="link" target="_blank" rel="noopener">Դիտել հրապարակված էջը ↗</a><button v-if="form.id&&form.status!=='ARCHIVED'" type="button" class="archive-button" :disabled="saving||pendingUploads>0" @click="submit('archive')"><Archive :size="14"/>Տեղափոխել արխիվ</button><button v-if="form.id&&user?.role==='ADMIN'" type="button" class="permanent-delete-button" :disabled="saving||pendingUploads>0" @click="openDelete"><Trash2 :size="14"/>Ջնջել անվերադարձ</button><p class="publish-footnote"><ShieldCheck :size="14"/>Սևագիրը չի ցուցադրվում այցելուներին։ Հրապարակված նյութի փոփոխությունները տեսանելի կդառնան նորից հրապարակելուց հետո։</p></section>
@@ -184,4 +177,5 @@ function submit(actionName:string){action.value=actionName;formElement.value?.re
 
 .permanent-delete-button{display:flex;align-items:center;justify-content:center;gap:7px;color:#d99591;font-size:10px;padding:13px 10px;border:1px solid #c7776f33;border-radius:9px;margin-top:14px;width:100%}.permanent-delete-button:hover{background:#c7776f0d;border-color:#c7776f66}.delete-dialog{width:calc(100vw - 36px);max-width:530px;padding:30px;border:1px solid #8b5b5e;border-radius:20px;background:#101e31;color:#e2e9f4}.delete-dialog::backdrop{background:#020917c9;backdrop-filter:blur(5px)}.delete-symbol{display:grid;place-items:center;width:54px;height:54px;border-radius:15px;background:#c7776f12;border:1px solid #c7776f44;color:#df9b94;margin-bottom:22px}.delete-dialog h2{font-size:20px;font-weight:750;line-height:1.7}.delete-dialog p{font-size:11px;line-height:2.1;color:#97a8c0;margin-top:14px}.delete-dialog label{display:block;margin-top:23px;font-size:11px;line-height:1.9;color:#b7c6db}.delete-dialog strong{display:block;margin:10px 0;color:#e6c58f;font-weight:600;overflow-wrap:anywhere}.delete-dialog input{width:100%;border:1px solid #52617b;border-radius:9px;background:#081325;padding:12px;color:#edf2f8;font-size:12px}.delete-dialog input:focus{outline:2px solid #dfba7c;outline-offset:2px}.delete-dialog-actions{display:flex;justify-content:flex-end;gap:13px;margin-top:24px}.delete-confirm{display:flex;align-items:center;justify-content:center;gap:7px;font-size:11px;padding:12px 15px;background:#9d4547;border:1px solid #c7776f;border-radius:9px;color:#fff}.delete-confirm:disabled{opacity:.4;cursor:not-allowed}.delete-dialog .delete-error{color:#edaaa3}.delete-dialog .editor-secondary{margin:0;width:auto;padding:12px 15px}@media(max-width:480px){.delete-dialog{padding:23px}.delete-dialog-actions{flex-direction:column-reverse}.delete-dialog-actions button{width:100%}}
 .artwork-settings{display:grid;gap:18px;margin-bottom:26px;padding:18px;border:1px solid #3b526d;border-radius:12px;background:#0b1b2e}.artwork-setting{display:grid;gap:8px}.artwork-setting>label{color:#dce6f3;font-size:12px;font-weight:650}.artwork-setting>label span{color:#ebc986}.artwork-setting>input,.artwork-setting>select{width:100%;min-width:0;padding:12px 14px;background:#071426;border:1px solid #304661;border-radius:10px;color:#edf3fc;font:inherit;font-size:13px}.artwork-setting :is(input,select):focus{outline:2px solid #ebc98655;outline-offset:2px;border-color:#b49d78}.artwork-setting p{font-size:11px;line-height:1.7;color:#8da2be}.artwork-setting .artwork-setting-error{color:#edaaa3}.artist-suggestions{display:grid;gap:4px;max-height:210px;overflow:auto;padding:5px;border:1px solid #405675;border-radius:9px;background:#071426}.artist-suggestions button{display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px;padding:9px 11px;border-radius:6px;text-align:left;font-size:12px;color:#e8d5ae}.artist-suggestions button:hover,.artist-suggestions button:focus-visible{background:#253b54;outline:2px solid #e3c68f}.artist-suggestions small{color:#93a8bf;font-size:10px}
+.artwork-placement-heading{color:#e4eefb;font-size:14px}
 </style>
