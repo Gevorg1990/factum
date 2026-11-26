@@ -135,7 +135,7 @@ function submit(actionName:string){action.value=actionName;formElement.value?.re
               </div>
               <div v-if="form.data.room===undefined" class="artwork-setting">
                 <strong class="artwork-placement-heading">Պատը 3D սրահում</strong>
-                <LazyAdminGalleryWallPicker v-if="galleryLayoutLoaded" v-model="form.data.gallerySlot" :rooms="galleryMap.rooms" :walls="galleryMap.walls" :image="form.data.image"/>
+                <LazyAdminGalleryWallPicker v-if="galleryLayoutLoaded" v-model="form.data.gallerySlot" :rooms="galleryMap.rooms" :walls="galleryMap.walls" :image="form.data.image" :wall-percent="Number(form.data.wallPercent)||artworkDefaultPercent"/>
                 <p v-else-if="!galleryLayoutError" role="status">Բեռնվում է սրահների քարտեզը…</p>
                 <label for="artwork-slot">Պատերի ամբողջ ցանկը</label>
                 <select id="artwork-slot" v-model="form.data.gallerySlot">

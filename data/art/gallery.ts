@@ -30,14 +30,7 @@ export interface GalleryArtwork {
   displaySize?: 'regular'|'medium'|'large'
 }
 
-export const galleryRooms = [
-  { id: 0, name: 'Կենտրոնական դահլիճ', era: 'ՍԿԻԶԲ', summary: 'Չորս ուղղությամբ բացվող պատկերասրահ։', direction: 'կենտրոն' },
-  { id: 1, name: 'Արևելյան սրահ', era: 'ԱՐԵՎԵԼՔ', summary: 'Արվեստի գործեր արևելյան սրահում։', direction: 'արևելք' },
-  { id: 2, name: 'Գեղանկարչության սրահ', era: 'ԱՐԵՎՄՈՒՏՔ', summary: 'Լույս, գույն և ժամանակակից քաղաք։', direction: 'արևմուտք' },
-  { id: 3, name: 'Գլուխգործոցների սրահ', era: 'ՀՅՈՒՍԻՍ', summary: 'Նշանավոր գեղանկարներ ու մեծ կտավներ։', direction: 'հյուսիս' },
-  { id: 4, name: 'Վերածննդի սրահ', era: 'ՀԱՐԱՎ', summary: 'Լեոնարդո դա Վինչիի երկու գլուխգործոց։', direction: 'հարավ' },
-  { id: 5, name: 'Նկարիչների երկրորդ սրահ', era: 'ՀԵՌԱՎՈՐ ԱՐԵՎՄՈՒՏՔ', summary: 'Իմպրեսիոնիստներ և հետիմպրեսիոնիստներ։', direction: 'արևմուտք՝ հաջորդ սրահ' },
-] as const
+export {galleryRooms} from './galleryRooms'
 
 // Collection facts are from the linked museum records. Image credits refer to
 // the exact local reproduction used here; sculpture photographs retain credits.

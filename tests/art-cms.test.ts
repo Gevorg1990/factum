@@ -4,7 +4,7 @@ import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
 import {firstGalleryFrontSlot,galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryIsBranchSlot,galleryIsFrontSlot,galleryIsSculpture,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth,maxGallerySlot} from '../utils/art/galleryLayout'
 import {galleryBranchId} from '../utils/art/galleryBranches'
-import {galleryEditorLayout} from '../utils/art/galleryEditorLayout'
+import {galleryEditorLayout,galleryOverviewLayout} from '../utils/art/galleryEditorLayout'
 import {galleryArtworks,visibleGalleryArtworks} from '../data/art/gallery'
 
 const artwork={...newContent('ARTWORK'),title:'Փորձնական նկար'}
@@ -170,6 +170,18 @@ test('the map previews new branch directions and the artwork that would move',()
   assert.ok(opened.walls.some(wall=>wall.room===1&&wall.side==='east'&&wall.available===3))
   assert.ok(!opened.walls.some(wall=>wall.room===1&&wall.side==='north'))
   assert.equal(galleryEditorLayout([front],'front',front.slot,false).rooms.find(room=>room.id===6)?.moving,0)
+})
+
+test('the gallery model includes the original halls and connects additions to their actual parent',()=>{
+  const left=galleryBranchId(1,'north')
+  const editor=galleryEditorLayout([],'new',undefined,true)
+  const model=galleryOverviewLayout(editor.rooms)
+  assert.deepEqual(model.rooms.filter(room=>!room.planned).map(room=>room.id),[0,1,2,3,4,5])
+  assert.deepEqual(model.rooms.find(room=>room.id===1),{id:1,x:17,z:0,planned:false})
+  assert.deepEqual(model.rooms.find(room=>room.id===left),{id:left,x:17,z:-17,planned:true})
+  assert.ok(model.links.some(([from,to])=>from===2&&to===5))
+  assert.ok(model.links.some(([from,to])=>from===1&&to===left))
+  assert.ok(model.links.some(([from,to])=>from===1&&to===6))
 })
 
 test('percentage controls frame width and multiple images stay centered with clear margins',()=>{

@@ -1,10 +1,29 @@
 import {galleryBranch,galleryBranchName} from './galleryBranches'
 import {firstCmsGalleryRoom,galleryAvailableSlots,galleryFirstFrontRoom,galleryPlacement,galleryRoomForSlot,gallerySlotLabel} from './galleryLayout'
+import {galleryCenter,galleryCenters} from './galleryNavigation'
 
 export type GalleryEditorWallSide=ReturnType<typeof galleryPlacement>['wall']
 export type GalleryEditorWall={room:number;side:GalleryEditorWallSide;label:string;slot:number;available:number}
 export type GalleryEditorRoom={id:number;name:string;planned:boolean;moving:number;parent:number|null;entrance:GalleryEditorWallSide}
 export type GalleryEditorSlot={key:string;slot:number}
+export type GalleryOverviewRoom={id:number;x:number;z:number;planned:boolean}
+
+export function galleryOverviewLayout(editorRooms:readonly GalleryEditorRoom[]){
+  const rooms=new Map<number,GalleryOverviewRoom>(galleryCenters.map((center,id)=>[
+    id,{...center,x:id===galleryFirstFrontRoom?17:center.x,id,planned:false},
+  ]))
+  for(const room of editorRooms){
+    if(rooms.has(room.id))continue
+    const center=galleryBranch(room.id)??galleryCenter(room.id)
+    if(center)rooms.set(room.id,{id:room.id,x:center.x,z:center.z,planned:room.planned})
+  }
+
+  const links:[number,number][]=[[0,1],[0,2],[0,3],[0,4],[2,5]]
+  for(const room of editorRooms){
+    if(room.parent!==null&&rooms.has(room.parent)&&rooms.has(room.id))links.push([room.parent,room.id])
+  }
+  return {rooms:[...rooms.values()],links}
+}
 
 export function galleryEditorRoomName(room:number){
   return galleryBranchName(room)??(room===galleryFirstFrontRoom?'Արևելյան սրահ':`Նոր սրահ ${room-firstCmsGalleryRoom+1}`)
