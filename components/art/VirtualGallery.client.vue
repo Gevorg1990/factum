@@ -6,7 +6,7 @@ import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {galleryCenter,type GalleryPoint} from '~/utils/art/galleryNavigation'
 import {galleryBranch,galleryBranchId,galleryBranchName,galleryBranchedRoomAt,galleryBranchedRoute,galleryBranchedWalkable} from '~/utils/art/galleryBranches'
 import {galleryPaintedPlacement,galleryPlacement,galleryWallFrames,galleryWallPercent} from '~/utils/art/galleryLayout'
-import {EYE_HEIGHT,smoothJourneyProgress} from '~/utils/library/navigation'
+import {smoothJourneyProgress} from '~/utils/library/navigation'
 
 const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]; fullscreen:[element:HTMLElement|null]}>()
 const props=defineProps<{coreArtworks?:GalleryArtwork[];cmsArtworks?:GalleryArtwork[];lastRoom:number;branchRooms:number[]}>()
@@ -43,6 +43,9 @@ let pitch = 0
 let drag: {id:number;x:number;y:number;moved:boolean} | undefined
 let lookTarget: {yaw:number;pitch:number} | undefined
 type CameraView = {yaw:number;pitch:number;fov:number}
+const galleryFloorY=-.025
+const galleryCeilingY=9.14
+const galleryEyeY=(galleryFloorY+galleryCeilingY)/2
 const artworkTurnLead = 2000
 const artworkTurnAfterArrival = 400
 const artworkPreviewDuration = 300
@@ -182,7 +185,7 @@ function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=f
   if(!route)return
   leaveArtwork()
   lookTarget=undefined
-  const points=[camera.position.clone(),...route.map(item=>new THREE.Vector3(item.x,EYE_HEIGHT,item.z))]
+  const points=[camera.position.clone(),...route.map(item=>new THREE.Vector3(item.x,galleryEyeY,item.z))]
   const lengths:number[]=[]
   let total=0
   for(let index=1;index<points.length;index++){
@@ -239,8 +242,8 @@ function focusArtwork(id:string,turnFromStart=false) {
   const fov=mobile.value?88:70
   const vertical=THREE.MathUtils.degToRad(fov)
   const horizontal=2*Math.atan(Math.tan(vertical/2)*camera.aspect)
-  const top=view.centerY+view.height/2-EYE_HEIGHT
-  const bottom=view.centerY-view.height/2-EYE_HEIGHT
+  const top=view.centerY+view.height/2-galleryEyeY
+  const bottom=view.centerY-view.height/2-galleryEyeY
   let distance=4.8
   while(distance<11.8) {
     const widthAngle=2*Math.atan(view.width/2/distance)
@@ -568,8 +571,8 @@ function buildScene() {
     roomCoords.set(id,[branch.x,branch.z])
   }
   for(const [index,[cx,cz]] of roomCoords) {
-    walkGround.push(box(14,.25,14,cx,-.15,cz,floor))
-    box(14,.28,14,cx,9.28,cz,ceiling)
+    walkGround.push(box(14,.25,14,cx,galleryFloorY-.125,cz,floor))
+    box(14,.28,14,cx,galleryCeilingY+.14,cz,ceiling)
     box(13.2,.05,13.2,cx,9.09,cz,gold)
     box(11.7,.06,11.7,cx,9.04,cz,glass)
     box(10.6,.05,10.6,cx,9.01,cz,ceiling)
@@ -729,7 +732,7 @@ onMounted(()=>{
     canvasHost.value?.appendChild(renderer.domElement)
     renderer.domElement.setAttribute('aria-label','Եռաչափ արվեստի սրահներ')
     camera=new THREE.PerspectiveCamera(70,1,.1,85)
-    camera.position.set(0,EYE_HEIGHT,3.7)
+    camera.position.set(0,galleryEyeY,3.7)
     camera.rotation.order='YXZ'
     buildScene()
     loadNearbyRooms()
