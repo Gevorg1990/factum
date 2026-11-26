@@ -3,7 +3,7 @@ import test from 'node:test'
 import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
 import {galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryIsSculpture,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth} from '../utils/art/galleryLayout'
-import {galleryArtworks} from '../data/art/gallery'
+import {galleryArtworks,visibleGalleryArtworks} from '../data/art/gallery'
 
 const artwork={...newContent('ARTWORK'),title:'Փորձնական նկար'}
 artwork.data={...artwork.data,
@@ -12,6 +12,15 @@ artwork.data={...artwork.data,
   date:'1900',medium:'Յուղաներկ, կտավ',description:'Նկարի մասին բացատրություն',
   image:'/images/uploads/art.webp',source:'https://example.org/artwork',imageCredit:'Լուսանկարի հեղինակ',imageSource:'https://example.org/image',
 }
+
+test('the public gallery hides the unavailable models and retains the Thinker photograph',()=>{
+  const visibleIds=visibleGalleryArtworks.map(item=>item.id)
+  for(const id of ['venus-de-milo','greek-slave','girl-skating']){
+    assert.ok(galleryArtworks.some(item=>item.id===id))
+    assert.ok(!visibleIds.includes(id))
+  }
+  assert.ok(visibleIds.includes('thinker'))
+})
 
 test('the CMS accepts a complete gallery work and keeps its stable ID',()=>{
   const payload=parseContent(prepareContent(artwork))

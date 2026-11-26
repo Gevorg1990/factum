@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import {ArrowLeft, ExternalLink, Images, Move3D, Search, X} from 'lucide-vue-next'
-import {galleryArtworks,galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
+import {visibleGalleryArtworks,galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {artistPortraits} from '~/data/art/artistPortraits'
 import {galleryRoomForSlot} from '~/utils/art/galleryLayout'
 
 const requestFetch=useRequestFetch()
+const route=useRoute()
+const linkedArtist=computed(()=>typeof route.query.artist==='string'?route.query.artist:'')
+const linkedArtwork=computed(()=>typeof route.query.artwork==='string'?route.query.artwork:'')
 const {data:cmsPage}=await useAsyncData('art-gallery-cms',async()=>{
   try{return await requestFetch<{core:GalleryArtwork[];items:GalleryArtwork[];total:number}>('/api/art/gallery',{query:{offset:0,limit:24}})}
-  catch{return {core:[...galleryArtworks],items:[],total:0}}
+  catch{return {core:visibleGalleryArtworks,items:[],total:0}}
 })
 const coreArtworks=ref<GalleryArtwork[]>(cmsPage.value?.core||[])
 const cmsArtworks=ref<GalleryArtwork[]>(cmsPage.value?.items||[])
@@ -25,8 +28,10 @@ const searchGroups=computed(()=>Array.from(searchResults.value.reduce((groups,it
 const searchLoading=ref(false)
 const searchError=ref(false)
 const searchHasMore=ref(false)
+const linkedArtworkError=ref(false)
 let searchTimer:ReturnType<typeof setTimeout>|undefined
 let searchVersion=0
+let artworkLinkVersion=0
 const rooms=computed(()=>[...galleryRooms,...Array.from({length:Math.max(0,...cmsArtworks.value.map((item,index)=>galleryRoomForSlot(item.gallerySlot??index)-5))},(_,i)=>({id:i+6,name:`Պատկերասրահի նոր սրահ ${i+1}`,era:'ՆՈՐ ՍՐԱՀ',summary:'CMS-ից հրապարակված գործեր',direction:'արևելք'}))])
 
 const gallery=ref<{focusArtwork:(id:string)=>boolean}>()
@@ -54,7 +59,8 @@ async function searchWorks(version:number,reset:boolean){
   searchLoading.value=true
   searchError.value=false
   try{
-    const page=await $fetch<{items:GalleryArtwork[];hasMore:boolean}>('/api/art/search',{query:{q,offset:reset?0:searchResults.value.length}})
+    const match=q===linkedArtist.value?{artist:q}:{q}
+    const page=await $fetch<{items:GalleryArtwork[];hasMore:boolean}>('/api/art/search',{query:{...match,offset:reset?0:searchResults.value.length}})
     if(version!==searchVersion)return
     searchResults.value=reset?page.items:[...searchResults.value,...page.items]
     searchHasMore.value=page.hasMore
@@ -88,7 +94,26 @@ function open(item:GalleryArtwork){previousFocus=document.activeElement instance
 function openSearchResult(item:GalleryArtwork){open(loadedArtwork(item.id)||item)}
 function visitSearchResult(item:GalleryArtwork){const loaded=loadedArtwork(item.id);if(loaded&&ready.value)jumpToArtwork(loaded);else openSearchResult(item)}
 function select(id:string){const item=allArtworks.value.find(item=>item.id===id);if(item)open(item)}
-function close(){selected.value=null;nextTick(()=>previousFocus?.focus({preventScroll:true}))}
+async function openLinkedArtwork(id:string){
+  const version=++artworkLinkVersion
+  linkedArtworkError.value=false
+  if(!id)return
+  try{
+    const item=loadedArtwork(id)??(await $fetch<{items:GalleryArtwork[]}>('/api/art/search',{query:{artwork:id}})).items[0]
+    if(version!==artworkLinkVersion)return
+    if(item)open(item)
+    else linkedArtworkError.value=true
+  }catch{
+    if(version===artworkLinkVersion)linkedArtworkError.value=true
+  }
+}
+function close(){
+  selected.value=null
+  nextTick(()=>previousFocus?.focus({preventScroll:true}))
+  if(linkedArtwork.value){
+    void navigateTo({path:route.path,query:{...route.query,artwork:undefined},hash:route.hash},{replace:true})
+  }
+}
 watch(selected,(item,previous)=>{
   if(item&&!previous){
     previousRootOverflow=document.documentElement.style.overflow
@@ -100,25 +125,35 @@ watch(selected,(item,previous)=>{
     document.body.style.overflow=previousBodyOverflow
   }
 },{flush:'sync'})
-onMounted(()=>window.addEventListener('keydown',escape))
-onUnmounted(()=>{clearTimeout(searchTimer);searchVersion++;window.removeEventListener('keydown',escape);if(selected.value){document.documentElement.style.overflow=previousRootOverflow;document.body.style.overflow=previousBodyOverflow}})
+onMounted(()=>{
+  searchQuery.value=linkedArtist.value
+  void openLinkedArtwork(linkedArtwork.value)
+  window.addEventListener('keydown',escape)
+})
+watch(linkedArtist,artist=>{searchQuery.value=artist})
+watch(linkedArtwork,(id,previous)=>{
+  if(!id&&selected.value?.id===previous)close()
+  void openLinkedArtwork(id)
+})
+onUnmounted(()=>{clearTimeout(searchTimer);searchVersion++;artworkLinkVersion++;window.removeEventListener('keydown',escape);if(selected.value){document.documentElement.style.overflow=previousRootOverflow;document.body.style.overflow=previousBodyOverflow}})
 function escape(event:KeyboardEvent){if(event.key==='Escape')close()}
-useHead({title:'Արվեստի վիրտուալ պատկերասրահ — COGNITIO',meta:[{name:'description',content:'Շրջիր COGNITIO-ի եռաչափ արվեստի սրահներում և բացահայտիր նշանավոր քանդակներ, նկարներ ու փորագրություններ։'}]})
+useHead({title:'Արվեստի վիրտուալ պատկերասրահ — COGNITIO',meta:[{name:'description',content:'Շրջիր COGNITIO-ի եռաչափ արվեստի սրահներում և բացահայտիր նշանավոր գեղանկարներ ու փորագրություններ։'}]})
 </script>
 
 <template>
   <main class="art-page">
     <div class="art-breadcrumb"><NuxtLink to="/"><ArrowLeft :size="17"/> Գլխավոր</NuxtLink><span>COGNITIO · ԱՐՎԵՍՏ</span></div>
     <header class="art-hero">
-      <div><p class="eyebrow">ՎԻՐՏՈՒԱԼ ՊԱՏԿԵՐԱՍՐԱՀ</p><h1>Արվեստի <em>սրահներ</em></h1><p>Մտիր բարձր առաստաղով կենտրոնական դահլիճ, անցիր չորս ուղղությամբ բաց սրահներ և բացահայտիր մեծածավալ գեղանկարներ ու քանդակներ։</p></div>
+      <div><p class="eyebrow">ՎԻՐՏՈՒԱԼ ՊԱՏԿԵՐԱՍՐԱՀ</p><h1>Արվեստի <em>սրահներ</em></h1><p>Մտիր բարձր առաստաղով կենտրոնական դահլիճ, անցիր չորս ուղղությամբ բաց սրահներ և բացահայտիր մեծածավալ գեղանկարներ ու փորագրություններ։</p></div>
       <div class="hero-mark" aria-hidden="true"><Images :size="43" :stroke-width="1"/><span>COGNITIO</span></div>
     </header>
+    <p v-if="linkedArtworkError" class="art-search-status" role="status">Չհաջողվեց բացել պատկերասրահի այս գործը։</p>
     <section ref="frame" class="art-frame" aria-label="Եռաչափ արվեստի պատկերասրահ">
       <ClientOnly><LazyArtVirtualGallery :key="`${coreArtworks.length}-${cmsArtworks.length}`" ref="gallery" :core-artworks="coreArtworks" :cms-artworks="cmsArtworks" @ready="ready=true" @room="room=$event" @select="select" @fullscreen="modalTarget=$event||'body'"/><template #fallback><div class="art-placeholder">Բացվում են արվեստի սրահները…</div></template></ClientOnly>
     </section>
     <div class="art-frame-caption"><span><Move3D :size="17"/> Կրկնակի սեղմիր հատակին՝ քայլելու համար․ անցումները միշտ բաց են</span><span>Ընթացիկ սրահ՝ {{roomName(room)}}</span></div>
     <button v-if="cmsArtworks.length<cmsTotal" type="button" class="art-load-rooms" :disabled="loadingMore" @click="loadMore">{{loadingMore?'Բեռնվում են…':`Բացել հաջորդ սրահները (${cmsTotal-cmsArtworks.length} գործ)`}}</button>
-    <section class="artist-section" aria-label="Նկարիչների գործերը">
+    <section id="gallery-works" class="artist-section" aria-label="Նկարիչների գործերը">
       <div class="collection-heading"><div><p class="eyebrow">ԳՈՐԾԵՐԻ ՈՐՈՆՈՒՄ</p><h2>Գտիր նկարը կամ հեղինակին</h2></div></div>
       <div class="art-search"><label for="artwork-search">Որոնել բոլոր գործերում</label><div class="art-search-field"><Search :size="19" aria-hidden="true"/><input id="artwork-search" v-model="searchQuery" type="search" maxlength="100" autocomplete="off" placeholder="Գործի անունը կամ հեղինակը"/></div></div>
       <template v-if="searchQuery.trim()">

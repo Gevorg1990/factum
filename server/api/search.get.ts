@@ -9,6 +9,7 @@ import { personMonuments } from '~/data/personMonuments'
 import { geographicPlaces } from '~/data/geography/places'
 import { worldRecords } from '~/data/geography/records'
 import { armeniaRegions } from '~/data/geography/armeniaRegions'
+import { localGallerySearchRecords, publishedGallerySearchRecords } from '../utils/gallerySearch'
 
 // The local catalog is static; build its searchable records once per server worker.
  const atomContent = [...atomSections.flatMap(section => [section.title,...section.paragraphs]),...atomParticles.flatMap(particle => [particle.name,particle.charge,particle.location,particle.detail]),...atomFacts].join(' ')
@@ -34,17 +35,20 @@ export default defineEventHandler(async event=>{
  const limit=Math.max(1,Math.min(50,Number.parseInt(String(getQuery(event).limit||'20'),10)||20))
  const {databaseEnabled,db}=await import('../utils/db')
  const hasDatabase=databaseEnabled()
- const searchable=hasDatabase?records:[...records,...localBookRecords]
+ const searchable=hasDatabase?records:[...records,...localBookRecords,...localGallerySearchRecords]
  const local=searchRecords(searchable,terms,searchable.length)
  if(hasDatabase) {
   const prefixQuery=terms.map(term=>`'${term.replace(/[^\p{L}\p{N}]/gu,'')}':*`).filter(term=>term!=="'':*").join(' | ')
-  const [rows,bookRows]=prefixQuery ? await Promise.all([
+  const [rows,bookRows,galleryRecords]=prefixQuery ? await Promise.all([
    db.$queryRaw<any[]>`SELECT kind, key, "publishedData" AS data FROM "Content" WHERE "publishedData" IS NOT NULL AND kind IN ('ARTICLE','PERSON','FACT','EVENT','CATEGORY','PAGE','VIDEO') AND to_tsvector('simple', "publishedData"::text) @@ to_tsquery('simple', ${prefixQuery}) LIMIT 500`,
    db.$queryRaw<{key:string;title:string;author:string}[]>`SELECT key, "publishedData"->>'title' AS title, "publishedData"->>'author' AS author FROM "Content" WHERE kind = 'BOOK' AND "publishedData" IS NOT NULL AND "publishedData" <> 'null'::jsonb AND to_tsvector('simple', coalesce("publishedData"->>'title','') || ' ' || coalesce("publishedData"->>'author','')) @@ to_tsquery('simple', ${prefixQuery}) LIMIT 500`,
-  ]) : [[],[]]
+   publishedGallerySearchRecords(query,terms),
+  ]) : [[],[],[]]
   const urls:Record<string,string>={ARTICLE:'/articles/',PERSON:'/people/',FACT:'/facts?fact=',EVENT:'/history?event=',CATEGORY:'/subjects/',PAGE:'/content/',VIDEO:'/videos?video='}
   const databaseItems=[...rows.map(row=>({title:row.data.title||row.data.name,description:row.data.answer||row.data.bio||row.data.text||'',url:urls[row.kind]+encodeURIComponent(row.key),kind:'COGNITIO',score:1})),...bookRows.map(book=>({title:book.title,description:book.author||'',url:'/library?book='+encodeURIComponent(book.key),kind:'Գիրք',subject:getSearchSubject('/library'),score:1}))]
-  const combined=[...local,...databaseItems.filter(row=>!local.some(item=>item.url===row.url))]
+  const gallery=searchRecords(galleryRecords,terms,galleryRecords.length)
+  const localUrls=new Set(local.map(item=>item.url))
+  const combined=[...gallery,...local,...databaseItems.filter(row=>!localUrls.has(row.url))].sort((a,b)=>b.score-a.score)
   return {query,total:combined.length,items:combined.slice(offset,offset+limit)}
  }
  return {query,total:local.length,items:local.slice(offset,offset+limit)}

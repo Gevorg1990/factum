@@ -15,6 +15,16 @@ const armeniaRegionsUrl=url(read('data/geography/armeniaRegions.ts'))
 const libraryCatalogUrl=url(read('data/library/catalog.ts'))
 const highlightUrl=url(read('utils/searchHighlight.ts').replace("from './searchTerms'",`from '${termsUrl}'`))
 const dbUrl=url('export const databaseEnabled=()=>Boolean(globalThis.__searchTest.databaseEnabled);export const db={$queryRaw:(...args)=>globalThis.__searchTest.queryRaw(...args)}')
+const galleryNavigationUrl=url(read('utils/art/galleryNavigation.ts'))
+const galleryLayoutUrl=url(read('utils/art/galleryLayout.ts').replace("from './galleryNavigation'",`from '${galleryNavigationUrl}'`))
+const galleryAdditionsUrl=url(read('data/art/galleryAdditions.ts'))
+const galleryUrl=url(read('data/art/gallery.ts').replace("from './galleryAdditions'",`from '${galleryAdditionsUrl}'`).replace("from '../../utils/art/galleryLayout'",`from '${galleryLayoutUrl}'`))
+const prismaUrl=new URL('file://'+require.resolve('@prisma/client')).href
+const gallerySearchUrl=url(read('server/utils/gallerySearch.ts')
+ .replace("from '@prisma/client'",`from '${prismaUrl}'`)
+ .replace("from '../../data/art/gallery'",`from '${galleryUrl}'`)
+ .replace("from '../../utils/art/galleryLayout'",`from '${galleryLayoutUrl}'`)
+ .replace("from './db'",`from '${dbUrl}'`))
 const subjectUrl=url(read('utils/searchSubjects.ts').replace("from '../data/content'",`from '${contentUrl}'`))
 const {getSearchSubject}=await import(subjectUrl)
 const {searchRecords}=await import(recordsUrl)
@@ -24,6 +34,7 @@ globalThis.__searchTest={defineEventHandler:fn=>fn,getQuery:event=>event,useRunt
 let source='const {defineEventHandler,getQuery,useRuntimeConfig,$fetch}=globalThis.__searchTest;'+read('server/api/search.get.ts')
 for(const [path,module] of [['~/utils/searchSubjects',subjectUrl],['~/utils/searchTerms',termsUrl],['~/utils/searchRecords',recordsUrl],['~/data/content',contentUrl],['~/data/library/catalog',libraryCatalogUrl],['~/data/atomArticle',atomUrl],['~/data/bible',bibleUrl],['~/data/personMonuments',monumentsUrl],['~/data/geography/places',geographyPlacesUrl],['~/data/geography/records',geographyRecordsUrl],['~/data/geography/armeniaRegions',armeniaRegionsUrl]])source=source.replace(`from '${path}'`,`from '${module}'`)
 source=source.replace("import('../utils/db')",`import('${dbUrl}')`)
+ .replace("from '../utils/gallerySearch'",`from '${gallerySearchUrl}'`)
 const handler=(await import(url(source))).default
 
 test('temperature finds the solution article through its detailed explanation',async()=>{
@@ -50,8 +61,8 @@ test('published CMS books are searchable by title without transferring their ful
  globalThis.__searchTest.databaseEnabled=true
  const sql=[]
  globalThis.__searchTest.queryRaw=async(strings)=>{
-  const query=strings.join('?');sql.push(query)
-  return query.includes("->>'title'")?[{key:'cms-book',title:'Գիքորի շարունակությունը',author:'Հեղինակ'}]:[]
+  const query=(strings.strings??strings).join('?');sql.push(query)
+  return query.includes("kind = 'BOOK'")?[{key:'cms-book',title:'Գիքորի շարունակությունը',author:'Հեղինակ'}]:[]
  }
  try{
   const result=await handler({q:'Գիքոր'})
@@ -59,6 +70,44 @@ test('published CMS books are searchable by title without transferring their ful
   assert.ok(!result.items.some(item=>item.url==='/library?book=gikor'),'CMS catalogue is authoritative when configured')
   assert.ok(sql.some(query=>query.includes("->>'title'")&&query.includes("->>'author'")))
   assert.ok(sql.some(query=>query.includes("kind = 'BOOK'")))
+ }finally{globalThis.__searchTest.databaseEnabled=false;delete globalThis.__searchTest.queryRaw}
+})
+
+test('homepage search links gallery works and artists to the relevant gallery views',async()=>{
+ const {items}=await handler({q:'Մոնա Լիզա',limit:5})
+ assert.ok(items.some(item=>item.url==='/art?artwork=mona-lisa'))
+ const english=await handler({q:'Starry Night',limit:5})
+ assert.ok(english.items.some(item=>item.url==='/art?artwork=starry-night'))
+ const artist=await handler({q:'Վինսենթ վան Գոգ',limit:5})
+ const card=artist.items.find(item=>item.kind==='Նկարիչ')
+ const link=new URL(card.url,'https://factum.local')
+ assert.equal(link.searchParams.get('artist'),'Վինսենթ վան Գոգ')
+ assert.equal(link.hash,'#gallery-works')
+ assert.deepEqual(card.subject,{name:'Պատկերասրահ',url:'/art'})
+ const hidden=await handler({q:'Venus de Milo'})
+ assert.ok(!hidden.items.some(item=>item.url==='/art?artwork=venus-de-milo'))
+})
+
+test('global search ranks published CMS gallery metadata and groups artist results',async()=>{
+ globalThis.__searchTest.databaseEnabled=true
+ const galleryQueries=[]
+ globalThis.__searchTest.queryRaw=async request=>{
+  const query=(request.strings??request).join('?')
+  if(!query.includes("kind = 'ARTWORK'"))return []
+  galleryQueries.push(query)
+  assert.ok(request.values.includes('venus-de-milo'))
+  assert.match(query,/status = 'PUBLISHED'/)
+  return query.includes('GROUP BY')
+   ? [{creator:'Մարիամ Ավետիսյան'}]
+   : [{id:'cms-gallery-work',title:'Կապույտ սարեր',originalTitle:'Blue Mountains',creator:'Մարիամ Ավետիսյան',date:'1984'}]
+ }
+ try{
+  const artist=await handler({q:'Մարիամ Ավետիսյան',limit:5})
+  assert.equal(artist.items[0].kind,'Նկարիչ')
+  assert.ok(artist.items.some(item=>item.url==='/art?artwork=cms-gallery-work'))
+  const painting=await handler({q:'Blue Mountains',limit:5})
+  assert.ok(painting.items.some(item=>item.url==='/art?artwork=cms-gallery-work'))
+  assert.ok(galleryQueries.every(query=>!/^\s*SELECT "publishedData" AS/m.test(query)))
  }finally{globalThis.__searchTest.databaseEnabled=false;delete globalThis.__searchTest.queryRaw}
 })
 

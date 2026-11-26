@@ -1,4 +1,5 @@
 import {galleryAdditions} from './galleryAdditions'
+import {galleryIsSculpture} from '../../utils/art/galleryLayout'
 
 export interface GalleryArtwork {
   id: string
@@ -31,7 +32,7 @@ export interface GalleryArtwork {
 
 export const galleryRooms = [
   { id: 0, name: 'Կենտրոնական դահլիճ', era: 'ՍԿԻԶԲ', summary: 'Չորս ուղղությամբ բացվող պատկերասրահ։', direction: 'կենտրոն' },
-  { id: 1, name: 'Քանդակների սրահ', era: 'ԱՐԵՎԵԼՔ', summary: 'Քար, բրոնզ և եռաչափ ձև։', direction: 'արևելք' },
+  { id: 1, name: 'Արևելյան սրահ', era: 'ԱՐԵՎԵԼՔ', summary: 'Արվեստի գործեր արևելյան սրահում։', direction: 'արևելք' },
   { id: 2, name: 'Գեղանկարչության սրահ', era: 'ԱՐԵՎՄՈՒՏՔ', summary: 'Լույս, գույն և ժամանակակից քաղաք։', direction: 'արևմուտք' },
   { id: 3, name: 'Գլուխգործոցների սրահ', era: 'ՀՅՈՒՍԻՍ', summary: 'Նշանավոր գեղանկարներ ու մեծ կտավներ։', direction: 'հյուսիս' },
   { id: 4, name: 'Վերածննդի սրահ', era: 'ՀԱՐԱՎ', summary: 'Լեոնարդո դա Վինչիի երկու գլուխգործոց։', direction: 'հարավ' },
@@ -188,3 +189,5 @@ export const galleryArtworks: readonly GalleryArtwork[] = [
     image:'/images/art/woman-bathing.webp',source:'https://www.artic.edu/artworks/13506/woman-bathing',imageCredit:'Art Institute of Chicago · Public Domain',imageSource:'https://commons.wikimedia.org/wiki/File:Mary_Cassatt_-_Woman_Bathing.jpg',
   },
 ]
+
+export const visibleGalleryArtworks=galleryArtworks.filter(item=>!galleryIsSculpture(item.id))

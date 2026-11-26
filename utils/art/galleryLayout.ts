@@ -5,7 +5,8 @@ export const galleryWallHeight=7
 export const galleryFrameBorder=.2
 export const defaultGalleryWallPercent=45
 const legacyWidths={regular:2.4,medium:3.05,large:3.7}
-const sculptureIds=new Set(['venus-de-milo','greek-slave','girl-skating'])
+export const galleryHiddenSculptureIds=['venus-de-milo','greek-slave','girl-skating'] as const
+const sculptureIds=new Set<string>(galleryHiddenSculptureIds)
 export const galleryIsSculpture=(id:string)=>sculptureIds.has(id)
 
 type Wall='north'|'south'|'east'|'west'

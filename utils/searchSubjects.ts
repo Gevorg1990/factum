@@ -10,6 +10,7 @@ const sections: Record<string,SearchSubject> = {
   library: {name:'Գրադարան',url:'/library'},
   bible: {name:'Աստվածաշունչ',url:'/bible'},
   globe: {name:'Աշխարհագրություն',url:'/globe'},
+  art: {name:'Պատկերասրահ',url:'/art'},
 }
 
 /** Also resolves section labels for results loaded before metadata was added. */

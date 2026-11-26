@@ -105,7 +105,7 @@ onBeforeUnmount(()=>{
   <div ref="container" class="home-search" @focusout="focusOut" @keydown.esc.prevent="close">
     <form class="hero-search" role="search" @submit.prevent="submit">
       <Search :size="24" aria-hidden="true" />
-      <input ref="input" v-model="value" type="search" maxlength="160" autocomplete="off" placeholder="Որոնիր հոդված, մարդ, փաստ, գիրք կամ բաժին…" aria-label="Որոնել COGNITIO-ում" role="combobox" aria-autocomplete="list" aria-controls="home-search-results" :aria-expanded="open" :aria-activedescendant="active >= 0 ? `home-search-result-${active}` : undefined" @focus="focus" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" />
+      <input ref="input" v-model="value" type="search" maxlength="160" autocomplete="off" placeholder="Որոնիր հոդված, մարդ, գիրք, նկար կամ նկարիչ…" aria-label="Որոնել COGNITIO-ում" role="combobox" aria-autocomplete="list" aria-controls="home-search-results" :aria-expanded="open" :aria-activedescendant="active >= 0 ? `home-search-result-${active}` : undefined" @focus="focus" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" />
       <button v-if="modelValue" class="home-search-clear" type="button" aria-label="Մաքրել որոնումը" @click="clearSearch"><X :size="17" aria-hidden="true" /></button>
       <LoaderCircle v-if="pending" :size="19" class="animate-spin home-search-spinner" aria-label="Որոնում ենք" />
     </form>

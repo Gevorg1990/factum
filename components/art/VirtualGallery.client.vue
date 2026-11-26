@@ -2,7 +2,7 @@
 import * as THREE from 'three'
 import {Maximize2,Minimize2} from 'lucide-vue-next'
 import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
-import {galleryArtworkRoute,galleryCenter,galleryRoomAt,galleryRoute,gallerySculptureStand,galleryWalkable,type GalleryPoint} from '~/utils/art/galleryNavigation'
+import {galleryArtworkRoute,galleryCenter,galleryRoomAt,galleryRoute,galleryWalkable,type GalleryPoint} from '~/utils/art/galleryNavigation'
 import {galleryCorePlacement,galleryPlacement,galleryRoomForSlot,galleryWallFrames,galleryWallPercent} from '~/utils/art/galleryLayout'
 import {EYE_HEIGHT,smoothJourneyProgress} from '~/utils/library/navigation'
 
@@ -25,6 +25,7 @@ let observer: ResizeObserver | undefined
 let intersection: IntersectionObserver | undefined
 let visible = true
 let disposed = false
+let loadPassageArt: (()=>void) | undefined
 let lastTime = 0
 let yaw = 0
 let pitch = 0
@@ -44,9 +45,8 @@ let journey: {
   elapsed:number
   duration:number
   faceTravel:boolean
-  aim?:{target:CameraView;from?:CameraView}
+  aim?:{id:string;turnFromStart:boolean;target:CameraView;from?:CameraView}
 } | undefined
-let pendingSelection: string | undefined
 const walkVelocity = new THREE.Vector2()
 const movementTarget = new THREE.Vector2()
 let touchId: number | undefined
@@ -55,9 +55,8 @@ const keys = new Set<string>()
 const selectable: THREE.Object3D[] = []
 const walkGround: THREE.Object3D[] = []
 const pendingArtworks: {room:number;load:()=>void}[] = []
-const artworkViews = new Map<string,{room:number;x:number;z:number;rotation:number;width:number;height:number;centerY:number;stand?:GalleryPoint}>()
+const artworkViews = new Map<string,{room:number;x:number;z:number;rotation:number;width:number;height:number;centerY:number}>()
 const loadedRooms = new Set<number>()
-const sculptureLoading = new Set<string>()
 const textures: THREE.Texture[] = []
 const geometries: THREE.BufferGeometry[] = []
 const materials: THREE.Material[] = []
@@ -92,7 +91,7 @@ function moveTo(x:number,z:number) {
   if(galleryWalkable(camera.position.x,z,extraRooms.value))camera.position.z=z
 }
 function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,findRoute=galleryRoute}={}):GalleryPoint|undefined {
-  pendingSelection=undefined
+  journey=undefined
   const route=findRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value)
   if(!route)return
   const points=[camera.position.clone(),...route.map(item=>new THREE.Vector3(item.x,EYE_HEIGHT,item.z))]
@@ -116,7 +115,6 @@ function loadRoom(index:number) {
   if(loadedRooms.has(index))return
   loadedRooms.add(index)
   pendingArtworks.filter(item=>item.room===index).forEach(item=>item.load())
-  for(const sculpture of sculptureModels)if(sculpture.room===index)loadSculptureModel(sculpture)
 }
 function loadNearbyRooms(){
   for(let index=0;index<6;index++){
@@ -137,9 +135,9 @@ function visit(index:number) {
   if(destination)routeTo(destination,index)
 }
 function reset(){visit(0);pitch=0}
-function focusArtwork(id:string,clickedInGallery=false) {
+function focusArtwork(id:string,turnFromStart=false) {
   const view=artworkViews.get(id)
-  if(!view||!camera)return false
+  if(!view||!camera){journey=undefined;return false}
   const fov=mobile.value?88:70
   const vertical=THREE.MathUtils.degToRad(fov)
   const horizontal=2*Math.atan(Math.tan(vertical/2)*camera.aspect)
@@ -153,22 +151,20 @@ function focusArtwork(id:string,clickedInGallery=false) {
     distance+=.2
   }
   distance=Math.min(distance,11.8)
-  let destination=view.stand||{x:view.x+Math.sin(view.rotation)*distance,z:view.z+Math.cos(view.rotation)*distance}
-  if(clickedInGallery&&view.stand){
-    const start={x:camera.position.x,z:camera.position.z}
-    const viewingDistance=Math.hypot(view.stand.x-view.x,view.stand.z-view.z)
-    destination=gallerySculptureStand(start,view,viewingDistance,extraRooms.value)
-  }
+  const destination={x:view.x+Math.sin(view.rotation)*distance,z:view.z+Math.cos(view.rotation)*distance}
   const endpoint=routeTo(destination,view.room,{findRoute:galleryArtworkRoute})
   if(!endpoint||!journey)return false
   const actualDistance=Math.hypot(endpoint.x-view.x,endpoint.z-view.z)
   // Aim midway between the top and bottom of the full framed artwork.
   journey.duration=Math.max(1800,journey.duration)
-  journey.aim={target:{
-    yaw:Math.atan2(endpoint.x-view.x,endpoint.z-view.z),
-    pitch:(Math.atan2(top,actualDistance)+Math.atan2(bottom,actualDistance))/2,
-    fov
-  }}
+  journey.aim={
+    id,turnFromStart,
+    target:{
+      yaw:Math.atan2(endpoint.x-view.x,endpoint.z-view.z),
+      pitch:(Math.atan2(top,actualDistance)+Math.atan2(bottom,actualDistance))/2,
+      fov
+    },
+  }
   return true
 }
 defineExpose({visit,reset,focusArtwork})
@@ -248,43 +244,193 @@ function addGalleryPaintings(){
   walls.forEach(addArtWall)
 }
 
-const sculptureModels=[
-  {id:'venus-de-milo',room:1,x:17,z:0,height:2.75,baseY:1.03,stand:{x:20,z:3.1},url:'/models/art/venus-smk.glb',draco:false},
-  {id:'greek-slave',room:0,x:-2.2,z:-2.2,height:3.05,baseY:.94,stand:{x:0,z:2.5},url:'/models/art/greek-slave-smithsonian.glb',draco:true},
-  {id:'girl-skating',room:5,x:-34,z:-2.2,height:2.75,baseY:.94,stand:{x:-31.5,z:2.5},url:'/models/art/girl-skating-smithsonian.glb',draco:true},
-] as const
+type PassagePanel = GalleryPoint & {rotation:number}
 
-async function loadSculptureModel(spec:typeof sculptureModels[number]){
-  if(sculptureLoading.has(spec.id))return
-  sculptureLoading.add(spec.id)
-  try{
-    const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js')
-    const loader=new GLTFLoader()
-    if(spec.draco){
-      const {DRACOLoader}=await import('three/addons/loaders/DRACOLoader.js')
-      loader.setDRACOLoader(new DRACOLoader().setDecoderPath('/models/art/draco/'))
+function addInstancedDetail(geometry:THREE.BufferGeometry,material:THREE.Material,placements:THREE.Matrix4[]){
+  const mesh=new THREE.InstancedMesh(geometry,material,placements.length)
+  placements.forEach((placement,index)=>mesh.setMatrixAt(index,placement))
+  geometries.push(geometry)
+  cleanup.push(()=>mesh.dispose())
+  scene.add(mesh)
+}
+
+function addGalleryColumns(columns:GalleryPoint[],stone:THREE.Material,trim:THREE.Material,base:THREE.Material) {
+  const halfWidth=.26
+  const profile: [number,number][]=[[-halfWidth,-halfWidth]]
+  for(const center of [-.136,0,.136]){
+    profile.push(
+      [center-.034,-halfWidth],[center-.017,-halfWidth+.024],
+      [center+.017,-halfWidth+.024],[center+.034,-halfWidth],
+    )
+  }
+  const contour=new THREE.Shape()
+  const sides=[[1,0],[0,1],[-1,0],[0,-1]] as const
+  const outline=sides.flatMap(([cos,sin])=>profile.map(([x,z])=>[x*cos-z*sin,x*sin+z*cos] as const))
+  contour.moveTo(...outline[0]!)
+  for(const point of outline.slice(1))contour.lineTo(...point)
+  contour.closePath()
+
+  const shaft=new THREE.ExtrudeGeometry(contour,{depth:7.96,bevelEnabled:false})
+  shaft.rotateX(-Math.PI/2)
+  shaft.translate(0,.47,0)
+  const placements=columns.map(({x,z})=>new THREE.Matrix4().makeTranslation(x,0,z))
+  addInstancedDetail(shaft,stone,placements)
+  addInstancedDetail(new THREE.BoxGeometry(.76,.35,.76).translate(0,.285,0),base,placements)
+  addInstancedDetail(new THREE.BoxGeometry(.66,.16,.66).translate(0,8.48,0),trim,placements)
+  addInstancedDetail(new THREE.BoxGeometry(.79,.17,.79).translate(0,8.645,0),trim,placements)
+}
+
+const passageArchShoulder=5.68
+
+function passageArch(outline:THREE.Path,radius:number,bottom:number){
+  outline.moveTo(-radius,bottom)
+  outline.lineTo(radius,bottom)
+  outline.lineTo(radius,passageArchShoulder)
+  outline.absarc(0,passageArchShoulder,radius,0,Math.PI,false)
+  outline.closePath()
+}
+
+const passageLampHeight=7.52
+
+function addPassageLightWash(placements:THREE.Matrix4[]){
+  const size=64
+  const pixels=new Uint8Array(size*size*4)
+  for(let y=0;y<size;y++){
+    const fall=1-y/(size-1)
+    const spread=.27+.73*Math.sqrt(Math.min(1,fall/.29))
+    const strength=(1-fall)**2.1*THREE.MathUtils.smoothstep(fall,0,.035)
+    for(let x=0;x<size;x++){
+      const horizontalDistance=Math.abs(2*x/(size-1)-1)
+      const edge=1-THREE.MathUtils.smoothstep(horizontalDistance,spread*.54,spread)
+      pixels.set([255,255,255,Math.round(255*strength*edge)],(y*size+x)*4)
     }
-    const gltf=await loader.loadAsync(spec.url)
-    loader.dracoLoader?.dispose()
-    if(disposed)return
-    const model=gltf.scene
-    const bounds=new THREE.Box3().setFromObject(model)
-    const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3())
-    const scale=spec.height/Math.max(size.y,.001)
-    model.scale.setScalar(scale)
-    model.position.set(spec.x-center.x*scale,spec.baseY-bounds.min.y*scale,spec.z-center.z*scale)
-    model.traverse(object=>{
-      if(object instanceof THREE.Mesh){
-        object.castShadow=false
-        geometries.push(object.geometry)
-        const source=Array.isArray(object.material)?object.material:[object.material]
-        source.forEach(item=>{materials.push(item);if(item instanceof THREE.MeshStandardMaterial&&item.map)textures.push(item.map)})
-        object.userData.artworkId=spec.id
-        selectable.push(object)
-      }
-    })
-    scene.add(model)
-  }catch(error){console.warn('Sculpture model unavailable',spec.id,error)}
+  }
+  const wash=new THREE.DataTexture(pixels,size,size)
+  wash.magFilter=THREE.LinearFilter
+  wash.minFilter=THREE.LinearFilter
+  wash.needsUpdate=true
+  textures.push(wash)
+  const light=new THREE.MeshBasicMaterial({
+    map:wash,color:0xffd6a6,transparent:true,opacity:.36,depthWrite:false,blending:THREE.AdditiveBlending,
+  })
+  materials.push(light)
+  // Project the same pool of light over both the mosaic and its stone surround.
+  const top=passageLampHeight-.051
+  const bottom=1.16
+  const projection=new THREE.PlaneGeometry(3.78,top-bottom).translate(0,(top+bottom)/2,.093)
+  addInstancedDetail(projection,light,placements)
+}
+
+function addPassageMosaics(geometry:THREE.ShapeGeometry,inset:THREE.MeshStandardMaterial,placements:THREE.Matrix4[]){
+  const columns=4,rows=3,padding=.012
+  const tileCount=columns*rows
+  const tileScale=[(1-padding*2)/columns,(1-padding*2)/rows].map(value=>value.toFixed(8)).join(',')
+  const tileOrigin=(tile:number)=>[(tile%columns+padding)/columns,1-(Math.floor(tile/columns)+1-padding)/rows]
+  const origins=new Float32Array(placements.length*4)
+  const styles=new Float32Array(placements.length)
+  placements.forEach((_,index)=>{
+    const tile=index%tileCount
+    const series=Math.floor(index/tileCount)
+    // Additional panels pair a different border with each motif before using mirrored compositions.
+    const border=series?(tile+1+(series-1)%(tileCount-1))%tileCount:tile
+    origins.set([...tileOrigin(tile),...tileOrigin(border)],index*4)
+    if(series)styles[index]=1+Math.floor((series-1)/(tileCount-1))
+  })
+  geometry.setAttribute('mosaicTileOrigins',new THREE.InstancedBufferAttribute(origins,4))
+  geometry.setAttribute('mosaicStyle',new THREE.InstancedBufferAttribute(styles,1))
+  const varyings=`varying vec2 vMosaicUv; varying vec2 vMosaicBorderOrigin; varying float vMosaicStyle;`
+  inset.onBeforeCompile=shader=>{
+    shader.vertexShader=shader.vertexShader
+      .replace('#include <common>',`#include <common>
+        attribute vec4 mosaicTileOrigins;
+        attribute float mosaicStyle;
+        ${varyings}`)
+      .replace('#include <uv_vertex>',`#include <uv_vertex>
+        #ifdef USE_MAP
+          vMosaicUv = vMapUv;
+          vMosaicBorderOrigin = mosaicTileOrigins.zw;
+          vMosaicStyle = mosaicStyle;
+          if (mosaicStyle > 1.5) vMapUv.x = 1.0 - vMapUv.x;
+          vMapUv = mosaicTileOrigins.xy + vMapUv * vec2(${tileScale});
+        #endif`)
+    shader.fragmentShader=shader.fragmentShader
+      .replace('#include <common>',`#include <common>\n${varyings}`)
+      .replace('#include <map_fragment>',THREE.ShaderChunk.map_fragment.replace(
+        'diffuseColor *= sampledDiffuseColor;',
+        `
+          if (vMosaicStyle > 0.5) {
+            float edge = min(min(vMosaicUv.x, 1.0 - vMosaicUv.x), vMosaicUv.y * 2.0);
+            float border = 1.0 - smoothstep(0.075, 0.082, edge);
+            vec2 borderUv = vMosaicBorderOrigin + vMosaicUv * vec2(${tileScale});
+            sampledDiffuseColor = mix(sampledDiffuseColor, texture2D(map, borderUv), border);
+          }
+          diffuseColor *= sampledDiffuseColor;
+        `,
+      ))
+  }
+  addInstancedDetail(geometry,inset,placements)
+
+  loadPassageArt=()=>{
+    loadPassageArt=undefined
+    new THREE.TextureLoader().load('/images/art/passage-mosaics.webp',texture=>{
+      if(disposed){texture.dispose();return}
+      texture.colorSpace=THREE.SRGBColorSpace
+      texture.anisotropy=Math.min(4,renderer?.capabilities.getMaxAnisotropy()||1)
+      textures.push(texture)
+      inset.color.setHex(0xffffff)
+      inset.map=texture
+      inset.needsUpdate=true
+    },undefined,()=>{})
+  }
+}
+
+function addPassagePanels(panels:PassagePanel[],inset:THREE.MeshStandardMaterial,trim:THREE.Material,base:THREE.Material,brass:THREE.Material){
+  const placements=panels.map(({x,z,rotation})=>new THREE.Matrix4().makeRotationY(rotation).setPosition(x,0,z))
+  const halfWidth=1.36
+  const archBottom=1.34
+  const skirtingBottom=.17,skirtingTop=.68
+  const opening=new THREE.Shape()
+  passageArch(opening,halfWidth,archBottom)
+  const skirtingInsert=new THREE.Shape([
+    new THREE.Vector2(-halfWidth,skirtingBottom),
+    new THREE.Vector2(halfWidth,skirtingBottom),
+    new THREE.Vector2(halfWidth,skirtingTop),
+    new THREE.Vector2(-halfWidth,skirtingTop),
+  ])
+  const panelGeometry=new THREE.ShapeGeometry([opening,skirtingInsert],16)
+  const positions=panelGeometry.getAttribute('position')
+  const uv=panelGeometry.getAttribute('uv')
+  const archHeight=passageArchShoulder+halfWidth-archBottom
+  for(let index=0;index<uv.count;index++){
+    const y=positions.getY(index)
+    const u=(positions.getX(index)+halfWidth)/(2*halfWidth)
+    if(y<1){
+      // Sample the bottom of the same tile without flattening it into a strip.
+      uv.setXY(index,u,.065+.09*(y-skirtingBottom)/(skirtingTop-skirtingBottom))
+      positions.setZ(index,.058)
+    }else{
+      uv.setXY(index,u,(y-archBottom)/archHeight)
+      positions.setZ(index,.009)
+    }
+  }
+  addPassageLightWash(placements)
+  addPassageMosaics(panelGeometry,inset,placements)
+
+  const surround=new THREE.Shape()
+  const hole=new THREE.Path()
+  passageArch(surround,1.51,1.19)
+  passageArch(hole,halfWidth,archBottom)
+  surround.holes.push(hole)
+  const molding=new THREE.ExtrudeGeometry(surround,{
+    depth:.052,bevelEnabled:true,bevelThickness:.013,bevelSize:.013,bevelSegments:1,curveSegments:16,
+  })
+  addInstancedDetail(molding,trim,placements)
+  addInstancedDetail(new THREE.BoxGeometry(3.9,.81,.052).translate(0,.405,.026),base,placements)
+  const rails=placements.flatMap(wall=>[.86,8.31].map(y=>wall.clone().multiply(new THREE.Matrix4().makeTranslation(0,y,.043))))
+  addInstancedDetail(new THREE.BoxGeometry(3.9,.12,.086),trim,rails)
+  addInstancedDetail(new THREE.BoxGeometry(1.06,.09,.092).translate(0,passageLampHeight,.046),brass,placements)
+  const diffuser=material(0xffe3b4,{emissive:0xffbb72,emissiveIntensity:.55,roughness:.8})
+  addInstancedDetail(new THREE.BoxGeometry(.91,.018,.051).translate(0,passageLampHeight-.051,.061),diffuser,placements)
 }
 
 function buildScene() {
@@ -293,12 +439,29 @@ function buildScene() {
   scene.fog=new THREE.Fog(0x152130,30,75)
   scene.add(new THREE.HemisphereLight(0xe9f3ff,0x74644d,2.1))
   const stone=material(0xd9d0bf,{roughness:.86})
+  const columnStone=material(0xe0d5c2,{roughness:.85})
+  const trimStone=material(0xe9ddc8,{roughness:.82})
+  const panelStone=material(0xc6b7a1,{roughness:.94})
+  const skirtingStone=material(0xac9d88,{roughness:.83})
   const floor=material(0xddd0b9,{roughness:.72})
   const dark=material(0x35434c,{roughness:.68})
   const gold=material(0xa98850,{metalness:.54,roughness:.34})
   const ceiling=material(0xefe5d3,{roughness:.85})
   const glass=material(0x8baaba,{emissive:0x5b7e94,emissiveIntensity:.28,metalness:.18,roughness:.2})
   const coords=[[0,0],[17,0],[-17,0],[0,-17],[0,17],[-34,0]]
+  const columns: GalleryPoint[]=[]
+  const passagePanels: PassagePanel[]=[]
+  function addPassageWalls(x:number,z:number,alongX:boolean){
+    for(const side of [-1,1]){
+      const edge=side*3.95
+      box(alongX ? 3.9 : .3,9,alongX ? .3 : 3.9,x+(alongX ? 0 : edge),4.5,z+(alongX ? edge : 0),stone)
+      // Keep the deepest molding behind the existing clear walking width.
+      const face=side*3.8
+      passagePanels.push(alongX
+        ? {x,z:z+face,rotation:side>0?Math.PI:0}
+        : {x:x+face,z,rotation:-side*Math.PI/2})
+    }
+  }
   for(let index=0;index<extraRooms.value;index++)coords.push([34+index*17,0])
   for(const [index,[cx,cz]] of coords.entries()) {
     walkGround.push(box(14,.25,14,cx,-.15,cz,floor))
@@ -311,9 +474,7 @@ function buildScene() {
     mainLight.position.set(cx,7.8,cz)
     scene.add(mainLight)
     for(const dx of [-6.35,6.35])for(const dz of [-6.35,6.35]) {
-      box(.52,8.8,.52,cx+dx,4.4,cz+dz,stone)
-      box(.82,.35,.82,cx+dx,8.6,cz+dz,gold)
-      box(.8,.38,.8,cx+dx,.28,cz+dz,dark)
+      columns.push({x:cx+dx,z:cz+dz})
     }
     const entrance=index===0?'all':index===1?'west':index===2?'east':index===3?'south':index===4?'north':index===5?'east':'west'
     for(const side of ['north','south','east','west']) {
@@ -343,19 +504,17 @@ function buildScene() {
     walkGround.push(box(14,.18,3.9,0,-.08,sign*8.5,floor))
     box(3.9,.3,14,sign*8.5,9.27,0,ceiling)
     box(14,.3,3.9,0,9.27,sign*8.5,ceiling)
-    for(const edge of [-3.85,3.85]){
-      box(3.9,9,.3,sign*8.5,4.5,edge,stone)
-      box(.3,9,3.9,edge,4.5,sign*8.5,stone)
-    }
+    addPassageWalls(sign*8.5,0,true)
+    addPassageWalls(0,sign*8.5,false)
   }
   walkGround.push(box(3.9,.18,14,-25.5,-.08,0,floor))
   box(3.9,.3,14,-25.5,9.27,0,ceiling)
-  for(const edge of [-3.85,3.85])box(3.9,9,.3,-25.5,4.5,edge,stone)
+  addPassageWalls(-25.5,0,true)
   for(let index=0;index<extraRooms.value;index++){
     const x=25.5+index*17
     walkGround.push(box(3.9,.18,14,x,-.08,0,floor))
     box(3.9,.3,14,x,9.27,0,ceiling)
-    for(const edge of [-3.85,3.85])box(3.9,9,.3,x,4.5,edge,stone)
+    addPassageWalls(x,0,true)
   }
   // A circular marble inlay anchors the crossroads without blocking walking.
   const discGeo=new THREE.CylinderGeometry(2.55,2.55,.025,48)
@@ -366,17 +525,8 @@ function buildScene() {
   geometries.push(ringGeo)
   const ring=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color:0xc8aa6d,side:THREE.DoubleSide}))
   materials.push(ring.material);ring.rotation.x=-Math.PI/2;ring.position.y=.053;scene.add(ring)
-  // The central plinth leaves a broad walking loop around the sculpture.
-  box(3.15,.72,3.15,17,.36,0,dark)
-  box(3.35,.14,3.35,17,.79,0,gold)
-  box(2.7,.18,2.7,17,.94,0,stone)
-  for(const spec of sculptureModels){
-    if(spec.id!=='venus-de-milo'){
-      box(2.25,.68,2.25,spec.x,.4,spec.z,dark)
-      box(2.4,.14,2.4,spec.x,.82,spec.z,gold)
-    }
-    artworkViews.set(spec.id,{room:spec.room,x:spec.x,z:spec.z,rotation:Math.atan2(spec.stand.x-spec.x,spec.stand.z-spec.z),width:2.5,height:spec.height,centerY:spec.baseY+spec.height/2,stand:spec.stand})
-  }
+  addGalleryColumns(columns,columnStone,trimStone,skirtingStone)
+  addPassagePanels(passagePanels,panelStone,trimStone,skirtingStone,gold)
   addGalleryPaintings()
 }
 
@@ -387,7 +537,7 @@ function pick(clientX:number,clientY:number) {
   raycaster.setFromCamera(pointer,camera)
   const hit=raycaster.intersectObjects(selectable,true)[0]
   const id=hit?.object.userData.artworkId
-  if(typeof id==='string'&&focusArtwork(id,true))pendingSelection=id
+  if(typeof id==='string')focusArtwork(id,true)
 }
 function walkAt(clientX:number,clientY:number) {
   if(!renderer||!camera)return
@@ -397,7 +547,7 @@ function walkAt(clientX:number,clientY:number) {
   const floorHit=raycaster.intersectObjects(walkGround)[0]
   if(!floorHit)return
   const firstHit=raycaster.intersectObjects(scene.children,true)[0]
-  // A painting, wall, or sculpture in front of the floor is not a walking target.
+  // A painting or wall in front of the floor is not a walking target.
   if(firstHit&&firstHit.distance<floorHit.distance-.03&&firstHit.point.y>.25)return
   const destination={x:floorHit.point.x,z:floorHit.point.z}
   routeTo(destination,galleryRoomAt(destination.x,destination.z),{floorWalk:true})
@@ -406,7 +556,7 @@ function keyDown(event:KeyboardEvent) {
   if(event.key==='Escape'&&fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen()}
   if(!host.value?.contains(document.activeElement)||document.activeElement instanceof Element&&document.activeElement.closest('[role="dialog"]'))return
   if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) {
-    event.preventDefault();keys.add(event.code);journey=undefined;pendingSelection=undefined
+    event.preventDefault();keys.add(event.code);journey=undefined
   }
 }
 function keyUp(event:KeyboardEvent){keys.delete(event.code)}
@@ -423,7 +573,7 @@ function move(event:PointerEvent){
   }
   const dx=event.clientX-drag.x,dy=event.clientY-drag.y
   drag.x=event.clientX;drag.y=event.clientY
-  if(Math.abs(dx)+Math.abs(dy)>1){drag.moved=true;journey=undefined;pendingSelection=undefined}
+  if(Math.abs(dx)+Math.abs(dy)>1){drag.moved=true;journey=undefined}
   yaw-=dx*.004;pitch=THREE.MathUtils.clamp(pitch-dy*.003,-.75,.75)
 }
 function up(event:PointerEvent){
@@ -438,7 +588,7 @@ function up(event:PointerEvent){
 }
 function doubleClick(event:MouseEvent){event.preventDefault();walkAt(event.clientX,event.clientY)}
 function touchStart(event:PointerEvent){event.preventDefault();touchId=event.pointerId;host.value?.focus({preventScroll:true});(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);touchMove(event)}
-function touchMove(event:PointerEvent){if(event.pointerId!==touchId)return;const rect=(event.currentTarget as HTMLElement).getBoundingClientRect();joystick.value={x:THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/38,-1,1),y:THREE.MathUtils.clamp((event.clientY-rect.top-rect.height/2)/38,-1,1)};journey=undefined;pendingSelection=undefined}
+function touchMove(event:PointerEvent){if(event.pointerId!==touchId)return;const rect=(event.currentTarget as HTMLElement).getBoundingClientRect();joystick.value={x:THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/38,-1,1),y:THREE.MathUtils.clamp((event.clientY-rect.top-rect.height/2)/38,-1,1)};journey=undefined}
 function touchEnd(event:PointerEvent){if(event.pointerId===touchId){joystick.value={x:0,y:0};touchId=undefined}}
 
 onMounted(()=>{
@@ -457,7 +607,12 @@ onMounted(()=>{
     loadNearbyRooms()
     const resize=()=>{if(!canvasHost.value||!renderer)return;const {width,height}=canvasHost.value.getBoundingClientRect();if(!width||!height)return;renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile.value?1.5:2,Math.sqrt(2_400_000/(width*height))));renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix()}
     observer=new ResizeObserver(resize);observer.observe(canvasHost.value!);resize()
-    intersection=new IntersectionObserver(entries=>{visible=Boolean(entries[0]?.isIntersecting)},{threshold:.01});intersection.observe(host.value!)
+    intersection=new IntersectionObserver(entries=>{
+      const entry=entries[0]
+      visible=Boolean(entry?.isIntersecting)
+      if(entry&&entry.intersectionRatio>=.2)loadPassageArt?.()
+    },{threshold:[.01,.2]})
+    intersection.observe(host.value!)
     listen(window,'keydown',keyDown as EventListener);listen(window,'keyup',keyUp as EventListener);listen(window,'blur',(()=>keys.clear()) as EventListener)
     listen(document,'fullscreenchange',syncFullscreen as EventListener)
     listen(renderer.domElement,'pointerdown',down as EventListener);listen(renderer.domElement,'pointermove',move as EventListener);listen(renderer.domElement,'pointerup',up as EventListener);listen(renderer.domElement,'pointercancel',(()=>{drag=undefined}) as EventListener)
@@ -466,10 +621,12 @@ onMounted(()=>{
     renderer.setAnimationLoop(time=>{
       if(disposed||!visible||document.hidden||!renderer)return
       const moving=keys.size>0||Math.abs(joystick.value.x)+Math.abs(joystick.value.y)>.05||Boolean(journey)
+      if(moving||drag)loadPassageArt?.()
       if(time-lastTime<(moving?16:80))return
       const frameDuration=Math.min(50,time-lastTime)
       const dt=frameDuration/1000
       lastTime=time
+      let arrivedArtwork: string|undefined
       if(journey){
         // A delayed or skipped frame should not jump ahead in the animation.
         journey.elapsed+=frameDuration
@@ -485,7 +642,7 @@ onMounted(()=>{
         camera.position.lerpVectors(from,to,smoothJourneyProgress(t))
         const dx=to.x-from.x,dz=to.z-from.z
         // A directly clicked artwork is already visible. Turn toward it from the first frame.
-        const turnStart=pendingSelection?0:Math.max(0,duration-artworkTurnLead)
+        const turnStart=aim?.turnFromStart?0:Math.max(0,duration-artworkTurnLead)
         const turnEnd=duration+artworkTurnAfterArrival
         const turnProgress=(elapsed-turnStart)/(turnEnd-turnStart)
         if(aim&&turnProgress>=0){
@@ -506,8 +663,9 @@ onMounted(()=>{
           const turnEase=smoothJourneyProgress(Math.min(elapsed,travelTurnEnd-elapsed)/travelTurnEaseDuration)
           yaw+=THREE.MathUtils.clamp(turn,-turnLimit,turnLimit)*turnEase
         }
-        const end=aim?turnEnd+(pendingSelection?artworkPreviewDuration:0):duration
+        const end=aim?turnEnd+artworkPreviewDuration:duration
         if(elapsed>=end){
+          arrivedArtwork=aim?.id
           journey=undefined
         }
       }else {
@@ -519,11 +677,11 @@ onMounted(()=>{
         if(walkVelocity.lengthSq()>.0001)moveTo(camera.position.x+walkVelocity.x*dt,camera.position.z+walkVelocity.y*dt)
       }
       camera.rotation.set(pitch,yaw,0,'YXZ')
-      if(pendingSelection&&!journey){const id=pendingSelection;pendingSelection=undefined;emit('select',id)}
       loadNearbyRooms()
       const nextRoom=galleryRoomAt(camera.position.x,camera.position.z,extraRooms.value)
       if(nextRoom!==activeRoom.value){setRoom(nextRoom);loadRoom(nextRoom)}
       renderer.render(scene,camera)
+      if(arrivedArtwork)emit('select',arrivedArtwork)
     })
     loading.value=false;emit('ready')
   } catch(error) {console.error('Art gallery WebGL initialization failed',error);failed.value=true;loading.value=false;emit('error')}

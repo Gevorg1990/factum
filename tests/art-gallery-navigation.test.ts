@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import {galleryArtworkRoute,galleryCenter,galleryCenters,galleryRoute,gallerySculptureStand,galleryWalkable,type GalleryPoint} from '../utils/art/galleryNavigation'
+import {galleryArtworkRoute,galleryCenter,galleryCenters,galleryRoute,galleryWalkable,type GalleryPoint} from '../utils/art/galleryNavigation'
 
-function routeIsOpen(points:readonly {x:number;z:number}[]) {
+function routeIsOpen(points:readonly {x:number;z:number}[],extraRooms=0) {
   for(let index=0;index<points.length-1;index++) {
     const a=points[index]!,b=points[index+1]!
     const steps=Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.1)
     for(let step=0;step<=steps;step++) {
       const t=steps?step/steps:0
-      assert.equal(galleryWalkable(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t),true)
+      assert.equal(galleryWalkable(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,extraRooms),true)
     }
   }
 }
@@ -22,12 +22,13 @@ test('every exhibition room has a walkable path through open passages',()=>{
   }
 })
 
-test('walking to the sculpture entrance goes around its pedestal',()=>{
+test('the former sculpture sites are clear for walking',()=>{
+  for(const point of [{x:17,z:0},{x:-2.2,z:-2.2},{x:-34,z:-2.2}]){
+    assert.ok(galleryWalkable(point.x,point.z))
+  }
   const start={x:20,z:0},destination=galleryCenters[1]!
-  const route=galleryRoute(start,destination)
-  assert.ok(route)
-  assert.ok(route.length>1)
-  routeIsOpen([start,...route])
+  assert.deepEqual(galleryRoute(start,destination),[destination])
+  assert.deepEqual(galleryArtworkRoute(start,destination),[destination])
 })
 
 test('artwork navigation uses a straight segment when the floor is clear',()=>{
@@ -35,43 +36,41 @@ test('artwork navigation uses a straight segment when the floor is clear',()=>{
   assert.deepEqual(galleryArtworkRoute(start,destination),[destination])
 })
 
-test('artwork navigation finds the shorter side of a pedestal',()=>{
-  const start={x:20,z:.8},destination={x:12,z:0}
+test('artwork navigation follows the shortest open passage around a wall',()=>{
+  const start={x:0,z:16},destination={x:-17,z:0}
   const route=galleryArtworkRoute(start,destination)
   assert.ok(route)
   routeIsOpen([start,...route])
   assert.deepEqual(route.at(-1),destination)
-  assert.ok(route.slice(0,-1).every(point=>point.z>0))
-  const points=[start,...route]
-  const length=route.reduce((total,end,index)=>total+Math.hypot(end.x-points[index]!.x,end.z-points[index]!.z),0)
-  const shortest=Math.hypot(20-19.1,2.1-.8)+4.2+Math.hypot(14.9-12,2.1)
-  assert.ok(length>=shortest&&length-shortest<.01)
+  assert.ok(route.some(({x,z})=>Math.abs(x+3.7)<.01&&Math.abs(z-3.7)<.01))
+  const floorRoute=galleryRoute(start,destination)!
+  const length=(route:GalleryPoint[])=>route.reduce((sum,end,i)=>{
+    const from=route[i-1]??start
+    return sum+Math.hypot(end.x-from.x,end.z-from.z)
+  },0)
+  assert.ok(length(route)<length(floorRoute))
 })
 
-test('clicking a sculpture approaches from the current side of its pedestal',()=>{
-  const start={x:10,z:0},center={x:17,z:0}
-  const stand=gallerySculptureStand(start,center,4.5)
-  assert.deepEqual(stand,{x:12.5,z:0})
-  assert.deepEqual(galleryArtworkRoute(start,stand),[stand])
-  const nearby={x:14,z:0}
-  assert.deepEqual(gallerySculptureStand(nearby,center,4.5),nearby)
-})
-
-test('a blocked sculpture approach stops on the same line',()=>{
-  const start={x:0,z:-16},center={x:17,z:0}
-  const stand=gallerySculptureStand(start,center,4.5)
-  assert.ok(stand.x>3.68&&stand.x<=3.7)
-  assert.ok(Math.abs(stand.z-(start.z+16*stand.x/17))<1e-9)
-  routeIsOpen([start,stand])
-  assert.deepEqual(galleryArtworkRoute(start,stand),[stand])
-})
-
-test('central sculpture plinths leave their room passages walkable',()=>{
-  assert.equal(galleryWalkable(-2.2,-2.2),false)
-  assert.equal(galleryWalkable(-34,-2.2),false)
-  const route=galleryRoute(galleryCenters[0]!,galleryCenters[5]!)
-  assert.ok(route)
-  routeIsOpen([galleryCenters[0]!,...route])
+test('both navigation modes leave space beside the passage panels',()=>{
+  for(const sign of [-1,1]){
+    assert.equal(galleryWalkable(8.5,sign*2.5),false)
+    assert.equal(galleryWalkable(sign*2.5,-8.5),false)
+    assert.equal(galleryWalkable(25.5,sign*2.5,2),false)
+    assert.equal(galleryWalkable(5.75,sign*2.5),false)
+    assert.equal(galleryWalkable(8.5,sign*2.2),true)
+    assert.equal(galleryWalkable(0,sign*3.5),true)
+  }
+  for(const navigate of [galleryRoute,galleryArtworkRoute]){
+    const start={x:22,z:3.5}
+    const end={x:29,z:3.5}
+    const route=navigate(start,end,2)
+    assert.ok(route)
+    assert.ok(route.length>1)
+    assert.deepEqual(route.at(-1),end)
+    routeIsOpen([start,...route],2)
+    const stop=navigate({x:0,z:0},{x:8.5,z:3.7})?.at(-1)
+    assert.ok(stop&&Math.abs(stop.z)<=2.25)
+  }
 })
 
 test('a floor click on a wall edge stops at the nearest open floor',()=>{
@@ -96,6 +95,7 @@ test('the camera stays at least three metres from gallery walls',()=>{
 test('new rooms extend the open gallery without blocking the route',()=>{
   const destination=galleryCenter(9)!
   assert.deepEqual(destination,{x:85,z:0})
+  assert.ok(galleryWalkable(81.3,0,4))
   const route=galleryRoute(galleryCenters[0]!,destination,4)
   assert.ok(route)
   for(let i=0;i<route.length-1;i++){

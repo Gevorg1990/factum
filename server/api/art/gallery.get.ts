@@ -1,23 +1,23 @@
 import {Prisma} from '@prisma/client'
 import {z} from 'zod'
 import {artCmsSchema} from '../../../shared/artCms'
-import {galleryArtworks,type GalleryArtwork} from '../../../data/art/gallery'
+import {galleryArtworks,visibleGalleryArtworks,type GalleryArtwork} from '../../../data/art/gallery'
 import {db,databaseEnabled} from '../../utils/db'
 import {galleryRoomForSlot} from '../../../utils/art/galleryLayout'
 
 const coreIds=galleryArtworks.map(item=>item.id)
 const coreOrder=new Map(coreIds.map((id,index)=>[id,index]))
 const coreRooms=new Map(galleryArtworks.map(item=>[item.id,item.room]))
-const staticSculptures=galleryArtworks.filter(item=>['venus-de-milo','greek-slave','girl-skating'].includes(item.id))
+const visibleCoreIds=visibleGalleryArtworks.map(item=>item.id)
 type ArtworkRow={publishedData:unknown;slot:number|null}
 
 export default defineEventHandler(async event=>{
   const query=z.object({offset:z.coerce.number().int().min(0).max(100000).default(0),limit:z.coerce.number().int().min(1).max(24).default(24)}).parse(getQuery(event))
   setHeader(event,'cache-control','private, max-age=30')
-  if(!databaseEnabled())return {core:galleryArtworks,items:[],total:0,offset:query.offset}
+  if(!databaseEnabled())return {core:visibleGalleryArtworks,items:[],total:0,offset:query.offset}
   const published:Prisma.ContentWhereInput={kind:'ARTWORK',status:'PUBLISHED',publishedData:{not:Prisma.DbNull}}
   const [coreRows,rows,total]=await Promise.all([
-    db.content.findMany({where:{...published,key:{in:coreIds}},select:{key:true,publishedData:true}}),
+    db.content.findMany({where:{...published,key:{in:visibleCoreIds}},select:{key:true,publishedData:true}}),
     db.$queryRaw<ArtworkRow[]>(Prisma.sql`
       SELECT "publishedData", ("publishedData"->>'gallerySlot')::integer AS slot
       FROM "Content" WHERE kind = 'ARTWORK' AND status = 'PUBLISHED' AND "publishedData" IS NOT NULL
@@ -30,7 +30,5 @@ export default defineEventHandler(async event=>{
     db.content.count({where:{...published,key:{notIn:coreIds}}}),
   ])
   const core:GalleryArtwork[]=coreRows.sort((a,b)=>(coreOrder.get(a.key)??0)-(coreOrder.get(b.key)??0)).map(row=>{const item=artCmsSchema.parse(row.publishedData);return {...item,room:item.room??coreRooms.get(row.key)??0}})
-  const publishedIds=new Set(core.map(item=>item.id))
-  core.push(...staticSculptures.filter(item=>!publishedIds.has(item.id)))
   return {core,items:rows.map((row,index)=>{const slot=row.slot??query.offset+index;return {...artCmsSchema.parse(row.publishedData),gallerySlot:slot,room:galleryRoomForSlot(slot)}}),total,offset:query.offset}
 })
