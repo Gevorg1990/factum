@@ -4,7 +4,7 @@ import {Maximize2,Minimize2} from 'lucide-vue-next'
 import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {galleryCenter,type GalleryPoint} from '~/utils/art/galleryNavigation'
 import {galleryBranch,galleryBranchId,galleryBranchName,galleryBranchedRoomAt,galleryBranchedRoute,galleryBranchedWalkable} from '~/utils/art/galleryBranches'
-import {galleryCorePlacement,galleryPlacement,galleryWallFrames,galleryWallPercent} from '~/utils/art/galleryLayout'
+import {galleryPaintedPlacement,galleryPlacement,galleryWallFrames,galleryWallPercent} from '~/utils/art/galleryLayout'
 import {EYE_HEIGHT,smoothJourneyProgress} from '~/utils/library/navigation'
 
 const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]; fullscreen:[element:HTMLElement|null]}>()
@@ -248,7 +248,7 @@ function addGalleryPaintings(){
     walls.get(key)!.push({artwork,placement})
   }
   for(const artwork of props.coreArtworks||[]){
-    const placement=galleryCorePlacement(artwork.id,branches.value)
+    const placement=galleryPaintedPlacement(artwork.id,artwork.gallerySlot,props.lastRoom,branches.value)
     if(placement)place(artwork,placement)
   }
   props.cmsArtworks?.forEach((artwork,index)=>place(artwork,galleryPlacement(artwork.gallerySlot??index,props.lastRoom,branches.value)))

@@ -6,7 +6,7 @@ import { fieldLabels } from '../../../shared/cmsEditor'
 import { parseContent, kindSchema } from '../../../shared/cms'
 import { db } from '../../utils/db'
 import { requireUser } from '../../utils/auth'
-import {galleryAutomaticSlot} from '../../../utils/art/galleryLayout'
+import {galleryAutomaticSlot,galleryDefaultSlot,galleryIsSculpture} from '../../../utils/art/galleryLayout'
 export default defineEventHandler(async event => {
   const user = await requireUser(event, ['ADMIN','EDITOR'])
   const query = getQuery(event)
@@ -84,15 +84,15 @@ export default defineEventHandler(async event => {
   try {
     return await db.$transaction(async tx => {
       let contentData=data
-      if(input.kind==='ARTWORK'&&action==='publish'&&data.room===undefined){
+      if(input.kind==='ARTWORK'&&action==='publish'&&!galleryIsSculpture(input.key)){
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(241106)::text AS lock_status`
-        const occupied=await tx.$queryRaw<{key:string;slot:number}[]>`
+        const occupied=await tx.$queryRaw<{key:string;slot:number|null}[]>`
           SELECT key, ("publishedData"->>'gallerySlot')::integer AS slot
           FROM "Content" WHERE kind = 'ARTWORK' AND status = 'PUBLISHED'
-            AND "publishedData" ? 'gallerySlot' AND key <> ${input.key}
+            AND "publishedData" IS NOT NULL AND key <> ${input.key}
         `
-        const taken=new Set(occupied.map(item=>item.slot))
-        const slot=typeof data.gallerySlot==='number'?data.gallerySlot:galleryAutomaticSlot(taken)
+        const taken=new Set(occupied.flatMap(item=>{const slot=item.slot??galleryDefaultSlot(item.key);return slot===undefined?[]:[slot]}))
+        const slot=typeof data.gallerySlot==='number'?data.gallerySlot:galleryDefaultSlot(input.key)??galleryAutomaticSlot(taken)
         if(slot===undefined)throw createError({statusCode:400,statusMessage:'Պատկերասրահում ազատ տեղ չի մնացել։'})
         if(taken.has(slot))throw createError({statusCode:409,statusMessage:'Այդ տեղն արդեն զբաղեցված է։ Ընտրիր ազատ տեղ և կրկին հրապարակի՛ր։'})
         contentData={...data,gallerySlot:slot}

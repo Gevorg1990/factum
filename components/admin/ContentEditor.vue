@@ -2,8 +2,8 @@
 import { Archive, ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, Eye, FileText, Globe2, Info, LoaderCircle, Plus, Save, ShieldCheck, Trash2, X } from 'lucide-vue-next'
 import { millionSlots } from '~/shared/millionStages'
 import { contentSections, contentUrl, editorTemplates, editorRecord, prepareContent, type CmsKind } from '~/shared/cmsEditor'
-import {galleryIsSculpture,galleryWallPercent} from '~/utils/art/galleryLayout'
-import {galleryEditorLayout,type GalleryEditorSlot} from '~/utils/art/galleryEditorLayout'
+import {galleryDefaultSlot,galleryIsSculpture,galleryWallPercent} from '~/utils/art/galleryLayout'
+import {galleryEditorLayout,type GalleryEditorArtwork,type GalleryEditorSlot} from '~/utils/art/galleryEditorLayout'
 const props=defineProps<{record:any}>()
 const emit=defineEmits(['close','saved','dirty','deleted'])
 const {user}=useAuth()
@@ -23,18 +23,25 @@ const existingArtists=ref<ExistingArtist[]>([])
 const occupiedGallerySlots=ref<GalleryEditorSlot[]>([])
 const galleryLayoutLoaded=ref(false)
 const galleryLayoutError=ref(false)
-const thinkerPublished=ref(false)
 let artistTimer:ReturnType<typeof setTimeout>|undefined
 let artistSearchVersion=0
-const galleryMap=computed(()=>galleryEditorLayout(occupiedGallerySlots.value,form.value.key,form.value.data.gallerySlot,thinkerPublished.value))
+const defaultArtworkSlot=computed(()=>galleryDefaultSlot(form.value.key))
+const artworkSlot=computed<number|undefined>({
+ get:()=>form.value.data.gallerySlot??defaultArtworkSlot.value,
+ set:slot=>{form.value.data.gallerySlot=slot},
+})
+const galleryMap=computed(()=>galleryEditorLayout(occupiedGallerySlots.value,form.value.key,artworkSlot.value))
+async function loadWallArtworks(keys:string[]){
+ const result=await $fetch<{artworks:GalleryEditorArtwork[]}>('/api/admin/art-layout',{query:{keys}})
+ return result.artworks
+}
 const artworkDefaultPercent=computed(()=>galleryWallPercent({
  id:form.value.key,displaySize:form.value.data.displaySize,
 }))
 async function loadGalleryLayout(){
  try{
-  const result=await $fetch<{occupied:GalleryEditorSlot[];thinkerPublished:boolean}>('/api/admin/art-layout')
+  const result=await $fetch<{occupied:GalleryEditorSlot[]}>('/api/admin/art-layout')
   occupiedGallerySlots.value=result.occupied
-  thinkerPublished.value=result.thinkerPublished
   galleryLayoutLoaded.value=true
   galleryLayoutError.value=false
  }
@@ -133,15 +140,15 @@ function submit(actionName:string){action.value=actionName;formElement.value?.re
                 <input id="artwork-size" v-model.number="form.data.wallPercent" type="number" min="1" max="100" step="1" :placeholder="String(artworkDefaultPercent)" aria-describedby="artwork-size-hint">
                 <p id="artwork-size-hint">Օրինակ՝ 40 նշանակում է պատի հասանելի լայնության մինչև 40%։ Եթե նույն պատի նկարները միասին չեն տեղավորվում, դրանք համաչափ փոքրանում են։</p>
               </div>
-              <div v-if="form.data.room===undefined" class="artwork-setting">
+              <div v-if="!galleryIsSculpture(form.key)" class="artwork-setting">
                 <strong class="artwork-placement-heading">Պատը 3D սրահում</strong>
-                <LazyAdminGalleryWallPicker v-if="galleryLayoutLoaded" v-model="form.data.gallerySlot" :rooms="galleryMap.rooms" :walls="galleryMap.walls" :image="form.data.image" :wall-percent="Number(form.data.wallPercent)||artworkDefaultPercent"/>
+                <LazyAdminGalleryWallPicker v-if="galleryLayoutLoaded" v-model="artworkSlot" :rooms="galleryMap.rooms" :walls="galleryMap.walls" :image="form.data.image" :wall-percent="Number(form.data.wallPercent)||artworkDefaultPercent" :load-artworks="loadWallArtworks"/>
                 <p v-else-if="!galleryLayoutError" role="status">Բեռնվում է սրահների քարտեզը…</p>
                 <label for="artwork-slot">Պատերի ամբողջ ցանկը</label>
-                <select id="artwork-slot" v-model="form.data.gallerySlot">
-                  <option :value="undefined">Ավտոմատ ընտրել ազատ տեղով պատը</option>
+                <select id="artwork-slot" v-model="artworkSlot">
+                  <option v-if="defaultArtworkSlot===undefined" :value="undefined">Ավտոմատ ընտրել ազատ տեղով պատը</option>
                   <option v-for="wall in galleryLayoutLoaded?galleryMap.walls:[]" :key="wall.slot" :value="wall.slot" :disabled="!wall.available">{{wall.label}}{{wall.available?'':' · ազատ տեղ չկա'}}</option>
-                  <option v-if="!galleryLayoutLoaded&&form.data.gallerySlot!==undefined" :value="form.data.gallerySlot">Պահպանված պատը</option>
+                  <option v-if="!galleryLayoutLoaded&&artworkSlot!==undefined" :value="artworkSlot">Պահպանված պատը</option>
                 </select>
                 <p v-if="galleryLayoutError" class="artwork-setting-error">Պատերի ցանկը չբեռնվեց։ Փորձիր նորից էջը բացել։</p>
               </div>

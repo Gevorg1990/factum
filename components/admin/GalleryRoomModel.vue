@@ -3,13 +3,13 @@ import {onBeforeUnmount,onMounted,ref,watch} from 'vue'
 import {RotateCcw} from 'lucide-vue-next'
 import * as THREE from 'three'
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js'
-import {galleryFrameSize} from '~/utils/art/galleryLayout'
+import {galleryWallFrames} from '~/utils/art/galleryLayout'
 import type {GalleryOverviewRoom} from '~/utils/art/galleryEditorLayout'
 
 type Position='left'|'front'|'right'
-type Edge={position:Position;selectable:boolean;selected:boolean;passage:boolean}
+type Edge={position:Position;selectable:boolean;selected:boolean;passage:boolean;occupied:boolean;frames:{image?:string;percent:number;selected:boolean}[]}
 type Overview={rooms:(GalleryOverviewRoom&{name:string})[];links:[number,number][];selected:number}
-const props=defineProps<{edges:Edge[];image?:string;wallPercent:number;planned:boolean;overview?:Overview}>()
+const props=defineProps<{edges:Edge[];planned:boolean;overview?:Overview}>()
 const emit=defineEmits<{ 'pick':[position:Position]; 'room':[id:number]; 'ready':[] }>()
 const host=ref<HTMLElement>()
 const unavailable=ref(false)
@@ -26,9 +26,7 @@ const orientations={left:[-7,0,Math.PI/2],front:[0,-7,0],right:[7,0,-Math.PI/2]}
 let renderer:THREE.WebGLRenderer|undefined
 let controls:OrbitControls|undefined
 let resizeObserver:ResizeObserver|undefined
-let texture:THREE.Texture|undefined
-let textureUrl=''
-let textureRequest=0
+const textures=new Map<string,{texture?:THREE.Texture}>()
 let disposed=false
 let down:{x:number;y:number}|undefined
 
@@ -48,7 +46,7 @@ function reset(){
     controls.maxDistance=distance*1.5
     camera.far=distance*4+100
   }else{
-    camera.position.set(8.5,18,22)
+    camera.position.set(3.5,18,22)
     controls.target.set(0,1.6,0)
     controls.minDistance=0
     controls.maxDistance=Infinity
@@ -142,35 +140,44 @@ function rebuild(){
   wall([0,7,Math.PI],stone,true,undefined,1.1)
   for(const edge of props.edges){
     const color=edge.selected?0xd2af61:edge.selectable?0xa6bcc8:stone
-    const group=wall(orientations[edge.position],color,edge.passage,edge.selectable||edge.passage?edge.position:undefined)
-    if(!edge.selected)continue
-    const image=texture?.image as HTMLImageElement|undefined
-    const aspect=image?.width&&image.height?image.width/image.height:1.35
-    const {width,height,border}=galleryFrameSize(props.wallPercent,aspect)
-    const centerY=Math.min(4.5,wallHeight-(height+border)/2-.18)
-    box(group,width+border,height+border,.13,0,centerY,.24,0x554335)
-    const picture=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:texture??null,color:texture?0xffffff:0xf8e2af}))
-    picture.position.set(0,centerY,.32)
-    group.add(picture)
+    const group=wall(orientations[edge.position],color,edge.passage,edge.occupied||edge.passage?edge.position:undefined)
+    const wallTextures=edge.frames.map(item=>item.image?textures.get(item.image)?.texture:undefined)
+    const frames=galleryWallFrames(edge.frames.map((item,index)=>{
+      const image=wallTextures[index]?.image as HTMLImageElement|undefined
+      return {percent:item.percent,aspectRatio:image?.width&&image.height?image.width/image.height:1.35}
+    }))
+    frames.forEach(({width,height,border,offset},index)=>{
+      const centerY=Math.min(4.5,wallHeight-(height+border)/2-.18)
+      const selected=edge.frames[index]?.selected
+      const texture=wallTextures[index]
+      box(group,width+border,height+border,.13,offset,centerY,.24,selected?0x9b692c:0x554335)
+      const picture=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:texture??null,color:texture?0xffffff:selected?0xf8e2af:0x897a63}))
+      picture.position.set(offset,centerY,.32)
+      group.add(picture)
+    })
   }
   render()
 }
 
-function syncTexture(){
+function syncTextures(){
   if(!renderer)return
-  const url=!props.overview&&props.edges.some(edge=>edge.selected)?props.image??'':''
-  if(url===textureUrl)return
-  textureUrl=url
-  const request=++textureRequest
-  texture?.dispose()
-  texture=undefined
-  if(!url)return
-  new THREE.TextureLoader().load(url,loaded=>{
-    if(disposed||textureRequest!==request){loaded.dispose();return}
-    loaded.colorSpace=THREE.SRGBColorSpace
-    texture=loaded
-    rebuild()
-  },undefined,()=>{})
+  const urls=new Set(props.overview?[]:props.edges.flatMap(edge=>edge.frames.flatMap(item=>item.image?[item.image]:[])))
+  for(const [url,entry] of textures){
+    if(urls.has(url))continue
+    entry.texture?.dispose()
+    textures.delete(url)
+  }
+  for(const url of urls){
+    if(textures.has(url))continue
+    const entry:{texture?:THREE.Texture}={}
+    textures.set(url,entry)
+    new THREE.TextureLoader().load(url,loaded=>{
+      if(disposed||textures.get(url)!==entry){loaded.dispose();return}
+      loaded.colorSpace=THREE.SRGBColorSpace
+      entry.texture=loaded
+      rebuild()
+    },undefined,()=>{})
+  }
 }
 
 function target(event:PointerEvent){
@@ -197,7 +204,7 @@ function pointUp(event:PointerEvent){
   down=undefined
 }
 
-watch(()=>[props.edges,props.image,props.wallPercent,props.planned,props.overview],()=>{syncTexture();rebuild()})
+watch(()=>[props.edges,props.planned,props.overview],()=>{syncTextures();rebuild()})
 watch(()=>Boolean(props.overview),()=>{hoveredRoom.value=undefined;reset()},{flush:'post'})
 onMounted(()=>{
   const node=host.value
@@ -233,7 +240,7 @@ onMounted(()=>{
     else render()
   })
   resizeObserver.observe(node)
-  syncTexture()
+  syncTextures()
   rebuild()
   reset()
   emit('ready')
@@ -246,7 +253,8 @@ onBeforeUnmount(()=>{
   renderer?.domElement.removeEventListener('pointermove',pointMove)
   renderer?.domElement.removeEventListener('pointerup',pointUp)
   renderer?.dispose()
-  texture?.dispose()
+  textures.forEach(entry=>entry.texture?.dispose())
+  textures.clear()
   clearRoom()
 })
 </script>

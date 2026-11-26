@@ -34,7 +34,7 @@ const linkedArtworkError=ref(false)
 let searchTimer:ReturnType<typeof setTimeout>|undefined
 let searchVersion=0
 let artworkLinkVersion=0
-const lastRoom=computed(()=>Math.max(galleryFirstFrontRoom,...branchRooms.value.map(room=>galleryBranch(room)!.parent),...cmsArtworks.value.map((item,index)=>{
+const lastRoom=computed(()=>Math.max(galleryFirstFrontRoom,...coreArtworks.value.map(item=>item.room>=6?(galleryBranch(item.room)?.parent??item.room):galleryFirstFrontRoom),...branchRooms.value.map(room=>galleryBranch(room)!.parent),...cmsArtworks.value.map((item,index)=>{
   const room=item.room??galleryRoomForSlot(item.gallerySlot??index)
   return galleryBranch(room)?.parent??room
 })))

@@ -3,7 +3,7 @@ import {z} from 'zod'
 import {artCmsSchema} from '../../../shared/artCms'
 import {galleryArtworks,visibleGalleryArtworks,type GalleryArtwork} from '../../../data/art/gallery'
 import {db,databaseEnabled} from '../../utils/db'
-import {firstGalleryBranchSlot,firstGalleryFrontSlot,galleryCorePlacement,galleryRoomForSlot,lastGalleryBranchSlot} from '../../../utils/art/galleryLayout'
+import {firstGalleryBranchSlot,firstGalleryFrontSlot,galleryPaintedPlacement,galleryRoomForSlot,lastGalleryBranchSlot} from '../../../utils/art/galleryLayout'
 import {publishedGalleryLayout} from '../../utils/galleryLayout'
 
 const coreIds=galleryArtworks.map(item=>item.id)
@@ -35,6 +35,6 @@ export default defineEventHandler(async event=>{
   ])
   const {frontRoom,branches}=layout
   const openBranches=new Set(branches)
-  const core:GalleryArtwork[]=coreRows.sort((a,b)=>(coreOrder.get(a.key)??0)-(coreOrder.get(b.key)??0)).map(row=>{const item=artCmsSchema.parse(row.publishedData);return {...item,room:galleryCorePlacement(row.key,openBranches)?.room??item.room??coreRooms.get(row.key)??0}})
+  const core:GalleryArtwork[]=coreRows.sort((a,b)=>(coreOrder.get(a.key)??0)-(coreOrder.get(b.key)??0)).map(row=>{const item=artCmsSchema.parse(row.publishedData);return {...item,room:galleryPaintedPlacement(row.key,item.gallerySlot,frontRoom,openBranches)?.room??item.room??coreRooms.get(row.key)??0}})
   return {core,items:rows.map((row,index)=>{const slot=row.slot??query.offset+index;return {...artCmsSchema.parse(row.publishedData),gallerySlot:slot,room:galleryRoomForSlot(slot,frontRoom,openBranches)}}),total,offset:query.offset,branches,frontRoom}
 })

@@ -1,5 +1,6 @@
 import {galleryCenter} from './galleryNavigation'
 import {galleryBranch,galleryBranchId,galleryBranchName} from './galleryBranches'
+import {galleryRooms} from '../../data/art/galleryRooms'
 
 export const galleryWallWidth=11.8
 export const galleryWallHeight=7
@@ -47,7 +48,23 @@ const firstEastHallSouthSlot=firstGalleryFrontSlot+worksPerWall
 export const firstGalleryBranchSlot=firstEastHallSouthSlot+worksPerWall
 const lastStraightRoom=133
 export const lastGalleryBranchSlot=firstGalleryBranchSlot+(lastStraightRoom-4)*worksPerRoom*2-1
-export const maxGallerySlot=lastGalleryBranchSlot+worksPerWall-1
+const firstCoreSlot=lastGalleryBranchSlot+worksPerWall
+const coreWallKeys=new Map<string,{room:number;wall:Wall;first:number;count:number}>()
+const defaultSlots=new Map<string,number>([['thinker',firstCoreSlot]])
+const newCoreSlots=new Map<number,{room:number;wall:Wall}>([[firstCoreSlot,{room:1,wall:'north'}]])
+for(const [id,room,wall] of coreWalls){
+  if(room===1)continue
+  const key=`${room}:${wall}`
+  let entry=coreWallKeys.get(key)
+  if(!entry){
+    entry={room,wall,first:firstCoreSlot+1+coreWallKeys.size*worksPerWall,count:0}
+    coreWallKeys.set(key,entry)
+    for(let i=0;i<worksPerWall;i++)newCoreSlots.set(entry.first+i,entry)
+  }
+  defaultSlots.set(id,entry.first+entry.count++)
+}
+export const maxGallerySlot=firstCoreSlot+coreWallKeys.size*worksPerWall
+export const galleryDefaultSlot=(id:string)=>defaultSlots.get(id)
 export const galleryFirstFrontRoom=1
 export const galleryIsFrontSlot=(slot:number)=>slot>=firstGalleryFrontSlot&&slot<firstEastHallSouthSlot
 export const galleryIsBranchSlot=(slot:number)=>slot>=firstGalleryBranchSlot&&slot<=lastGalleryBranchSlot
@@ -92,6 +109,8 @@ export function galleryRoomForSlot(slot:number,frontRoom=galleryFirstFrontRoom,b
 }
 
 export function galleryPlacement(slot:number,frontRoom=galleryFirstFrontRoom,branches?:ReadonlySet<number>){
+  const fixed=newCoreSlots.get(slot)
+  if(fixed)return {...galleryArtworkWall(fixed.room,fixed.wall,branches),order:fixed.room===1?-1:slot}
   if(galleryIsBranchSlot(slot)){
     const index=slot-firstGalleryBranchSlot
     const room=galleryBranchId(1,'north')+Math.floor(index/worksPerRoom)
@@ -105,11 +124,16 @@ export function galleryPlacement(slot:number,frontRoom=galleryFirstFrontRoom,bra
   return {...galleryArtworkWall(room,order%worksPerRoom<worksPerWall?'north':'south',branches),order}
 }
 
+export function galleryPaintedPlacement(id:string,slot:number|undefined,frontRoom=galleryFirstFrontRoom,branches?:ReadonlySet<number>){
+  const assigned=slot??galleryDefaultSlot(id)
+  return assigned===undefined?undefined:galleryPlacement(assigned,frontRoom,branches)
+}
+
 export function gallerySlotLabel(slot:number,branches?:ReadonlySet<number>){
   if(galleryIsFrontSlot(slot))return 'Դիմացի պատ · վերջին սրահում'
   const placement=galleryPlacement(slot,galleryFirstFrontRoom,branches)
   const branch=galleryBranchName(placement.room)
-  const name=branch??(placement.room===1?'Արևելյան սրահ':`Նոր սրահ ${placement.room-5}`)
+  const name=branch??galleryRooms[placement.room]?.name??`Նոր սրահ ${placement.room-5}`
   const wall=branch&&(placement.wall==='north'||placement.wall==='south')?'Դիմացի':wallLabels[placement.wall]
   return `${name} · ${wall} պատ`
 }
@@ -120,7 +144,7 @@ export function galleryAvailableSlots(lastRoom:number,lastOpenRoom=lastRoom){
     const start=firstGalleryBranchSlot+(galleryBranchId(parent,'north')-galleryBranchId(1,'north'))*worksPerRoom
     return Array.from({length:worksPerRoom*2},(_,index)=>start+index)
   })
-  return [...frontWallSlots,...fixedWallSlots,...thinkerWallSlots,...slotsByWall.slice(0,Math.max(0,(lastRoom-firstCmsGalleryRoom+1)*worksPerRoom)),...branchSlots]
+  return [...frontWallSlots,...fixedWallSlots,...thinkerWallSlots,...newCoreSlots.keys(),...slotsByWall.slice(0,Math.max(0,(lastRoom-firstCmsGalleryRoom+1)*worksPerRoom)),...branchSlots]
 }
 
 export function galleryAutomaticSlot(occupied:ReadonlySet<number>){

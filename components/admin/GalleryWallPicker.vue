@@ -2,12 +2,12 @@
 import {computed,nextTick,ref,watch} from 'vue'
 import {ArrowDown,ArrowLeft,ArrowRight,ArrowUp,Check,DoorOpen,Image,Plus} from 'lucide-vue-next'
 import {galleryBranch,galleryBranchId} from '~/utils/art/galleryBranches'
-import {firstCmsGalleryRoom,galleryFirstFrontRoom} from '~/utils/art/galleryLayout'
-import {galleryOverviewLayout,type GalleryEditorRoom,type GalleryEditorWall,type GalleryEditorWallSide} from '~/utils/art/galleryEditorLayout'
+import {defaultGalleryWallPercent,firstCmsGalleryRoom,galleryFirstFrontRoom,galleryPlacement} from '~/utils/art/galleryLayout'
+import {galleryOverviewLayout,type GalleryEditorArtwork,type GalleryEditorRoom,type GalleryEditorWall,type GalleryEditorWallSide} from '~/utils/art/galleryEditorLayout'
 import {galleryRooms} from '~/data/art/galleryRooms'
 import GalleryRoomModel from './GalleryRoomModel.vue'
 
-const props=defineProps<{rooms:GalleryEditorRoom[];walls:GalleryEditorWall[];modelValue?:number;image?:string;wallPercent:number}>()
+const props=defineProps<{rooms:GalleryEditorRoom[];walls:GalleryEditorWall[];modelValue?:number;image?:string;wallPercent:number;loadArtworks?:(keys:string[])=>Promise<GalleryEditorArtwork[]>}>()
 const emit=defineEmits<{ 'update:modelValue':[slot:number] }>()
 const currentRoom=ref(galleryFirstFrontRoom)
 const view=ref<'overview'|'room'>('overview')
@@ -17,7 +17,7 @@ const overview=ref<HTMLElement>()
 const roomsById=computed(()=>new Map(props.rooms.map(item=>[item.id,item])))
 const room=computed(()=>roomsById.value.get(currentRoom.value))
 const selectedWall=computed(()=>props.walls.find(wall=>wall.slot===props.modelValue))
-watch(selectedWall,wall=>{if(wall)currentRoom.value=wall.room},{immediate:true})
+watch(selectedWall,wall=>{if(wall){currentRoom.value=wall.room;overviewFocus.value=wall.room}},{immediate:true})
 watch(()=>props.rooms,rooms=>{
   if(!rooms.some(item=>item.id===currentRoom.value))currentRoom.value=rooms[0]?.id??galleryFirstFrontRoom
 })
@@ -27,7 +27,7 @@ const mapRooms=computed(()=>{
   const mainRoom=branch?.parent??currentRoom.value
   const activeParent=roomsById.value.get(mainRoom)?.parent
   const expansionParent=activeParent!==null&&activeParent!==undefined&&roomsById.value.get(mainRoom)?.planned?activeParent:mainRoom
-  return props.rooms.filter(item=>!item.planned||item.id===currentRoom.value||item.parent===expansionParent).map(item=>{
+  return props.rooms.filter(item=>(item.id===galleryFirstFrontRoom||item.id>=firstCmsGalleryRoom)&&(!item.planned||item.id===currentRoom.value||item.parent===expansionParent)).map(item=>{
     const branch=galleryBranch(item.id)
     const main=branch?.parent??item.id
     const column=main===galleryFirstFrontRoom?2:main-firstCmsGalleryRoom+3
@@ -49,7 +49,7 @@ function inspectRoom(id:number){
   if(roomsById.value.has(id)){
     currentRoom.value=id
     view.value='room'
-  }else overviewFocus.value=id
+  }else{overviewFocus.value=id;view.value='overview'}
 }
 watch([currentRoom,overview],async()=>{
   await nextTick()
@@ -70,6 +70,8 @@ const wallSides:Record<GalleryEditorWallSide,readonly GalleryEditorWallSide[]>={
 const nextRooms=computed(()=>{
   const id=currentRoom.value
   if(galleryBranch(id))return []
+  if(id===2)return [-1,5,-1]
+  if(id>=3&&id<firstCmsGalleryRoom)return []
   return [galleryBranchId(id,'north'),id===galleryFirstFrontRoom?firstCmsGalleryRoom:id+1,galleryBranchId(id,'south')]
 })
 const roomPlan=computed(()=>{
@@ -83,16 +85,48 @@ const roomPlan=computed(()=>{
 })
 const shownWall=computed(()=>roomPlan.value.find(edge=>edge.wall?.slot===selectedWall.value?.slot&&edge.wall))
 const previewWidth=computed(()=>Math.min(100,Math.max(1,props.wallPercent||45)))
+const inspected=ref<typeof directions[number]>()
+watch(currentRoom,()=>{inspected.value=undefined})
+const inspectedEdge=computed(()=>roomPlan.value.find(edge=>edge.position===inspected.value&&edge.wall)??shownWall.value)
+const listedArtworks=ref<GalleryEditorArtwork[]>([])
+const wallLoading=ref(false)
+const wallError=ref(false)
+const wallKeys=computed(()=>JSON.stringify(view.value==='room'?inspectedEdge.value?.wall?.artworks.map(item=>item.key)??[]:[]))
+watch(wallKeys,async(encoded,_,onCleanup)=>{
+  const keys=JSON.parse(encoded) as string[]
+  listedArtworks.value=[]
+  wallLoading.value=false
+  wallError.value=false
+  if(!keys.length||!props.loadArtworks)return
+  let current=true
+  onCleanup(()=>{current=false})
+  wallLoading.value=true
+  try{
+    const result=await props.loadArtworks(keys)
+    if(current)listedArtworks.value=keys.flatMap(key=>result.filter(item=>item.key===key))
+  }
+  catch{if(current)wallError.value=true}
+  finally{if(current)wallLoading.value=false}
+},{immediate:true})
+const artworkByKey=computed(()=>new Map(listedArtworks.value.map(item=>[item.key,item])))
 const modelEdges=computed(()=>roomPlan.value.map(edge=>({
   position:edge.position,
   selectable:Boolean(edge.wall?.available),
   selected:edge.wall!==undefined&&edge.wall.slot===props.modelValue,
   passage:Boolean(edge.neighbor&&!edge.neighbor.planned),
+  occupied:edge.wall!==undefined,
+  frames:[...(edge.wall?.artworks??[]).map(item=>({item,art:edge===inspectedEdge.value?artworkByKey.value.get(item.key):undefined,selected:false})),
+    ...(edge.wall&&edge.wall.slot===props.modelValue?[{item:{key:'',slot:edge.wall.slot},art:{image:props.image,percent:previewWidth.value},selected:true}]:[])]
+    .sort((a,b)=>galleryPlacement(a.item.slot).order-galleryPlacement(b.item.slot).order)
+    .map(({art,selected})=>({image:art?.image,percent:art?.percent??defaultGalleryWallPercent,selected})),
 })))
 
 function pickWall(position:typeof directions[number]){
   const edge=roomPlan.value.find(item=>item.position===position)
-  if(edge?.wall?.available)emit('update:modelValue',edge.wall.slot)
+  if(edge?.wall){
+    inspected.value=position
+    if(edge.wall.available)emit('update:modelValue',edge.wall.slot)
+  }
   else if(edge?.neighbor&&!edge.neighbor.planned)currentRoom.value=edge.neighbor.id
 }
 </script>
@@ -120,15 +154,16 @@ function pickWall(position:typeof directions[number]){
       <div class="overview-legend"><span>Բաց սրահ</span><span>Հնարավոր նոր սրահ</span></div>
     </div>
     <div v-else class="step-heading"><b>2</b><div><strong>Ընտրիր պատը</strong><small>{{room.name}}<template v-if="room.planned"> · նոր սրահի նախադիտում</template></small></div></div>
-    <GalleryRoomModel :edges="modelEdges" :image="image" :wall-percent="previewWidth" :planned="room.planned" :overview="view==='overview'?wholeModel:undefined" @room="inspectRoom" @pick="pickWall" @ready="modelReady=true"/>
+    <GalleryRoomModel :edges="modelEdges" :planned="room.planned" :overview="view==='overview'?wholeModel:undefined" @room="inspectRoom" @pick="pickWall" @ready="modelReady=true"/>
     <template v-if="view==='room'">
     <div class="room-plan" :class="{'planned-room':room.planned,'model-controls':modelReady}">
       <div v-if="!modelReady" class="floor"><ArrowUp :size="21" aria-hidden="true"/><small>Մուտքից նայելով</small></div>
       <div v-for="edge in roomPlan" :key="edge.position" class="room-edge" :class="edge.position">
-        <button v-if="edge.wall" class="wall-button" type="button" :disabled="!edge.wall.available" :aria-pressed="edge.wall.slot===modelValue" @click="emit('update:modelValue',edge.wall.slot)">
+        <button v-if="edge.wall" class="wall-button" type="button" :aria-pressed="edge.wall.slot===modelValue" @click="pickWall(edge.position)">
           <img v-if="edge.wall.slot===modelValue&&image" :src="image" alt="" loading="lazy" width="46" height="40">
           <Check v-else-if="edge.wall.slot===modelValue" :size="16" aria-hidden="true"/>
           <span>{{edge.label}}</span>
+          <small>{{edge.wall.artworks.length}} այլ նկար</small>
           <small>{{edge.wall.available?`${edge.wall.available} ազատ տեղ`:'Ազատ տեղ չկա'}}</small>
         </button>
         <button v-else-if="edge.neighbor&&!edge.neighbor.planned" type="button" class="passage" :aria-label="`Անցում դեպի ${edge.neighbor.name}`" @click="currentRoom=edge.neighbor.id">
@@ -140,13 +175,22 @@ function pickWall(position:typeof directions[number]){
           <Plus :size="13" aria-hidden="true"/> Նոր սրահ · {{directionLabels[edge.position].toLocaleLowerCase()}}
         </button>
       </div>
-      <button v-if="room.parent!==null" class="entry passage" type="button" @click="currentRoom=room.parent??galleryFirstFrontRoom">
+      <button v-if="room.parent!==null" class="entry passage" type="button" @click="inspectRoom(room.parent??galleryFirstFrontRoom)">
         <DoorOpen :size="16" aria-hidden="true"/> Մուտք՝ {{roomsById.get(room.parent)?.name??'նախորդ սրահից'}} <ArrowDown :size="14" aria-hidden="true"/>
       </button>
       <span v-else class="entry"><ArrowUp :size="16" aria-hidden="true"/> Մուտք՝ կենտրոնական դահլիճից</span>
     </div>
 
     <p v-if="room.planned" class="plan-note">Նոր սրահը կբացվի այստեղ առաջին նկարը հրապարակելիս։</p>
+    <div v-if="inspectedEdge?.wall" class="wall-preview" aria-live="polite">
+      <strong>{{inspectedEdge.label}} · արդեն տեղադրված նկարներ</strong>
+      <small v-if="wallLoading">Բեռնվում են…</small>
+      <small v-else-if="wallError">Չհաջողվեց բեռնել նկարները։</small>
+      <small v-else-if="!inspectedEdge.wall.artworks.length">Այստեղ այլ նկար չկա։</small>
+      <ul v-else class="wall-artworks">
+        <li v-for="artwork in listedArtworks" :key="artwork.key"><img :src="artwork.image" alt="" width="34" height="34" loading="lazy">{{artwork.title}}</li>
+      </ul>
+    </div>
     <div v-if="shownWall" class="wall-preview" aria-live="polite">
       <div class="preview-heading"><Check :size="17" aria-hidden="true"/><div><strong>{{shownWall.label}}</strong><small>{{room.name}}</small></div></div>
       <div v-if="!modelReady" class="wall-elevation">
@@ -222,5 +266,8 @@ button.entry:hover{background:#29415d}
 .wall-elevation img,.empty-frame{display:block;max-height:84px;max-width:100%;object-fit:contain}
 .empty-frame{display:grid;place-items:center;min-width:22px;min-height:40px;border:1px dashed #574936;color:#493b2e}
 .previous-selection{flex-wrap:wrap}
+.wall-artworks{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.wall-artworks li{display:flex;align-items:center;gap:8px;font-size:12px}
+.wall-artworks img{object-fit:contain;border-radius:3px}
 @media(max-width:420px){.room-plan{padding:7px;gap:5px}.room-edge button,.moving-wall{padding:4px}.floor{font-size:12px}}
 </style>

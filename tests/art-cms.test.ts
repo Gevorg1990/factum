@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
-import {firstGalleryFrontSlot,galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryIsBranchSlot,galleryIsFrontSlot,galleryIsSculpture,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth,maxGallerySlot} from '../utils/art/galleryLayout'
+import {firstGalleryFrontSlot,galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryDefaultSlot,galleryIsBranchSlot,galleryIsFrontSlot,galleryIsSculpture,galleryPaintedPlacement,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth,maxGallerySlot} from '../utils/art/galleryLayout'
 import {galleryBranchId} from '../utils/art/galleryBranches'
 import {galleryEditorLayout,galleryOverviewLayout} from '../utils/art/galleryEditorLayout'
 import {galleryArtworks,visibleGalleryArtworks} from '../data/art/gallery'
@@ -108,7 +108,7 @@ test('all published slot IDs map to centered wall rows with up to four pictures 
 test('the front wall follows the last room and the empty east-hall side wall stays in place',()=>{
   const extraSlots=galleryAvailableSlots(1)
   const front=extraSlots.filter(galleryIsFrontSlot)
-  const side=extraSlots.filter(slot=>!galleryIsFrontSlot(slot)&&!galleryIsBranchSlot(slot)&&galleryPlacement(slot).wall==='south')
+  const side=extraSlots.filter(slot=>!galleryIsFrontSlot(slot)&&!galleryIsBranchSlot(slot)&&galleryPlacement(slot).room===1&&galleryPlacement(slot).wall==='south')
   assert.equal(front.length,4)
   assert.equal(side.length,4)
   assert.equal(new Set(front.map(slot=>gallerySlotLabel(slot))).size,1)
@@ -149,32 +149,33 @@ test('the chosen branch moves only the pictures on the new passage wall',()=>{
 
 test('the CMS map groups free places by physical wall and keeps the current selection',()=>{
   const occupied=[{key:'editing',slot:1},{key:'existing',slot:0},{key:'third',slot:2},{key:'fourth',slot:3}]
-  const layout=galleryEditorLayout(occupied,'editing',1,true)
+  const layout=galleryEditorLayout(occupied,'editing',1)
   const north=layout.walls.find(wall=>wall.room===6&&wall.side==='north')
   assert.deepEqual({slot:north?.slot,available:north?.available},{slot:1,available:1})
-  assert.equal(galleryEditorLayout(occupied,'new',undefined,true).walls.find(wall=>wall.room===6&&wall.side==='north')?.available,0)
+  assert.equal(galleryEditorLayout(occupied,'new',undefined).walls.find(wall=>wall.room===6&&wall.side==='north')?.available,0)
 })
 
 test('the map previews new branch directions and the artwork that would move',()=>{
   const front={key:'front',slot:firstGalleryFrontSlot}
+  const thinker={key:'thinker',slot:galleryDefaultSlot('thinker')!}
   const north=galleryBranchId(1,'north')
-  const preview=galleryEditorLayout([front],'new',undefined,true)
+  const preview=galleryEditorLayout([front,thinker],'new',undefined)
   assert.equal(preview.rooms.find(room=>room.id===6)?.moving,1)
   assert.deepEqual(preview.rooms.find(room=>room.id===north),{
     id:north,name:'Արևելյան սրահ · Ձախ սրահ',parent:1,planned:true,moving:1,entrance:'south',
   })
   const branchSlot=preview.walls.find(wall=>wall.room===north)!.slot
-  const opened=galleryEditorLayout([front,{key:'branch',slot:branchSlot}],'new',undefined,true)
+  const opened=galleryEditorLayout([front,thinker,{key:'branch',slot:branchSlot}],'new',undefined)
   assert.equal(opened.rooms.find(room=>room.id===north)?.planned,false)
   assert.ok(opened.walls.some(wall=>wall.room===north&&wall.side==='north'))
   assert.ok(opened.walls.some(wall=>wall.room===1&&wall.side==='east'&&wall.available===3))
   assert.ok(!opened.walls.some(wall=>wall.room===1&&wall.side==='north'))
-  assert.equal(galleryEditorLayout([front],'front',front.slot,false).rooms.find(room=>room.id===6)?.moving,0)
+  assert.equal(galleryEditorLayout([front],'front',front.slot).rooms.find(room=>room.id===6)?.moving,0)
 })
 
 test('the gallery model includes the original halls and connects additions to their actual parent',()=>{
   const left=galleryBranchId(1,'north')
-  const editor=galleryEditorLayout([],'new',undefined,true)
+  const editor=galleryEditorLayout([],'new',undefined)
   const model=galleryOverviewLayout(editor.rooms)
   assert.deepEqual(model.rooms.filter(room=>!room.planned).map(room=>room.id),[0,1,2,3,4,5])
   assert.deepEqual(model.rooms.find(room=>room.id===1),{id:1,x:17,z:0,planned:false})
@@ -182,6 +183,23 @@ test('the gallery model includes the original halls and connects additions to th
   assert.ok(model.links.some(([from,to])=>from===2&&to===5))
   assert.ok(model.links.some(([from,to])=>from===1&&to===left))
   assert.ok(model.links.some(([from,to])=>from===1&&to===6))
+})
+
+test('original paintings reserve their published places and can move to other historic or new walls',()=>{
+  const artworkIds=['mona-lisa','blue-armchair','virgin-rocks']
+  const original=artworkIds.map(key=>({key,slot:galleryDefaultSlot(key)!}))
+  assert.equal(new Set(original.map(item=>item.slot)).size,3)
+  const layout=galleryEditorLayout(original,'new',undefined)
+  const wall=layout.walls.find(item=>item.room===4&&item.side==='west')!
+  assert.equal(wall.available,1)
+  assert.deepEqual(wall.artworks.map(item=>item.key),artworkIds)
+  assert.equal(galleryPaintedPlacement('mona-lisa',undefined)?.room,4)
+  const destination=layout.walls.find(item=>item.room===2&&item.side==='south')!
+  assert.equal(galleryPaintedPlacement('mona-lisa',destination.slot)?.room,2)
+  assert.equal(galleryPaintedPlacement('mona-lisa',0)?.room,6)
+  const moved=galleryEditorLayout([{key:'mona-lisa',slot:destination.slot},...original.slice(1)],'new',undefined)
+  assert.equal(moved.walls.find(item=>item.room===4&&item.side==='west')?.available,2)
+  assert.ok(moved.walls.find(item=>item.room===2&&item.side==='south')?.artworks.some(item=>item.key==='mona-lisa'))
 })
 
 test('percentage controls frame width and multiple images stay centered with clear margins',()=>{
