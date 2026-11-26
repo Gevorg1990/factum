@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import {computed,nextTick,onMounted,onUnmounted,ref} from 'vue'
 import * as THREE from 'three'
-import {Maximize2,Minimize2} from 'lucide-vue-next'
+import {Info,Maximize2,Minimize2,Search} from 'lucide-vue-next'
 import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {galleryCenter,type GalleryPoint} from '~/utils/art/galleryNavigation'
 import {galleryBranch,galleryBranchId,galleryBranchName,galleryBranchedRoomAt,galleryBranchedRoute,galleryBranchedWalkable} from '~/utils/art/galleryBranches'
@@ -20,6 +21,14 @@ const mobile = ref(false)
 const fullscreen = ref(false)
 const fullscreenFallback = ref(false)
 const joystick = ref({x:0,y:0})
+const focusedArtwork=ref<string>()
+const artworkControls=ref<HTMLElement>()
+const artworkLens=ref<HTMLElement>()
+const loupeEnabled=ref(false)
+const loupeImage=computed(()=>loupeEnabled.value?[...(props.coreArtworks??[]),...(props.cmsArtworks??[])].find(item=>item.id===focusedArtwork.value)?.image:undefined)
+const loupeBackground=computed(()=>loupeImage.value?`url(${JSON.stringify(loupeImage.value)})`:undefined)
+let loupePoint={u:.5,v:.5}
+let loupePointer:number|undefined
 let renderer: THREE.WebGLRenderer | undefined
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
@@ -31,7 +40,8 @@ let loadPassageArt: (()=>void) | undefined
 let lastTime = 0
 let yaw = 0
 let pitch = 0
-let drag: {x:number;y:number;moved:boolean} | undefined
+let drag: {id:number;x:number;y:number;moved:boolean} | undefined
+let lookTarget: {yaw:number;pitch:number} | undefined
 type CameraView = {yaw:number;pitch:number;fov:number}
 const artworkTurnLead = 2000
 const artworkTurnAfterArrival = 400
@@ -55,6 +65,7 @@ let touchId: number | undefined
 let lastTap:{time:number;x:number;y:number}|undefined
 const keys = new Set<string>()
 const selectable: THREE.Object3D[] = []
+const artworkMeshes=new Map<string,THREE.Mesh>()
 const walkGround: THREE.Object3D[] = []
 const pendingArtworks: {room:number;load:()=>void}[] = []
 const artworkViews = new Map<string,{room:number;x:number;z:number;rotation:number;width:number;height:number;centerY:number}>()
@@ -64,6 +75,9 @@ const geometries: THREE.BufferGeometry[] = []
 const materials: THREE.Material[] = []
 const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
+const controlsAnchor=new THREE.Vector3()
+const lensAnchor=new THREE.Vector3()
+const lensEdge=new THREE.Vector3()
 const cleanup: (()=>void)[] = []
 
 function material(color:number, extra:Record<string,unknown>={}) {
@@ -92,10 +106,82 @@ function moveTo(x:number,z:number) {
   if(galleryBranchedWalkable(x,camera.position.z,extraRooms.value,branches.value))camera.position.x=x
   if(galleryBranchedWalkable(camera.position.x,z,extraRooms.value,branches.value))camera.position.z=z
 }
+function leaveArtwork(){
+  if(!focusedArtwork.value)return
+  focusedArtwork.value=undefined
+  loupeEnabled.value=false
+  loupePointer=undefined
+}
+function toggleLoupe(){
+  loupeEnabled.value=!loupeEnabled.value
+  loupePoint={u:.5,v:.5}
+  if(loupeEnabled.value)void nextTick(positionLoupe)
+}
+function positionLoupe(){
+  if(!focusedArtwork.value||!artworkLens.value||!renderer)return
+  const view=artworkViews.get(focusedArtwork.value)
+  if(!view)return
+  const {clientWidth:width,clientHeight:height}=renderer.domElement
+  const diameter=Math.min(156,width*.43,height*.36)
+  const x=(loupePoint.u-.5)*view.width
+  lensAnchor.set(view.x+Math.cos(view.rotation)*x,view.centerY+(loupePoint.v-.5)*view.height,view.z-Math.sin(view.rotation)*x).project(camera)
+  const left=THREE.MathUtils.clamp((lensAnchor.x+1)*width/2-diameter/2,0,width-diameter)
+  const top=THREE.MathUtils.clamp((1-lensAnchor.y)*height/2-diameter/2,0,height-diameter)
+  const aspect=view.width/view.height
+  const upper=lensEdge.set(view.x,view.centerY+view.height/2,view.z).project(camera).y
+  const lower=lensEdge.set(view.x,view.centerY-view.height/2,view.z).project(camera).y
+  const imageHeight=Math.max(diameter,diameter/aspect,Math.abs(upper-lower)*height*1.2)
+  const imageWidth=imageHeight*aspect
+  const backgroundX=THREE.MathUtils.clamp(diameter/2-loupePoint.u*imageWidth,diameter-imageWidth,0)
+  const backgroundY=THREE.MathUtils.clamp(diameter/2-(1-loupePoint.v)*imageHeight,diameter-imageHeight,0)
+  const style=artworkLens.value.style
+  style.width=style.height=`${diameter}px`
+  style.transform=`translate3d(${left}px,${top}px,0)`
+  style.backgroundSize=`${imageWidth}px ${imageHeight}px`
+  style.backgroundPosition=`${backgroundX}px ${backgroundY}px`
+}
+function loupeKeys(event:KeyboardEvent){
+  if(!loupeEnabled.value)return
+  const dx=Number(event.key==='ArrowRight')-Number(event.key==='ArrowLeft')
+  const dy=Number(event.key==='ArrowUp')-Number(event.key==='ArrowDown')
+  if(!dx&&!dy)return
+  event.preventDefault()
+  event.stopPropagation()
+  loupePoint={u:THREE.MathUtils.clamp(loupePoint.u+dx*.06,0,1),v:THREE.MathUtils.clamp(loupePoint.v+dy*.06,0,1)}
+  positionLoupe()
+}
+function moveLoupe(event:PointerEvent){
+  if(!loupeEnabled.value||!focusedArtwork.value||!renderer)return false
+  const painting=artworkMeshes.get(focusedArtwork.value)
+  if(!painting)return false
+  const rect=renderer.domElement.getBoundingClientRect()
+  pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1)
+  raycaster.setFromCamera(pointer,camera)
+  const uv=raycaster.intersectObject(painting,false)[0]?.uv
+  if(!uv)return false
+  loupePoint={u:uv.x,v:uv.y}
+  positionLoupe()
+  return true
+}
+function positionArtworkControls(){
+  if(!focusedArtwork.value||!artworkControls.value||!renderer)return
+  const view=artworkViews.get(focusedArtwork.value)
+  if(!view)return
+  controlsAnchor.set(view.x+Math.cos(view.rotation)*view.width/2,view.centerY-view.height/2,view.z-Math.sin(view.rotation)*view.width/2).project(camera)
+  const element=artworkControls.value
+  const {clientWidth:width,clientHeight:height}=renderer.domElement
+  const rightEdge=(controlsAnchor.x+1)*width/2
+  const bottomEdge=(1-controlsAnchor.y)*height/2
+  const x=THREE.MathUtils.clamp(rightEdge+10,12,Math.max(12,width-element.offsetWidth-12))
+  const y=THREE.MathUtils.clamp(bottomEdge-element.offsetHeight,58,Math.max(58,height-element.offsetHeight-14))
+  element.style.transform=`translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`
+}
 function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=false}={}):GalleryPoint|undefined {
   journey=undefined
   const route=galleryBranchedRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value,branches.value,artwork)
   if(!route)return
+  leaveArtwork()
+  lookTarget=undefined
   const points=[camera.position.clone(),...route.map(item=>new THREE.Vector3(item.x,EYE_HEIGHT,item.z))]
   const lengths:number[]=[]
   let total=0
@@ -147,6 +233,7 @@ function visit(index:number) {
 }
 function reset(){visit(0);pitch=0}
 function focusArtwork(id:string,turnFromStart=false) {
+  if(focusedArtwork.value===id)return true
   const view=artworkViews.get(id)
   if(!view||!camera){journey=undefined;return false}
   const fov=mobile.value?88:70
@@ -235,6 +322,7 @@ function addArtWall(works:WallWork[]) {
       const plane=new THREE.Mesh(geometry,imageMaterial)
       plane.position.set(view.x,centerY,view.z);plane.rotation.y=rotation;plane.translateZ(.095)
       plane.userData.artworkId=works[index]!.artwork.id
+      artworkMeshes.set(works[index]!.artwork.id,plane)
       scene.add(plane);selectable.push(plane)
     })
   }})
@@ -581,13 +669,21 @@ function keyDown(event:KeyboardEvent) {
   if(event.key==='Escape'&&fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen()}
   if(!host.value?.contains(document.activeElement)||document.activeElement instanceof Element&&document.activeElement.closest('[role="dialog"]'))return
   if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) {
-    event.preventDefault();keys.add(event.code);journey=undefined
+    event.preventDefault();keys.add(event.code);journey=undefined;leaveArtwork()
   }
 }
 function keyUp(event:KeyboardEvent){keys.delete(event.code)}
-function down(event:PointerEvent){if(event.button!==0)return;host.value?.focus({preventScroll:true});drag={x:event.clientX,y:event.clientY,moved:false};renderer?.domElement.setPointerCapture(event.pointerId)}
+function down(event:PointerEvent){
+  if(event.button!==0||drag||loupePointer!==undefined)return
+  host.value?.focus({preventScroll:true})
+  if(moveLoupe(event))loupePointer=event.pointerId
+  else drag={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false}
+  renderer?.domElement.setPointerCapture(event.pointerId)
+}
 function move(event:PointerEvent){
+  if(loupePointer===event.pointerId){moveLoupe(event);return}
   if(!drag){
+    if(moveLoupe(event)){if(renderer)renderer.domElement.style.cursor='crosshair';return}
     if(renderer&&camera){
       const rect=renderer.domElement.getBoundingClientRect()
       pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1)
@@ -596,13 +692,20 @@ function move(event:PointerEvent){
     }
     return
   }
+  if(event.pointerId!==drag.id)return
   const dx=event.clientX-drag.x,dy=event.clientY-drag.y
+  if(!drag.moved&&Math.hypot(dx,dy)<3)return
   drag.x=event.clientX;drag.y=event.clientY
-  if(Math.abs(dx)+Math.abs(dy)>1){drag.moved=true;journey=undefined}
-  yaw-=dx*.004;pitch=THREE.MathUtils.clamp(pitch-dy*.003,-.75,.75)
+  drag.moved=true
+  journey=undefined
+  leaveArtwork()
+  const target=lookTarget??{yaw,pitch}
+  lookTarget={yaw:target.yaw-dx*.004,pitch:THREE.MathUtils.clamp(target.pitch-dy*.003,-.75,.75)}
 }
 function up(event:PointerEvent){
-  if(drag&&!drag.moved){
+  if(loupePointer===event.pointerId){loupePointer=undefined;return}
+  if(drag?.id!==event.pointerId)return
+  if(!drag.moved){
     if(event.pointerType==='touch'){
       const now=performance.now()
       if(lastTap&&now-lastTap.time<360&&Math.hypot(event.clientX-lastTap.x,event.clientY-lastTap.y)<28){walkAt(event.clientX,event.clientY);lastTap=undefined}
@@ -613,7 +716,7 @@ function up(event:PointerEvent){
 }
 function doubleClick(event:MouseEvent){event.preventDefault();walkAt(event.clientX,event.clientY)}
 function touchStart(event:PointerEvent){event.preventDefault();touchId=event.pointerId;host.value?.focus({preventScroll:true});(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);touchMove(event)}
-function touchMove(event:PointerEvent){if(event.pointerId!==touchId)return;const rect=(event.currentTarget as HTMLElement).getBoundingClientRect();joystick.value={x:THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/38,-1,1),y:THREE.MathUtils.clamp((event.clientY-rect.top-rect.height/2)/38,-1,1)};journey=undefined}
+function touchMove(event:PointerEvent){if(event.pointerId!==touchId)return;const rect=(event.currentTarget as HTMLElement).getBoundingClientRect();joystick.value={x:THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/38,-1,1),y:THREE.MathUtils.clamp((event.clientY-rect.top-rect.height/2)/38,-1,1)};journey=undefined;if(Math.abs(joystick.value.x)+Math.abs(joystick.value.y)>.05)leaveArtwork()}
 function touchEnd(event:PointerEvent){if(event.pointerId===touchId){joystick.value={x:0,y:0};touchId=undefined}}
 
 onMounted(()=>{
@@ -640,14 +743,21 @@ onMounted(()=>{
     intersection.observe(host.value!)
     listen(window,'keydown',keyDown as EventListener);listen(window,'keyup',keyUp as EventListener);listen(window,'blur',(()=>keys.clear()) as EventListener)
     listen(document,'fullscreenchange',syncFullscreen as EventListener)
-    listen(renderer.domElement,'pointerdown',down as EventListener);listen(renderer.domElement,'pointermove',move as EventListener);listen(renderer.domElement,'pointerup',up as EventListener);listen(renderer.domElement,'pointercancel',(()=>{drag=undefined}) as EventListener)
+    listen(renderer.domElement,'pointerdown',down as EventListener);listen(renderer.domElement,'pointermove',move as EventListener);listen(renderer.domElement,'pointerup',up as EventListener)
+    const cancelDrag=(event:Event)=>{
+      const id=(event as PointerEvent).pointerId
+      if(id===drag?.id)drag=undefined
+      if(id===loupePointer)loupePointer=undefined
+    }
+    listen(renderer.domElement,'pointercancel',cancelDrag);listen(renderer.domElement,'lostpointercapture',cancelDrag)
     listen(renderer.domElement,'dblclick',doubleClick as EventListener)
     listen(renderer.domElement,'webglcontextlost',((event:Event)=>{event.preventDefault();failed.value=true;emit('error')}) as EventListener)
     renderer.setAnimationLoop(time=>{
       if(disposed||!visible||document.hidden||!renderer)return
       const moving=keys.size>0||Math.abs(joystick.value.x)+Math.abs(joystick.value.y)>.05||Boolean(journey)
+      const turning=Boolean(drag?.moved||lookTarget)
       if(moving||drag)loadPassageArt?.()
-      if(time-lastTime<(moving?16:80))return
+      if(time-lastTime<(turning?8:moving?16:80))return
       const frameDuration=Math.min(50,time-lastTime)
       const dt=frameDuration/1000
       lastTime=time
@@ -694,6 +804,14 @@ onMounted(()=>{
           journey=undefined
         }
       }else {
+        if(lookTarget){
+          const weight=1-Math.exp(-dt*28)
+          yaw=THREE.MathUtils.lerp(yaw,lookTarget.yaw,weight)
+          pitch=THREE.MathUtils.lerp(pitch,lookTarget.pitch,weight)
+          if(Math.abs(yaw-lookTarget.yaw)+Math.abs(pitch-lookTarget.pitch)<.0005){
+            yaw=lookTarget.yaw;pitch=lookTarget.pitch;lookTarget=undefined
+          }
+        }
         const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'))-joystick.value.y
         const strafe=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'))+joystick.value.x
         const length=Math.max(1,Math.hypot(forward,strafe))
@@ -706,7 +824,10 @@ onMounted(()=>{
       const nextRoom=galleryBranchedRoomAt(camera.position.x,camera.position.z,extraRooms.value,branches.value)
       if(nextRoom!==activeRoom.value){setRoom(nextRoom);loadRoom(nextRoom)}
       renderer.render(scene,camera)
-      if(arrivedArtwork)emit('select',arrivedArtwork)
+      if(arrivedArtwork){
+        focusedArtwork.value=arrivedArtwork
+        void nextTick(positionArtworkControls)
+      }else{positionArtworkControls();if(loupeEnabled.value)positionLoupe()}
     })
     loading.value=false;emit('ready')
   } catch(error) {console.error('Art gallery WebGL initialization failed',error);failed.value=true;loading.value=false;emit('error')}
@@ -732,6 +853,11 @@ onUnmounted(()=>{
       <span class="gallery-room-label">{{galleryRooms[activeRoom]?.name||galleryBranchName(activeRoom)||`Պատկերասրահի նոր սրահ ${activeRoom-5}`}}</span>
       <span class="gallery-controls-hint">{{mobile?'Կրկնակի հպումով քայլիր · քաշիր՝ նայելու համար':'Կրկնակի սեղմիր հատակին՝ քայլելու համար · W A S D · քաշիր՝ նայել'}}</span>
     </div>
+    <div v-if="loupeImage&&!failed" ref="artworkLens" class="gallery-artwork-lens" :style="{backgroundImage:loupeBackground}" aria-hidden="true"/>
+    <div v-if="focusedArtwork&&!failed" ref="artworkControls" class="gallery-artwork-controls" role="group" aria-label="Նկարը դիտել պատին">
+      <button type="button" :aria-pressed="loupeEnabled" @click="toggleLoupe" @keydown="loupeKeys"><Search :size="15" aria-hidden="true"/> Խոշորացույց</button>
+      <button type="button" class="gallery-artwork-info" @click="emit('select',focusedArtwork)"><Info :size="15" aria-hidden="true"/> Տեղեկություն</button>
+    </div>
     <button type="button" class="gallery-fullscreen" :aria-label="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" :aria-pressed="fullscreen" :title="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" @click="toggleFullscreen"><Minimize2 v-if="fullscreen" :size="19"/><Maximize2 v-else :size="19"/></button>
     <div v-if="mobile && !failed" class="gallery-touch-controls">
       <div class="gallery-joystick" aria-label="Քայլելու կառավարում" @pointerdown="touchStart" @pointermove="touchMove" @pointerup="touchEnd" @pointercancel="touchEnd"><span :style="{transform:`translate(${joystick.x*28}px,${joystick.y*28}px)`}"/></div>
@@ -747,5 +873,11 @@ onUnmounted(()=>{
 .gallery-hud{right:76px}
 .gallery-fullscreen{position:absolute;right:20px;top:18px;z-index:2;display:grid;place-items:center;width:39px;height:39px;border:1px solid #e3c88b80;border-radius:8px;background:#0a1724e6;color:#f6e4c4;cursor:pointer}
 .gallery-fullscreen:hover{background:#263b4c}.gallery-fullscreen:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.gallery-artwork-controls{position:absolute;z-index:1;top:0;left:0;display:flex;gap:5px;padding:5px;border:1px solid #dbbd817d;border-radius:9px;background:#0c1928f0;color:#f7e6c6;box-shadow:0 5px 18px #0006}
+.gallery-artwork-controls button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:36px;min-height:34px;padding:5px;border:1px solid #ab92637a;border-radius:6px;background:#253548;color:inherit;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.gallery-artwork-controls button:hover:not(:disabled){background:#3a4e64}.gallery-artwork-controls button:disabled{opacity:.48;cursor:default}.gallery-artwork-controls button:focus-visible{outline:2px solid #f6d89e;outline-offset:2px}
+.gallery-artwork-controls button[aria-pressed='true']{background:#54462e;border-color:#e8c77f}
+.gallery-artwork-controls button{padding-inline:8px}
+.gallery-artwork-lens{box-sizing:border-box;position:absolute;top:0;left:0;z-index:1;pointer-events:none;border:3px solid #f3d695;border-radius:50%;background-color:#15212d;background-repeat:no-repeat;box-shadow:0 6px 20px #000b}
 @media(max-width:700px){.gallery-hud{right:63px}.gallery-fullscreen{right:12px;top:12px;width:36px;height:36px}}
 </style>
