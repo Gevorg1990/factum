@@ -2,13 +2,15 @@
 import * as THREE from 'three'
 import {Maximize2,Minimize2} from 'lucide-vue-next'
 import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
-import {galleryArtworkRoute,galleryCenter,galleryRoomAt,galleryRoute,galleryWalkable,type GalleryPoint} from '~/utils/art/galleryNavigation'
-import {galleryCorePlacement,galleryPlacement,galleryRoomForSlot,galleryWallFrames,galleryWallPercent} from '~/utils/art/galleryLayout'
+import {galleryCenter,type GalleryPoint} from '~/utils/art/galleryNavigation'
+import {galleryBranch,galleryBranchId,galleryBranchName,galleryBranchedRoomAt,galleryBranchedRoute,galleryBranchedWalkable} from '~/utils/art/galleryBranches'
+import {galleryCorePlacement,galleryPlacement,galleryWallFrames,galleryWallPercent} from '~/utils/art/galleryLayout'
 import {EYE_HEIGHT,smoothJourneyProgress} from '~/utils/library/navigation'
 
 const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]; fullscreen:[element:HTMLElement|null]}>()
-const props=defineProps<{coreArtworks?:GalleryArtwork[];cmsArtworks?:GalleryArtwork[]}>()
-const extraRooms=computed(()=>Math.max(0,...(props.cmsArtworks||[]).map((item,index)=>galleryRoomForSlot(item.gallerySlot??index)-5)))
+const props=defineProps<{coreArtworks?:GalleryArtwork[];cmsArtworks?:GalleryArtwork[];lastRoom:number;branchRooms:number[]}>()
+const extraRooms=computed(()=>Math.max(0,props.lastRoom-5))
+const branches=computed(()=>new Set(props.branchRooms))
 const host = ref<HTMLElement>()
 const canvasHost = ref<HTMLElement>()
 const loading = ref(true)
@@ -87,12 +89,12 @@ function setRoom(index:number) {
   emit('room',index)
 }
 function moveTo(x:number,z:number) {
-  if(galleryWalkable(x,camera.position.z,extraRooms.value))camera.position.x=x
-  if(galleryWalkable(camera.position.x,z,extraRooms.value))camera.position.z=z
+  if(galleryBranchedWalkable(x,camera.position.z,extraRooms.value,branches.value))camera.position.x=x
+  if(galleryBranchedWalkable(camera.position.x,z,extraRooms.value,branches.value))camera.position.z=z
 }
-function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,findRoute=galleryRoute}={}):GalleryPoint|undefined {
+function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=false}={}):GalleryPoint|undefined {
   journey=undefined
-  const route=findRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value)
+  const route=galleryBranchedRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value,branches.value,artwork)
   if(!route)return
   const points=[camera.position.clone(),...route.map(item=>new THREE.Vector3(item.x,EYE_HEIGHT,item.z))]
   const lengths:number[]=[]
@@ -127,11 +129,20 @@ function loadNearbyRooms(){
     const center=galleryCenter(index)!
     if(Math.hypot(center.x-camera.position.x,center.z-camera.position.z)<31)loadRoom(index)
   }
+  for(let column=Math.max(1,Math.round(camera.position.x/17)-1);column<=Math.round(camera.position.x/17)+1;column++){
+    const parent=column===1?1:column+4
+    for(const direction of ['north','south'] as const){
+      const id=galleryBranchId(parent,direction)
+      if(!branches.value.has(id)||loadedRooms.has(id))continue
+      const branch=galleryBranch(id)!
+      if(Math.hypot(branch.x-camera.position.x,branch.z-camera.position.z)<25)loadRoom(id)
+    }
+  }
 }
 function visit(index:number) {
   if(!camera)return
   camera.fov=70;camera.updateProjectionMatrix()
-  const destination=galleryCenter(index)
+  const destination=galleryBranch(index)??galleryCenter(index)
   if(destination)routeTo(destination,index)
 }
 function reset(){visit(0);pitch=0}
@@ -152,7 +163,7 @@ function focusArtwork(id:string,turnFromStart=false) {
   }
   distance=Math.min(distance,11.8)
   const destination={x:view.x+Math.sin(view.rotation)*distance,z:view.z+Math.cos(view.rotation)*distance}
-  const endpoint=routeTo(destination,view.room,{findRoute:galleryArtworkRoute})
+  const endpoint=routeTo(destination,view.room,{artwork:true})
   if(!endpoint||!journey)return false
   const actualDistance=Math.hypot(endpoint.x-view.x,endpoint.z-view.z)
   // Aim midway between the top and bottom of the full framed artwork.
@@ -237,10 +248,10 @@ function addGalleryPaintings(){
     walls.get(key)!.push({artwork,placement})
   }
   for(const artwork of props.coreArtworks||[]){
-    const placement=galleryCorePlacement(artwork.id)
+    const placement=galleryCorePlacement(artwork.id,branches.value)
     if(placement)place(artwork,placement)
   }
-  props.cmsArtworks?.forEach((artwork,index)=>place(artwork,galleryPlacement(artwork.gallerySlot??index)))
+  props.cmsArtworks?.forEach((artwork,index)=>place(artwork,galleryPlacement(artwork.gallerySlot??index,props.lastRoom,branches.value)))
   walls.forEach(addArtWall)
 }
 
@@ -463,7 +474,12 @@ function buildScene() {
     }
   }
   for(let index=0;index<extraRooms.value;index++)coords.push([34+index*17,0])
-  for(const [index,[cx,cz]] of coords.entries()) {
+  const roomCoords=new Map(coords.map((coords,index)=>[index,coords]))
+  for(const id of branches.value){
+    const branch=galleryBranch(id)!
+    roomCoords.set(id,[branch.x,branch.z])
+  }
+  for(const [index,[cx,cz]] of roomCoords) {
     walkGround.push(box(14,.25,14,cx,-.15,cz,floor))
     box(14,.28,14,cx,9.28,cz,ceiling)
     box(13.2,.05,13.2,cx,9.09,cz,gold)
@@ -476,9 +492,11 @@ function buildScene() {
     for(const dx of [-6.35,6.35])for(const dz of [-6.35,6.35]) {
       columns.push({x:cx+dx,z:cz+dz})
     }
-    const entrance=index===0?'all':index===1?'west':index===2?'east':index===3?'south':index===4?'north':index===5?'east':'west'
-    for(const side of ['north','south','east','west']) {
-      const open=entrance==='all'||entrance===side||(index===2&&side==='west')||(index===1&&side==='east'&&extraRooms.value>0)||(index>=6&&side==='east'&&index<5+extraRooms.value)
+    const branch=galleryBranch(index)
+    const entrance=branch?(branch.direction==='north'?'south':'north'):index===0?'all':index===1?'west':index===2?'east':index===3?'south':index===4?'north':index===5?'east':'west'
+    for(const side of ['north','south','east','west'] as const) {
+      const opensToBranch=!branch&&(index===1||index>=6)&&(side==='north'||side==='south')&&branches.value.has(galleryBranchId(index,side))
+      const open=entrance==='all'||entrance===side||opensToBranch||(index===2&&side==='west')||(index===1&&side==='east'&&extraRooms.value>0)||(index>=6&&side==='east'&&index<5+extraRooms.value)
       const wallX=side==='east'||side==='west'
       const sign=side==='east'||side==='south'?1:-1
       const wx=cx+(wallX?sign*7:0),wz=cz+(wallX?0:sign*7)
@@ -516,6 +534,13 @@ function buildScene() {
     box(3.9,.3,14,x,9.27,0,ceiling)
     addPassageWalls(x,0,true)
   }
+  for(const id of branches.value){
+    const branch=galleryBranch(id)!
+    const z=branch.z/2
+    walkGround.push(box(14,.18,3.9,branch.x,-.08,z,floor))
+    box(14,.3,3.9,branch.x,9.27,z,ceiling)
+    addPassageWalls(branch.x,z,false)
+  }
   // A circular marble inlay anchors the crossroads without blocking walking.
   const discGeo=new THREE.CylinderGeometry(2.55,2.55,.025,48)
   geometries.push(discGeo)
@@ -550,7 +575,7 @@ function walkAt(clientX:number,clientY:number) {
   // A painting or wall in front of the floor is not a walking target.
   if(firstHit&&firstHit.distance<floorHit.distance-.03&&firstHit.point.y>.25)return
   const destination={x:floorHit.point.x,z:floorHit.point.z}
-  routeTo(destination,galleryRoomAt(destination.x,destination.z),{floorWalk:true})
+  routeTo(destination,galleryBranchedRoomAt(destination.x,destination.z,extraRooms.value,branches.value),{floorWalk:true})
 }
 function keyDown(event:KeyboardEvent) {
   if(event.key==='Escape'&&fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen()}
@@ -678,7 +703,7 @@ onMounted(()=>{
       }
       camera.rotation.set(pitch,yaw,0,'YXZ')
       loadNearbyRooms()
-      const nextRoom=galleryRoomAt(camera.position.x,camera.position.z,extraRooms.value)
+      const nextRoom=galleryBranchedRoomAt(camera.position.x,camera.position.z,extraRooms.value,branches.value)
       if(nextRoom!==activeRoom.value){setRoom(nextRoom);loadRoom(nextRoom)}
       renderer.render(scene,camera)
       if(arrivedArtwork)emit('select',arrivedArtwork)
@@ -704,7 +729,7 @@ onUnmounted(()=>{
     <div ref="canvasHost" class="gallery-canvas" />
     <div v-if="loading || failed" class="gallery-loading" role="status">{{failed?'3D ցուցադրությունը հասանելի չէ․ գործերը կարող ես դիտել ներքևում։':'Բացվում են արվեստի սրահները…'}}</div>
     <div v-if="!failed" class="gallery-hud">
-      <span class="gallery-room-label">{{galleryRooms[activeRoom]?.name||`Պատկերասրահի նոր սրահ ${activeRoom-5}`}}</span>
+      <span class="gallery-room-label">{{galleryRooms[activeRoom]?.name||galleryBranchName(activeRoom)||`Պատկերասրահի նոր սրահ ${activeRoom-5}`}}</span>
       <span class="gallery-controls-hint">{{mobile?'Կրկնակի հպումով քայլիր · քաշիր՝ նայելու համար':'Կրկնակի սեղմիր հատակին՝ քայլելու համար · W A S D · քաշիր՝ նայել'}}</span>
     </div>
     <button type="button" class="gallery-fullscreen" :aria-label="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" :aria-pressed="fullscreen" :title="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" @click="toggleFullscreen"><Minimize2 v-if="fullscreen" :size="19"/><Maximize2 v-else :size="19"/></button>

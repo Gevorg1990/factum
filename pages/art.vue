@@ -2,19 +2,21 @@
 import {ArrowLeft, ExternalLink, Images, Move3D, Search, X} from 'lucide-vue-next'
 import {visibleGalleryArtworks,galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {artistPortraits} from '~/data/art/artistPortraits'
-import {galleryRoomForSlot} from '~/utils/art/galleryLayout'
+import {galleryFirstFrontRoom,galleryRoomForSlot} from '~/utils/art/galleryLayout'
+import {galleryBranch,galleryBranchName} from '~/utils/art/galleryBranches'
 
 const requestFetch=useRequestFetch()
 const route=useRoute()
 const linkedArtist=computed(()=>typeof route.query.artist==='string'?route.query.artist:'')
 const linkedArtwork=computed(()=>typeof route.query.artwork==='string'?route.query.artwork:'')
 const {data:cmsPage}=await useAsyncData('art-gallery-cms',async()=>{
-  try{return await requestFetch<{core:GalleryArtwork[];items:GalleryArtwork[];total:number}>('/api/art/gallery',{query:{offset:0,limit:24}})}
-  catch{return {core:visibleGalleryArtworks,items:[],total:0}}
+  try{return await requestFetch<{core:GalleryArtwork[];items:GalleryArtwork[];total:number;branches:number[]}>('/api/art/gallery',{query:{offset:0,limit:24}})}
+  catch{return {core:visibleGalleryArtworks,items:[],total:0,branches:[]}}
 })
 const coreArtworks=ref<GalleryArtwork[]>(cmsPage.value?.core||[])
 const cmsArtworks=ref<GalleryArtwork[]>(cmsPage.value?.items||[])
 const cmsTotal=ref(cmsPage.value?.total||0)
+const branchRooms=ref(cmsPage.value?.branches??[])
 const loadingMore=ref(false)
 const allArtworks=computed(()=>[...coreArtworks.value,...cmsArtworks.value])
 const searchQuery=ref('')
@@ -32,7 +34,10 @@ const linkedArtworkError=ref(false)
 let searchTimer:ReturnType<typeof setTimeout>|undefined
 let searchVersion=0
 let artworkLinkVersion=0
-const rooms=computed(()=>[...galleryRooms,...Array.from({length:Math.max(0,...cmsArtworks.value.map((item,index)=>galleryRoomForSlot(item.gallerySlot??index)-5))},(_,i)=>({id:i+6,name:`Պատկերասրահի նոր սրահ ${i+1}`,era:'ՆՈՐ ՍՐԱՀ',summary:'CMS-ից հրապարակված գործեր',direction:'արևելք'}))])
+const lastRoom=computed(()=>Math.max(galleryFirstFrontRoom,...branchRooms.value.map(room=>galleryBranch(room)!.parent),...cmsArtworks.value.map((item,index)=>{
+  const room=item.room??galleryRoomForSlot(item.gallerySlot??index)
+  return galleryBranch(room)?.parent??room
+})))
 
 const gallery=ref<{focusArtwork:(id:string)=>boolean}>()
 const modalTarget=shallowRef<HTMLElement|'body'>('body')
@@ -50,7 +55,7 @@ const artistGroups=computed(()=>Array.from(allArtworks.value.reduce((groups,item
   groups.set(item.creator,works)
   return groups
 },new Map<string,GalleryArtwork[]>())).sort((a,b)=>b[1].length-a[1].length))
-function roomName(index?:number){return index===undefined?'Պատկերասրահ':rooms.value[index]?.name||'Պատկերասրահ'}
+function roomName(index?:number){return index===undefined?'Պատկերասրահ':galleryRooms[index]?.name||galleryBranchName(index)||`Պատկերասրահի նոր սրահ ${index-5}`}
 function portraitFor(creator:string,works:GalleryArtwork[]){return artistPortraits[creator]?.image||works.find(item=>item.creatorPortrait)?.creatorPortrait}
 function loadedArtwork(id:string){return allArtworks.value.find(item=>item.id===id)}
 async function searchWorks(version:number,reset:boolean){
@@ -83,8 +88,9 @@ async function loadMore(){
   if(loadingMore.value||cmsArtworks.value.length>=cmsTotal.value)return
   loadingMore.value=true
   try{
-    const page=await $fetch<{items:GalleryArtwork[];total:number}>('/api/art/gallery',{query:{offset:cmsArtworks.value.length,limit:24}})
+    const page=await $fetch<{items:GalleryArtwork[];total:number;branches:number[]}>('/api/art/gallery',{query:{offset:cmsArtworks.value.length,limit:24}})
     cmsTotal.value=page.total
+    branchRooms.value=page.branches
     ready.value=false
     cmsArtworks.value=[...cmsArtworks.value,...page.items]
   }finally{loadingMore.value=false}
@@ -149,7 +155,7 @@ useHead({title:'Արվեստի վիրտուալ պատկերասրահ — COGNI
     </header>
     <p v-if="linkedArtworkError" class="art-search-status" role="status">Չհաջողվեց բացել պատկերասրահի այս գործը։</p>
     <section ref="frame" class="art-frame" aria-label="Եռաչափ արվեստի պատկերասրահ">
-      <ClientOnly><LazyArtVirtualGallery :key="`${coreArtworks.length}-${cmsArtworks.length}`" ref="gallery" :core-artworks="coreArtworks" :cms-artworks="cmsArtworks" @ready="ready=true" @room="room=$event" @select="select" @fullscreen="modalTarget=$event||'body'"/><template #fallback><div class="art-placeholder">Բացվում են արվեստի սրահները…</div></template></ClientOnly>
+      <ClientOnly><LazyArtVirtualGallery :key="`${coreArtworks.length}-${cmsArtworks.length}`" ref="gallery" :core-artworks="coreArtworks" :cms-artworks="cmsArtworks" :last-room="lastRoom" :branch-rooms="branchRooms" @ready="ready=true" @room="room=$event" @select="select" @fullscreen="modalTarget=$event||'body'"/><template #fallback><div class="art-placeholder">Բացվում են արվեստի սրահները…</div></template></ClientOnly>
     </section>
     <div class="art-frame-caption"><span><Move3D :size="17"/> Կրկնակի սեղմիր հատակին՝ քայլելու համար․ անցումները միշտ բաց են</span><span>Ընթացիկ սրահ՝ {{roomName(room)}}</span></div>
     <button v-if="cmsArtworks.length<cmsTotal" type="button" class="art-load-rooms" :disabled="loadingMore" @click="loadMore">{{loadingMore?'Բեռնվում են…':`Բացել հաջորդ սրահները (${cmsTotal-cmsArtworks.length} գործ)`}}</button>

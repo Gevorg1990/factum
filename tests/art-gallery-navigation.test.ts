@@ -1,6 +1,31 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {galleryArtworkRoute,galleryCenter,galleryCenters,galleryRoute,galleryWalkable,type GalleryPoint} from '../utils/art/galleryNavigation'
+import {galleryBranchId,galleryBranchedRoomAt,galleryBranchedRoute,galleryBranchedWalkable} from '../utils/art/galleryBranches'
+
+test('left and right rooms connect through the main gallery with clear walking routes',()=>{
+  const left=galleryBranchId(1,'north'),right=galleryBranchId(6,'south')
+  const branches=new Set([left,right])
+  const start={x:19,z:-17},end={x:31,z:17}
+  assert.equal(galleryBranchedRoomAt(start.x,start.z,1,branches),left)
+  assert.equal(galleryBranchedRoomAt(end.x,end.z,1,branches),right)
+  assert.equal(galleryBranchedWalkable(17,8.5,1,branches),false)
+  assert.equal(galleryBranchedWalkable(17,-8.5,1,branches),true)
+  assert.equal(galleryBranchedWalkable(20,-8.5,1,branches),false)
+  for(const artwork of [false,true]){
+    const route=galleryBranchedRoute(start,end,1,branches,artwork)
+    assert.ok(route)
+    assert.deepEqual(route.at(-1),end)
+    const path=[start,...route]
+    for(let index=1;index<path.length;index++){
+      const a=path[index-1]!,b=path[index]!
+      for(let step=0;step<=100;step++){
+        const t=step/100
+        assert.equal(galleryBranchedWalkable(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,1,branches),true)
+      }
+    }
+  }
+})
 
 function routeIsOpen(points:readonly {x:number;z:number}[],extraRooms=0) {
   for(let index=0;index<points.length-1;index++) {

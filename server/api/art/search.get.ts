@@ -3,7 +3,8 @@ import {z} from 'zod'
 import {artCmsSchema} from '../../../shared/artCms'
 import {visibleGalleryArtworks} from '../../../data/art/gallery'
 import {db,databaseEnabled} from '../../utils/db'
-import {galleryRoomForSlot} from '../../../utils/art/galleryLayout'
+import {galleryCorePlacement,galleryRoomForSlot} from '../../../utils/art/galleryLayout'
+import {publishedGalleryLayout} from '../../utils/galleryLayout'
 import {escapeGallerySearch,publicArtworks} from '../../utils/gallerySearch'
 
 type SearchRow = {publishedData: unknown;slot:number|null}
@@ -42,5 +43,9 @@ export default defineEventHandler(async event=>{
     ORDER BY "createdAt", "key"
     LIMIT ${limit+1} OFFSET ${start}
   `)
-  return {items:rows.slice(0,limit).map(row=>{const item=artCmsSchema.parse(row.publishedData);return row.slot===null?item:{...item,gallerySlot:row.slot,room:galleryRoomForSlot(row.slot)}}),hasMore:rows.length>limit}
+  const page=rows.slice(0,limit)
+  if(!page.length)return {items:[],hasMore:false}
+  const {frontRoom,branches}=await publishedGalleryLayout()
+  const openBranches=new Set(branches)
+  return {items:page.map(row=>{const item=artCmsSchema.parse(row.publishedData);return row.slot===null?{...item,room:galleryCorePlacement(item.id,openBranches)?.room??item.room}:{...item,gallerySlot:row.slot,room:galleryRoomForSlot(row.slot,frontRoom,openBranches)}}),hasMore:rows.length>limit}
 })

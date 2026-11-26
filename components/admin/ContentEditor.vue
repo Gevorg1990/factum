@@ -2,7 +2,8 @@
 import { Archive, ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronRight, Eye, FileText, Globe2, Info, LoaderCircle, Plus, Save, ShieldCheck, Trash2, X } from 'lucide-vue-next'
 import { millionSlots } from '~/shared/millionStages'
 import { contentSections, contentUrl, editorTemplates, editorRecord, prepareContent, type CmsKind } from '~/shared/cmsEditor'
-import {firstCmsGalleryRoom,galleryAvailableSlots,galleryIsSculpture,galleryRoomForSlot,gallerySlotLabel,galleryWallPercent} from '~/utils/art/galleryLayout'
+import {firstCmsGalleryRoom,galleryAvailableSlots,galleryIsBranchSlot,galleryIsSculpture,galleryRoomForSlot,gallerySlotLabel,galleryWallPercent} from '~/utils/art/galleryLayout'
+import {galleryBranch} from '~/utils/art/galleryBranches'
 const props=defineProps<{record:any}>()
 const emit=defineEmits(['close','saved','dirty','deleted'])
 const {user}=useAuth()
@@ -26,10 +27,16 @@ let artistSearchVersion=0
 const galleryWalls=computed(()=>{
  const current=form.value.data.gallerySlot as number|undefined
  const occupied=new Map(occupiedGallerySlots.value.filter(item=>item.key!==form.value.key).map(item=>[item.slot,item]))
- const highestRoom=occupiedGallerySlots.value.reduce((room,item)=>Math.max(room,galleryRoomForSlot(item.slot)),current===undefined?firstCmsGalleryRoom:galleryRoomForSlot(current))
+ const branches=new Set(occupiedGallerySlots.value.map(item=>galleryRoomForSlot(item.slot)).filter(room=>galleryBranch(room)))
+ const highestRoom=occupiedGallerySlots.value.reduce((highest,item)=>{
+  const room=galleryRoomForSlot(item.slot)
+  return Math.max(highest,galleryBranch(room)?.parent??room)
+ },firstCmsGalleryRoom-1)
+ const currentRoom=current===undefined?0:galleryRoomForSlot(current)
+ const highestSelectableRoom=Math.max(highestRoom, galleryBranch(currentRoom)?.parent??currentRoom)
  const walls=new Map<string,{label:string;slot:number;free:boolean}>()
- for(const slot of galleryAvailableSlots(highestRoom+1)){
-  const label=gallerySlotLabel(slot)
+ for(const slot of galleryAvailableSlots(highestSelectableRoom+1,highestSelectableRoom)){
+  const label=gallerySlotLabel(slot,branches)+(galleryIsBranchSlot(slot)&&!branches.has(galleryRoomForSlot(slot))?' · նոր անցում':'')
   const free=!occupied.has(slot)
   const wall=walls.get(label)
   if(!wall||slot===current||(free&&!wall.free))walls.set(label,{label,slot,free})
@@ -142,7 +149,7 @@ function submit(actionName:string){action.value=actionName;formElement.value?.re
                   <option :value="undefined">Ավտոմատ ընտրել ազատ տեղով պատը</option>
                   <option v-for="wall in galleryWalls" :key="wall.label" :value="wall.slot" :disabled="!wall.free">{{wall.label}}{{wall.free?'':' · ազատ տեղ չկա'}}</option>
                 </select>
-                <p>Մեկ պատին կարող է լինել մինչև չորս նկար։ Նկարների շարքը կենտրոնանում է պատի վրա։</p>
+                <p>Ձախ կամ աջ սրահի առաջին նկարը բացում է դեպի այդ սրահ անցում։ Բացված պատի նկարները տեղափոխվում են նույն ճյուղի դիմացի պատին։</p>
                 <p v-if="galleryLayoutError" class="artwork-setting-error">Պատերի ցանկը չբեռնվեց։ Փորձիր նորից էջը բացել։</p>
               </div>
             </div>

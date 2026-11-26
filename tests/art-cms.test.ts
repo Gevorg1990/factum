@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {parseContent} from '../shared/cms'
 import {newContent,prepareContent} from '../shared/cmsEditor'
-import {galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryIsSculpture,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth} from '../utils/art/galleryLayout'
+import {firstGalleryFrontSlot,galleryAutomaticSlot,galleryAvailableSlots,galleryCorePlacement,galleryIsBranchSlot,galleryIsFrontSlot,galleryIsSculpture,galleryPlacement,galleryRoomForSlot,gallerySlotLabel,galleryWallFrames,galleryWallHeight,galleryWallPercent,galleryWallWidth,maxGallerySlot} from '../utils/art/galleryLayout'
+import {galleryBranchId} from '../utils/art/galleryBranches'
 import {galleryArtworks,visibleGalleryArtworks} from '../data/art/gallery'
 
 const artwork={...newContent('ARTWORK'),title:'Փորձնական նկար'}
@@ -67,12 +68,12 @@ test('CMS saves a wall percentage for both new and existing gallery paintings',(
   }
   artworkWithSize.data.wallPercent=''
   assert.equal(parseContent(prepareContent(artworkWithSize)).data.wallPercent,undefined)
-  artworkWithSize.data.gallerySlot=1024
+  artworkWithSize.data.gallerySlot=maxGallerySlot+1
   assert.throws(()=>parseContent(prepareContent(artworkWithSize)))
 })
 
 test('all published slot IDs map to centered wall rows with up to four pictures per wall',()=>{
-  const slots=galleryAvailableSlots(6)
+  const slots=galleryAvailableSlots(6).filter(slot=>slot<firstGalleryFrontSlot)
   assert.deepEqual(slots,[0,1,2,3,4,5,600,601])
   assert.equal(galleryAutomaticSlot(new Set(slots)),602)
   for(const slot of slots){
@@ -85,7 +86,7 @@ test('all published slot IDs map to centered wall rows with up to four pictures 
   assert.notEqual(gallerySlotLabel(3),gallerySlotLabel(4))
   assert.equal(gallerySlotLabel(4),gallerySlotLabel(601))
   const allSlots=galleryAvailableSlots(1000)
-  assert.equal(new Set(allSlots).size,1024)
+  assert.equal(new Set(allSlots).size,maxGallerySlot+1)
   const paintingsPerWall=new Map<string,number>()
   for(const artwork of galleryArtworks){
     const placement=galleryCorePlacement(artwork.id)
@@ -101,6 +102,48 @@ test('all published slot IDs map to centered wall rows with up to four pictures 
     assert.ok(count<=4)
     paintingsPerWall.set(key,count)
   }
+})
+
+test('the front wall follows the last room and the empty east-hall side wall stays in place',()=>{
+  const extraSlots=galleryAvailableSlots(1)
+  const front=extraSlots.filter(galleryIsFrontSlot)
+  const side=extraSlots.filter(slot=>!galleryIsFrontSlot(slot)&&!galleryIsBranchSlot(slot)&&galleryPlacement(slot).wall==='south')
+  assert.equal(front.length,4)
+  assert.equal(side.length,4)
+  assert.equal(new Set(front.map(slot=>gallerySlotLabel(slot))).size,1)
+  assert.equal(new Set(side.map(slot=>gallerySlotLabel(slot))).size,1)
+  assert.equal(galleryPlacement(front[0]!).room,1)
+  assert.equal(galleryPlacement(front[0]!).wall,'east')
+  assert.equal(galleryPlacement(front[0]!,7).room,7)
+  assert.equal(galleryPlacement(front[0]!,7).wall,'east')
+  assert.equal(galleryPlacement(side[0]!,7).room,1)
+  assert.equal(galleryPlacement(side[0]!,7).wall,'south')
+  assert.equal(galleryPlacement(0,7).room,6)
+  assert.equal(galleryAutomaticSlot(new Set(extraSlots)),0)
+
+  for(const slot of extraSlots){
+    const record=structuredClone(artwork)
+    record.data.gallerySlot=slot
+    assert.equal(parseContent(prepareContent(record)).data.gallerySlot,slot)
+  }
+})
+
+test('the chosen branch moves only the pictures on the new passage wall',()=>{
+  const north=galleryBranchId(6,'north')
+  const eastHallSouth=galleryBranchId(1,'south')
+  const open=new Set([north,eastHallSouth])
+  const chosenSlot=galleryAvailableSlots(7,6).find(slot=>galleryRoomForSlot(slot)===north)!
+  const record=structuredClone(artwork)
+  record.data.gallerySlot=chosenSlot
+  assert.equal(parseContent(prepareContent(record)).data.gallerySlot,chosenSlot)
+  assert.equal(galleryPlacement(chosenSlot,6,open).wall,'east')
+  assert.equal(galleryPlacement(0,6,open).room,north)
+  assert.equal(galleryPlacement(4,6,open).room,6)
+  assert.equal(galleryPlacement(firstGalleryFrontSlot,6,open).room,6)
+  assert.equal(galleryCorePlacement('thinker',open)?.room,1)
+  assert.equal(galleryCorePlacement('thinker',new Set([galleryBranchId(1,'north')]))?.room,galleryBranchId(1,'north'))
+  const eastHallSouthSlot=galleryAvailableSlots(1).find(slot=>galleryPlacement(slot).wall==='south')!
+  assert.equal(galleryPlacement(eastHallSouthSlot,6,open).room,eastHallSouth)
 })
 
 test('percentage controls frame width and multiple images stay centered with clear margins',()=>{
