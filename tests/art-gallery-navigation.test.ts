@@ -12,19 +12,25 @@ test('left and right rooms connect through the main gallery with clear walking r
   assert.equal(galleryBranchedWalkable(17,8.5,1,branches),false)
   assert.equal(galleryBranchedWalkable(17,-8.5,1,branches),true)
   assert.equal(galleryBranchedWalkable(20,-8.5,1,branches),false)
+  assert.deepEqual(galleryBranchedRoute({x:32,z:15},end,1,branches,true),[end])
+  const distances:number[]=[]
   for(const artwork of [false,true]){
     const route=galleryBranchedRoute(start,end,1,branches,artwork)
     assert.ok(route)
     assert.deepEqual(route.at(-1),end)
     const path=[start,...route]
+    let distance=0
     for(let index=1;index<path.length;index++){
       const a=path[index-1]!,b=path[index]!
+      distance+=Math.hypot(b.x-a.x,b.z-a.z)
       for(let step=0;step<=100;step++){
         const t=step/100
         assert.equal(galleryBranchedWalkable(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,1,branches),true)
       }
     }
+    distances.push(distance)
   }
+  assert.ok(distances[1]!<distances[0]!)
 })
 
 function routeIsOpen(points:readonly {x:number;z:number}[],extraRooms=0) {

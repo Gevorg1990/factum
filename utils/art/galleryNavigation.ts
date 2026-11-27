@@ -109,7 +109,14 @@ function artworkRouteCorners(start:GalleryPoint,end:GalleryPoint,extraRooms:numb
   ]
 }
 
-function artworkSegmentClear(start:GalleryPoint,end:GalleryPoint,extraRooms:number) {
+type ArtworkRouteExtension={
+  corners:readonly GalleryPoint[]
+  xEdges:readonly number[]
+  zEdges:readonly number[]
+  walkable:(x:number,z:number)=>boolean
+}
+
+function artworkSegmentClear(start:GalleryPoint,end:GalleryPoint,extraRooms:number,extension?:ArtworkRouteExtension) {
   // Between passage edges the segment stays in the same floor region.
   const dx=end.x-start.x,dz=end.z-start.z
   const crossings=[0,1]
@@ -119,6 +126,10 @@ function artworkSegmentClear(start:GalleryPoint,end:GalleryPoint,extraRooms:numb
   }
   for(const x of widthEdges)addCrossing(x,start.x,dx)
   for(const z of verticalPassageEdges)addCrossing(z,start.z,dz)
+  if(extension){
+    for(const x of extension.xEdges)addCrossing(x,start.x,dx)
+    for(const z of extension.zEdges)addCrossing(z,start.z,dz)
+  }
   const first=Math.max(firstHorizontalPassage,horizontalPassageIndex(Math.min(start.x,end.x)))
   const last=Math.min(extraRooms,horizontalPassageIndex(Math.max(start.x,end.x)))
   for(let bridge=first;bridge<=last;bridge++){
@@ -129,7 +140,8 @@ function artworkSegmentClear(start:GalleryPoint,end:GalleryPoint,extraRooms:numb
   crossings.sort((a,b)=>a-b)
   for(let i=1;i<crossings.length;i++){
     const t=(crossings[i-1]!+crossings[i]!)/2
-    if(!galleryWalkable(start.x+dx*t,start.z+dz*t,extraRooms))return false
+    const x=start.x+dx*t,z=start.z+dz*t
+    if(!(extension?extension.walkable(x,z):galleryWalkable(x,z,extraRooms)))return false
   }
   return true
 }
@@ -142,10 +154,15 @@ export function galleryArtworkRoute(start:GalleryPoint,destination:GalleryPoint,
     if(!cell)return
     end=point(cell.i,cell.j)
   }
-  if(artworkSegmentClear(start,end,extraRooms))return [end]
+  return galleryShortestArtworkRoute(start,end,extraRooms)??galleryRoute(start,end,extraRooms)
+}
+
+export function galleryShortestArtworkRoute(start:GalleryPoint,end:GalleryPoint,extraRooms:number,extension?:ArtworkRouteExtension):GalleryPoint[]|undefined {
+  if(extension&&(!extension.walkable(start.x,start.z)||!extension.walkable(end.x,end.z)))return
+  if(artworkSegmentClear(start,end,extraRooms,extension))return [end]
 
   // The shortest clear route bends only at passage corners.
-  const nodes=[start,end,...artworkRouteCorners(start,end,extraRooms)]
+  const nodes=[start,end,...artworkRouteCorners(start,end,extraRooms),...(extension?.corners??[])]
   const costs=nodes.map(()=>Infinity)
   const previous=nodes.map(()=>-1)
   const remaining=new Set(nodes.keys())
@@ -156,7 +173,7 @@ export function galleryArtworkRoute(start:GalleryPoint,destination:GalleryPoint,
     for(const index of remaining){
       if(costs[index]!<best){current=index;best=costs[index]!}
     }
-    if(current<0)return galleryRoute(start,end,extraRooms)
+    if(current<0)return
     if(current===1){
       const route:GalleryPoint[]=[]
       for(let index=current;index>0;index=previous[index]!)route.push(nodes[index]!)
@@ -166,7 +183,7 @@ export function galleryArtworkRoute(start:GalleryPoint,destination:GalleryPoint,
     for(const next of remaining){
       const from=nodes[current]!,to=nodes[next]!
       const cost=best+distance(from,to)
-      if(cost>=costs[next]!||!artworkSegmentClear(from,to,extraRooms))continue
+      if(cost>=costs[next]!||!artworkSegmentClear(from,to,extraRooms,extension))continue
       costs[next]=cost
       previous[next]=current
     }

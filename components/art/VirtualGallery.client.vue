@@ -53,6 +53,7 @@ const travelTurnSpeed = Math.PI / 3
 const travelTurnEaseDuration = 300
 const floorWalkEaseTime = 500
 const floorWalkSpeed = 6.2
+const artworkListSpeed = 8.5
 let journey: {
   points:THREE.Vector3[]
   lengths:number[]
@@ -70,6 +71,7 @@ const keys = new Set<string>()
 const selectable: THREE.Object3D[] = []
 const artworkMeshes=new Map<string,THREE.Mesh>()
 const walkGround: THREE.Object3D[] = []
+const walkWalls = new Set<THREE.Object3D>()
 const pendingArtworks: {room:number;load:()=>void}[] = []
 const artworkViews = new Map<string,{room:number;x:number;z:number;rotation:number;width:number;height:number;centerY:number}>()
 const loadedRooms = new Set<number>()
@@ -95,6 +97,9 @@ function box(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.Mat
   mesh.position.set(x,y,z)
   scene.add(mesh)
   return mesh
+}
+function wallBox(...args:Parameters<typeof box>){
+  walkWalls.add(box(...args))
 }
 function listen(target:EventTarget,name:string,handler:EventListener) {
   target.addEventListener(name,handler)
@@ -133,7 +138,8 @@ function positionLoupe(){
   const aspect=view.width/view.height
   const upper=lensEdge.set(view.x,view.centerY+view.height/2,view.z).project(camera).y
   const lower=lensEdge.set(view.x,view.centerY-view.height/2,view.z).project(camera).y
-  const imageHeight=Math.max(diameter,diameter/aspect,Math.abs(upper-lower)*height*1.2)
+  const projectedHeight=Math.abs(upper-lower)*height/2
+  const imageHeight=Math.max(diameter,diameter/aspect,projectedHeight*4)
   const imageWidth=imageHeight*aspect
   const backgroundX=THREE.MathUtils.clamp(diameter/2-loupePoint.u*imageWidth,diameter-imageWidth,0)
   const backgroundY=THREE.MathUtils.clamp(diameter/2-(1-loupePoint.v)*imageHeight,diameter-imageHeight,0)
@@ -179,7 +185,7 @@ function positionArtworkControls(){
   const y=THREE.MathUtils.clamp(bottomEdge-element.offsetHeight,58,Math.max(58,height-element.offsetHeight-14))
   element.style.transform=`translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`
 }
-function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=false}={}):GalleryPoint|undefined {
+function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=false,speed=4.6}={}):GalleryPoint|undefined {
   journey=undefined
   const route=galleryBranchedRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value,branches.value,artwork)
   if(!route)return
@@ -194,7 +200,7 @@ function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=f
   }
   const duration=floorWalk&&total>0
     ? Math.max(500,total/floorWalkSpeed*1000)+floorWalkEaseTime
-    : Math.max(700,total/4.6*1000)
+    : Math.max(700,total/speed*1000)
   journey={points,lengths,total,elapsed:0,duration,faceTravel:!floorWalk}
   walkVelocity.set(0,0)
   keys.clear()
@@ -253,11 +259,11 @@ function focusArtwork(id:string,turnFromStart=false) {
   }
   distance=Math.min(distance,11.8)
   const destination={x:view.x+Math.sin(view.rotation)*distance,z:view.z+Math.cos(view.rotation)*distance}
-  const endpoint=routeTo(destination,view.room,{artwork:true})
+  const endpoint=routeTo(destination,view.room,{artwork:true,speed:turnFromStart?undefined:artworkListSpeed})
   if(!endpoint||!journey)return false
   const actualDistance=Math.hypot(endpoint.x-view.x,endpoint.z-view.z)
   // Aim midway between the top and bottom of the full framed artwork.
-  journey.duration=Math.max(1800,journey.duration)
+  journey.duration=Math.max(turnFromStart?1800:1000,journey.duration)
   journey.aim={
     id,turnFromStart,
     target:{
@@ -318,6 +324,7 @@ function addArtWall(works:WallWork[]) {
       textures.push(texture)
       const frame=box(view.width,view.height,.13,view.x,centerY,view.z,material(0xa78652,{metalness:.55,roughness:.32}))
       frame.rotation.y=rotation
+      frame.userData.artworkId=works[index]!.artwork.id
       const imageMaterial=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide})
       materials.push(imageMaterial)
       const geometry=new THREE.PlaneGeometry(width,height)
@@ -556,7 +563,7 @@ function buildScene() {
   function addPassageWalls(x:number,z:number,alongX:boolean){
     for(const side of [-1,1]){
       const edge=side*3.95
-      box(alongX ? 3.9 : .3,9,alongX ? .3 : 3.9,x+(alongX ? 0 : edge),4.5,z+(alongX ? edge : 0),stone)
+      wallBox(alongX ? 3.9 : .3,9,alongX ? .3 : 3.9,x+(alongX ? 0 : edge),4.5,z+(alongX ? edge : 0),stone)
       // Keep the deepest molding behind the existing clear walking width.
       const face=side*3.8
       passagePanels.push(alongX
@@ -593,12 +600,12 @@ function buildScene() {
       const wx=cx+(wallX?sign*7:0),wz=cz+(wallX?0:sign*7)
       // Connected halls share their full-width side; no door frames or corridor partitions.
       if(!open){
-        if(wallX)box(.3,9,14,wx,4.5,cz,stone)
-        else box(14,9,.3,cx,4.5,wz,stone)
+        if(wallX)wallBox(.3,9,14,wx,4.5,cz,stone)
+        else wallBox(14,9,.3,cx,4.5,wz,stone)
       }else if(wallX){
-        for(const offset of [-5.35,5.35])box(.3,9,3.3,wx,4.5,cz+offset,stone)
+        for(const offset of [-5.35,5.35])wallBox(.3,9,3.3,wx,4.5,cz+offset,stone)
       }else{
-        for(const offset of [-5.35,5.35])box(3.3,9,.3,cx+offset,4.5,wz,stone)
+        for(const offset of [-5.35,5.35])wallBox(3.3,9,.3,cx+offset,4.5,wz,stone)
       }
       if(wallX) {
         if(!open){box(.1,.15,14,wx-sign*.19,.38,cz,gold);box(.1,.16,14,wx-sign*.19,8.05,cz,gold)}
@@ -655,18 +662,45 @@ function pick(clientX:number,clientY:number) {
   const id=hit?.object.userData.artworkId
   if(typeof id==='string')focusArtwork(id,true)
 }
+function wallDestination({point,face,object}:THREE.Intersection):GalleryPoint|undefined {
+  if(!face)return
+  const normal=face.normal.clone().transformDirection(object.matrixWorld)
+  if(Math.abs(normal.y)>.1)return
+  const standoff=4
+  let nearest:GalleryPoint|undefined
+  let nearestOffset=Infinity
+  // Fit the stopping point into the open floor even when the click is near a corner.
+  for(let depth=2;depth<=6;depth+=.25){
+    for(let side=-4;side<=4;side+=.25){
+      const offset=(depth-standoff)**2+side**2
+      if(offset>=nearestOffset)continue
+      const x=point.x+normal.x*depth+normal.z*side
+      const z=point.z+normal.z*depth-normal.x*side
+      if(!galleryBranchedWalkable(x,z,extraRooms.value,branches.value))continue
+      nearest={x,z};nearestOffset=offset
+    }
+  }
+  return nearest
+}
 function walkAt(clientX:number,clientY:number) {
   if(!renderer||!camera)return
   const rect=renderer.domElement.getBoundingClientRect()
   pointer.set((clientX-rect.left)/rect.width*2-1,-(clientY-rect.top)/rect.height*2+1)
   raycaster.setFromCamera(pointer,camera)
   const floorHit=raycaster.intersectObjects(walkGround)[0]
-  if(!floorHit)return
-  const firstHit=raycaster.intersectObjects(scene.children,true)[0]
-  // A painting or wall in front of the floor is not a walking target.
-  if(firstHit&&firstHit.distance<floorHit.distance-.03&&firstHit.point.y>.25)return
-  const destination={x:floorHit.point.x,z:floorHit.point.z}
-  routeTo(destination,galleryBranchedRoomAt(destination.x,destination.z,extraRooms.value,branches.value),{floorWalk:true})
+  const hits=raycaster.intersectObjects(scene.children,true)
+  const firstHit=hits[0]
+  let destination:GalleryPoint|undefined=floorHit?.point
+  if(firstHit&&(!floorHit||firstHit.distance<floorHit.distance-.03)){
+    if(typeof firstHit.object.userData.artworkId==='string')return
+    const wall=hits.find(hit=>hit.distance<=firstHit.distance+.35&&walkWalls.has(hit.object))
+    if(wall)destination=wallDestination(wall)
+    else if(firstHit.point.y>.25)destination=undefined
+  }
+  if(destination){
+    const room=galleryBranchedRoomAt(destination.x,destination.z,extraRooms.value,branches.value)
+    routeTo(destination,room,{floorWalk:true})
+  }
 }
 function keyDown(event:KeyboardEvent) {
   if(event.key==='Escape'&&fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen()}
@@ -854,12 +888,12 @@ onUnmounted(()=>{
     <div v-if="loading || failed" class="gallery-loading" role="status">{{failed?'3D ցուցադրությունը հասանելի չէ․ գործերը կարող ես դիտել ներքևում։':'Բացվում են արվեստի սրահները…'}}</div>
     <div v-if="!failed" class="gallery-hud">
       <span class="gallery-room-label">{{galleryRooms[activeRoom]?.name||galleryBranchName(activeRoom)||`Պատկերասրահի նոր սրահ ${activeRoom-5}`}}</span>
-      <span class="gallery-controls-hint">{{mobile?'Կրկնակի հպումով քայլիր · քաշիր՝ նայելու համար':'Կրկնակի սեղմիր հատակին՝ քայլելու համար · W A S D · քաշիր՝ նայել'}}</span>
+      <span class="gallery-controls-hint">{{mobile?'Կրկնակի հպվիր հատակին կամ պատին՝ մոտենալու համար · քաշիր՝ նայելու համար':'Կրկնակի սեղմիր հատակին կամ պատին՝ մոտենալու համար · W A S D · քաշիր՝ նայելու համար'}}</span>
     </div>
     <div v-if="loupeImage&&!failed" ref="artworkLens" class="gallery-artwork-lens" :style="{backgroundImage:loupeBackground}" aria-hidden="true"/>
     <div v-if="focusedArtwork&&!failed" ref="artworkControls" class="gallery-artwork-controls" role="group" aria-label="Նկարը դիտել պատին">
-      <button type="button" :aria-pressed="loupeEnabled" @click="toggleLoupe" @keydown="loupeKeys"><Search :size="15" aria-hidden="true"/> Խոշորացույց</button>
-      <button type="button" class="gallery-artwork-info" @click="emit('select',focusedArtwork)"><Info :size="15" aria-hidden="true"/> Տեղեկություն</button>
+      <button type="button" aria-label="Խոշորացույց" title="Խոշորացույց" :aria-pressed="loupeEnabled" @click="toggleLoupe" @keydown="loupeKeys"><Search :size="19" aria-hidden="true"/></button>
+      <button type="button" class="gallery-artwork-info" aria-label="Տեղեկություն" title="Տեղեկություն" @click="emit('select',focusedArtwork)"><Info :size="19" aria-hidden="true"/></button>
     </div>
     <button type="button" class="gallery-fullscreen" :aria-label="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" :aria-pressed="fullscreen" :title="fullscreen?'Փակել լիաէկրանը':'Բացել լիաէկրան'" @click="toggleFullscreen"><Minimize2 v-if="fullscreen" :size="19"/><Maximize2 v-else :size="19"/></button>
     <div v-if="mobile && !failed" class="gallery-touch-controls">
@@ -877,10 +911,9 @@ onUnmounted(()=>{
 .gallery-fullscreen{position:absolute;right:20px;top:18px;z-index:2;display:grid;place-items:center;width:39px;height:39px;border:1px solid #e3c88b80;border-radius:8px;background:#0a1724e6;color:#f6e4c4;cursor:pointer}
 .gallery-fullscreen:hover{background:#263b4c}.gallery-fullscreen:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .gallery-artwork-controls{position:absolute;z-index:1;top:0;left:0;display:flex;gap:5px;padding:5px;border:1px solid #dbbd817d;border-radius:9px;background:#0c1928f0;color:#f7e6c6;box-shadow:0 5px 18px #0006}
-.gallery-artwork-controls button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:36px;min-height:34px;padding:5px;border:1px solid #ab92637a;border-radius:6px;background:#253548;color:inherit;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.gallery-artwork-controls button{display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid #ab92637a;border-radius:6px;background:#253548;color:inherit;cursor:pointer}
 .gallery-artwork-controls button:hover:not(:disabled){background:#3a4e64}.gallery-artwork-controls button:disabled{opacity:.48;cursor:default}.gallery-artwork-controls button:focus-visible{outline:2px solid #f6d89e;outline-offset:2px}
 .gallery-artwork-controls button[aria-pressed='true']{background:#54462e;border-color:#e8c77f}
-.gallery-artwork-controls button{padding-inline:8px}
 .gallery-artwork-lens{box-sizing:border-box;position:absolute;top:0;left:0;z-index:1;pointer-events:none;border:3px solid #f3d695;border-radius:50%;background-color:#15212d;background-repeat:no-repeat;box-shadow:0 6px 20px #000b}
 @media(max-width:700px){.gallery-hud{right:63px}.gallery-fullscreen{right:12px;top:12px;width:36px;height:36px}}
 </style>
