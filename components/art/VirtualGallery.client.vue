@@ -52,13 +52,14 @@ const artworkPreviewDuration = 300
 const travelTurnSpeed = Math.PI / 3
 const travelTurnEaseDuration = 300
 const artworkListSpeed = 8.5
+const galleryWalkSpeed = 4.6
+const galleryLongWalkSpeed = 8.5
 let journey: {
   points:THREE.Vector3[]
   lengths:number[]
   total:number
   elapsed:number
   duration:number
-  faceTravel:boolean
   aim?:{id:string;turnFromStart:boolean;target:CameraView;from?:CameraView}
 } | undefined
 const walkVelocity = new THREE.Vector2()
@@ -183,7 +184,7 @@ function positionArtworkControls(){
   const y=THREE.MathUtils.clamp(bottomEdge-element.offsetHeight,58,Math.max(58,height-element.offsetHeight-14))
   element.style.transform=`translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`
 }
-function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=false,speed}: {floorWalk?:boolean;artwork?:boolean;speed?:number}={}):GalleryPoint|undefined {
+function routeTo(destination:GalleryPoint,room:number,{artwork=false,speed}: {artwork?:boolean;speed?:number}={}):GalleryPoint|undefined {
   journey=undefined
   const route=galleryBranchedRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value,branches.value,artwork)
   if(!route)return
@@ -196,8 +197,9 @@ function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=f
     const a=points[index-1]!,b=points[index]!,length=Math.hypot(b.x-a.x,b.z-a.z)
     lengths.push(length);total+=length
   }
-  const duration=walkJourneyDuration(total,speed)
-  journey={points,lengths,total,elapsed:0,duration,faceTravel:!floorWalk}
+  const walkSpeed=THREE.MathUtils.lerp(galleryWalkSpeed,galleryLongWalkSpeed,THREE.MathUtils.smoothstep(total,4,16))
+  const duration=walkJourneyDuration(total,speed??(artwork?undefined:walkSpeed))
+  journey={points,lengths,total,elapsed:0,duration}
   walkVelocity.set(0,0)
   keys.clear()
   loadRoom(room)
@@ -232,11 +234,10 @@ function loadNearbyRooms(){
 }
 function visit(index:number) {
   if(!camera)return
-  camera.fov=70;camera.updateProjectionMatrix()
   const destination=galleryBranch(index)??galleryCenter(index)
   if(destination)routeTo(destination,index)
 }
-function reset(){visit(0);pitch=0}
+function reset(){visit(0)}
 function focusArtwork(id:string,turnFromStart=false) {
   if(focusedArtwork.value===id||journey?.aim?.id===id)return true
   const view=artworkViews.get(id)
@@ -681,7 +682,7 @@ function walkToHit(hit:THREE.Intersection,hits:THREE.Intersection[]) {
   // Project other surfaces onto the floor and let the route find an accessible endpoint.
   const destination=(wall&&wallDestination(wall))??hit.point
   const room=galleryBranchedRoomAt(destination.x,destination.z,extraRooms.value,branches.value)
-  routeTo(destination,room,{floorWalk:true})
+  routeTo(destination,room)
 }
 function keyDown(event:KeyboardEvent) {
   if(event.key==='Escape'&&fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen()}
@@ -803,7 +804,7 @@ onMounted(()=>{
       if(journey){
         // A delayed or skipped frame should not jump ahead in the animation.
         journey.elapsed+=frameDuration
-        const {elapsed,duration,aim,faceTravel}=journey
+        const {elapsed,duration,aim}=journey
         const distance=smoothJourneyProgress(elapsed/duration)*journey.total
         let travelled=0,index=0
         while(index<journey.lengths.length-1&&travelled+journey.lengths[index]!<distance){travelled+=journey.lengths[index]!;index++}
@@ -825,13 +826,12 @@ onMounted(()=>{
           pitch=THREE.MathUtils.lerp(fromView.pitch,aim.target.pitch,ease)
           const fov=THREE.MathUtils.lerp(fromView.fov,aim.target.fov,ease)
           if(fov!==camera.fov){camera.fov=fov;camera.updateProjectionMatrix()}
-        }else if(faceTravel&&Math.hypot(dx,dz)>.001){
+        }else if(aim&&Math.hypot(dx,dz)>.001){
           const travelYaw=Math.atan2(-dx,-dz)
           const yawDelta=Math.atan2(Math.sin(travelYaw-yaw),Math.cos(travelYaw-yaw))
           const turn=yawDelta*(1-Math.exp(-dt*6))
           const turnLimit=travelTurnSpeed*dt
-          const travelTurnEnd=aim?turnStart:duration
-          const turnEase=smoothJourneyProgress(Math.min(elapsed,travelTurnEnd-elapsed)/travelTurnEaseDuration)
+          const turnEase=smoothJourneyProgress(Math.min(elapsed,turnStart-elapsed)/travelTurnEaseDuration)
           yaw+=THREE.MathUtils.clamp(turn,-turnLimit,turnLimit)*turnEase
         }
         const end=aim?turnEnd+artworkPreviewDuration:duration
