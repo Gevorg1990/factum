@@ -57,6 +57,10 @@ export function findWalkPath(start:WalkPoint,goal:WalkPoint,obstacles:readonly W
  }
  return []
 }
+export function walkJourneyDuration(distance:number,speed=4.6){
+ return Math.max(700,distance/speed*1000)
+}
+
 export function smoothJourneyProgress(progress:number){const t=Math.max(0,Math.min(1,progress));return t*t*t*(t*(t*6-15)+10)}
 
 // Explicit headings mark complete poems, not stanzas. A # heading lets editors

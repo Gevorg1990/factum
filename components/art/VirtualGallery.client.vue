@@ -6,7 +6,7 @@ import {galleryRooms,type GalleryArtwork} from '~/data/art/gallery'
 import {galleryCenter,type GalleryPoint} from '~/utils/art/galleryNavigation'
 import {galleryBranch,galleryBranchId,galleryBranchName,galleryBranchedRoomAt,galleryBranchedRoute,galleryBranchedWalkable} from '~/utils/art/galleryBranches'
 import {galleryPaintedPlacement,galleryPlacement,galleryWallFrames,galleryWallPercent} from '~/utils/art/galleryLayout'
-import {smoothJourneyProgress} from '~/utils/library/navigation'
+import {smoothJourneyProgress,walkJourneyDuration} from '~/utils/library/navigation'
 
 const emit = defineEmits<{select:[id:string]; room:[index:number]; ready:[]; error:[]; fullscreen:[element:HTMLElement|null]}>()
 const props=defineProps<{coreArtworks?:GalleryArtwork[];cmsArtworks?:GalleryArtwork[];lastRoom:number;branchRooms:number[]}>()
@@ -51,8 +51,6 @@ const artworkTurnAfterArrival = 400
 const artworkPreviewDuration = 300
 const travelTurnSpeed = Math.PI / 3
 const travelTurnEaseDuration = 300
-const floorWalkEaseTime = 500
-const floorWalkSpeed = 6.2
 const artworkListSpeed = 8.5
 let journey: {
   points:THREE.Vector3[]
@@ -67,10 +65,10 @@ const walkVelocity = new THREE.Vector2()
 const movementTarget = new THREE.Vector2()
 let touchId: number | undefined
 let lastTap:{time:number;x:number;y:number}|undefined
+let allowMouseDoubleClick=false
 const keys = new Set<string>()
 const selectable: THREE.Object3D[] = []
 const artworkMeshes=new Map<string,THREE.Mesh>()
-const walkGround: THREE.Object3D[] = []
 const walkWalls = new Set<THREE.Object3D>()
 const pendingArtworks: {room:number;load:()=>void}[] = []
 const artworkViews = new Map<string,{room:number;x:number;z:number;rotation:number;width:number;height:number;centerY:number}>()
@@ -185,7 +183,7 @@ function positionArtworkControls(){
   const y=THREE.MathUtils.clamp(bottomEdge-element.offsetHeight,58,Math.max(58,height-element.offsetHeight-14))
   element.style.transform=`translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`
 }
-function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=false,speed=4.6}={}):GalleryPoint|undefined {
+function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=false,speed}: {floorWalk?:boolean;artwork?:boolean;speed?:number}={}):GalleryPoint|undefined {
   journey=undefined
   const route=galleryBranchedRoute({x:camera.position.x,z:camera.position.z},destination,extraRooms.value,branches.value,artwork)
   if(!route)return
@@ -198,9 +196,7 @@ function routeTo(destination:GalleryPoint,room:number,{floorWalk=false,artwork=f
     const a=points[index-1]!,b=points[index]!,length=Math.hypot(b.x-a.x,b.z-a.z)
     lengths.push(length);total+=length
   }
-  const duration=floorWalk&&total>0
-    ? Math.max(500,total/floorWalkSpeed*1000)+floorWalkEaseTime
-    : Math.max(700,total/speed*1000)
+  const duration=walkJourneyDuration(total,speed)
   journey={points,lengths,total,elapsed:0,duration,faceTravel:!floorWalk}
   walkVelocity.set(0,0)
   keys.clear()
@@ -242,7 +238,7 @@ function visit(index:number) {
 }
 function reset(){visit(0);pitch=0}
 function focusArtwork(id:string,turnFromStart=false) {
-  if(focusedArtwork.value===id)return true
+  if(focusedArtwork.value===id||journey?.aim?.id===id)return true
   const view=artworkViews.get(id)
   if(!view||!camera){journey=undefined;return false}
   const fov=mobile.value?88:70
@@ -578,7 +574,7 @@ function buildScene() {
     roomCoords.set(id,[branch.x,branch.z])
   }
   for(const [index,[cx,cz]] of roomCoords) {
-    walkGround.push(box(14,.25,14,cx,galleryFloorY-.125,cz,floor))
+    box(14,.25,14,cx,galleryFloorY-.125,cz,floor)
     box(14,.28,14,cx,galleryCeilingY+.14,cz,ceiling)
     box(13.2,.05,13.2,cx,9.09,cz,gold)
     box(11.7,.06,11.7,cx,9.04,cz,glass)
@@ -616,26 +612,26 @@ function buildScene() {
     }
   }
   for(const sign of [-1,1]) {
-    walkGround.push(box(3.9,.18,14,sign*8.5,-.08,0,floor))
-    walkGround.push(box(14,.18,3.9,0,-.08,sign*8.5,floor))
+    box(3.9,.18,14,sign*8.5,-.08,0,floor)
+    box(14,.18,3.9,0,-.08,sign*8.5,floor)
     box(3.9,.3,14,sign*8.5,9.27,0,ceiling)
     box(14,.3,3.9,0,9.27,sign*8.5,ceiling)
     addPassageWalls(sign*8.5,0,true)
     addPassageWalls(0,sign*8.5,false)
   }
-  walkGround.push(box(3.9,.18,14,-25.5,-.08,0,floor))
+  box(3.9,.18,14,-25.5,-.08,0,floor)
   box(3.9,.3,14,-25.5,9.27,0,ceiling)
   addPassageWalls(-25.5,0,true)
   for(let index=0;index<extraRooms.value;index++){
     const x=25.5+index*17
-    walkGround.push(box(3.9,.18,14,x,-.08,0,floor))
+    box(3.9,.18,14,x,-.08,0,floor)
     box(3.9,.3,14,x,9.27,0,ceiling)
     addPassageWalls(x,0,true)
   }
   for(const id of branches.value){
     const branch=galleryBranch(id)!
     const z=branch.z/2
-    walkGround.push(box(14,.18,3.9,branch.x,-.08,z,floor))
+    box(14,.18,3.9,branch.x,-.08,z,floor)
     box(14,.3,3.9,branch.x,9.27,z,ceiling)
     addPassageWalls(branch.x,z,false)
   }
@@ -653,14 +649,12 @@ function buildScene() {
   addGalleryPaintings()
 }
 
-function pick(clientX:number,clientY:number) {
+function galleryHitsAt(clientX:number,clientY:number){
   if(!renderer||!camera)return
   const rect=renderer.domElement.getBoundingClientRect()
   pointer.set((clientX-rect.left)/rect.width*2-1,-(clientY-rect.top)/rect.height*2+1)
   raycaster.setFromCamera(pointer,camera)
-  const hit=raycaster.intersectObjects(selectable,true)[0]
-  const id=hit?.object.userData.artworkId
-  if(typeof id==='string')focusArtwork(id,true)
+  return raycaster.intersectObjects(scene.children,true)
 }
 function wallDestination({point,face,object}:THREE.Intersection):GalleryPoint|undefined {
   if(!face)return
@@ -682,25 +676,12 @@ function wallDestination({point,face,object}:THREE.Intersection):GalleryPoint|un
   }
   return nearest
 }
-function walkAt(clientX:number,clientY:number) {
-  if(!renderer||!camera)return
-  const rect=renderer.domElement.getBoundingClientRect()
-  pointer.set((clientX-rect.left)/rect.width*2-1,-(clientY-rect.top)/rect.height*2+1)
-  raycaster.setFromCamera(pointer,camera)
-  const floorHit=raycaster.intersectObjects(walkGround)[0]
-  const hits=raycaster.intersectObjects(scene.children,true)
-  const firstHit=hits[0]
-  let destination:GalleryPoint|undefined=floorHit?.point
-  if(firstHit&&(!floorHit||firstHit.distance<floorHit.distance-.03)){
-    if(typeof firstHit.object.userData.artworkId==='string')return
-    const wall=hits.find(hit=>hit.distance<=firstHit.distance+.35&&walkWalls.has(hit.object))
-    if(wall)destination=wallDestination(wall)
-    else if(firstHit.point.y>.25)destination=undefined
-  }
-  if(destination){
-    const room=galleryBranchedRoomAt(destination.x,destination.z,extraRooms.value,branches.value)
-    routeTo(destination,room,{floorWalk:true})
-  }
+function walkToHit(hit:THREE.Intersection,hits:THREE.Intersection[]) {
+  const wall=hits.find(item=>item.distance<=hit.distance+.35&&walkWalls.has(item.object))
+  // Project other surfaces onto the floor and let the route find an accessible endpoint.
+  const destination=(wall&&wallDestination(wall))??hit.point
+  const room=galleryBranchedRoomAt(destination.x,destination.z,extraRooms.value,branches.value)
+  routeTo(destination,room,{floorWalk:true})
 }
 function keyDown(event:KeyboardEvent) {
   if(event.key==='Escape'&&fullscreenFallback.value){fullscreenFallback.value=false;syncFullscreen()}
@@ -742,16 +723,36 @@ function move(event:PointerEvent){
 function up(event:PointerEvent){
   if(loupePointer===event.pointerId){loupePointer=undefined;return}
   if(drag?.id!==event.pointerId)return
-  if(!drag.moved){
-    if(event.pointerType==='touch'){
-      const now=performance.now()
-      if(lastTap&&now-lastTap.time<360&&Math.hypot(event.clientX-lastTap.x,event.clientY-lastTap.y)<28){walkAt(event.clientX,event.clientY);lastTap=undefined}
-      else {pick(event.clientX,event.clientY);lastTap={time:now,x:event.clientX,y:event.clientY}}
-    } else pick(event.clientX,event.clientY)
-  }
+  const click=!drag.moved
   drag=undefined
+  const touch=event.pointerType==='touch'
+  allowMouseDoubleClick=click&&!touch
+  const previousTap=lastTap
+  lastTap=undefined
+  if(!click)return
+  const {clientX:x,clientY:y}=event
+  const hits=galleryHitsAt(x,y)
+  if(!hits?.length)return
+  const hit=hits[0]!
+  const id=hit.object.userData.artworkId
+  if(typeof id==='string'){
+    focusArtwork(id,true)
+    return
+  }
+  if(touch){
+    const time=performance.now()
+    if(previousTap&&time-previousTap.time<360&&Math.hypot(x-previousTap.x,y-previousTap.y)<28)walkToHit(hit,hits)
+    else lastTap={time,x,y}
+  }
 }
-function doubleClick(event:MouseEvent){event.preventDefault();walkAt(event.clientX,event.clientY)}
+function doubleClick(event:MouseEvent){
+  if(!allowMouseDoubleClick)return
+  event.preventDefault()
+  const hits=galleryHitsAt(event.clientX,event.clientY)
+  if(!hits?.length)return
+  const hit=hits[0]!
+  if(typeof hit.object.userData.artworkId!=='string')walkToHit(hit,hits)
+}
 function touchStart(event:PointerEvent){event.preventDefault();touchId=event.pointerId;host.value?.focus({preventScroll:true});(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);touchMove(event)}
 function touchMove(event:PointerEvent){if(event.pointerId!==touchId)return;const rect=(event.currentTarget as HTMLElement).getBoundingClientRect();joystick.value={x:THREE.MathUtils.clamp((event.clientX-rect.left-rect.width/2)/38,-1,1),y:THREE.MathUtils.clamp((event.clientY-rect.top-rect.height/2)/38,-1,1)};journey=undefined;if(Math.abs(joystick.value.x)+Math.abs(joystick.value.y)>.05)leaveArtwork()}
 function touchEnd(event:PointerEvent){if(event.pointerId===touchId){joystick.value={x:0,y:0};touchId=undefined}}
@@ -803,15 +804,13 @@ onMounted(()=>{
         // A delayed or skipped frame should not jump ahead in the animation.
         journey.elapsed+=frameDuration
         const {elapsed,duration,aim,faceTravel}=journey
-        const progress=Math.min(1,elapsed/duration)
-        const distance=progress*journey.total
+        const distance=smoothJourneyProgress(elapsed/duration)*journey.total
         let travelled=0,index=0
         while(index<journey.lengths.length-1&&travelled+journey.lengths[index]!<distance){travelled+=journey.lengths[index]!;index++}
-        const segment=journey.lengths[index]||1
-        const t=Math.min(1,(distance-travelled)/segment)
+        const segment=journey.lengths[index]!
+        const t=segment?Math.min(1,(distance-travelled)/segment):1
         const from=journey.points[index]!,to=journey.points[index+1]!
-        // Slow down at waypoints so the camera can turn without cutting across walls.
-        camera.position.lerpVectors(from,to,smoothJourneyProgress(t))
+        camera.position.lerpVectors(from,to,t)
         const dx=to.x-from.x,dz=to.z-from.z
         // A directly clicked artwork is already visible. Turn toward it from the first frame.
         const turnStart=aim?.turnFromStart?0:Math.max(0,duration-artworkTurnLead)
@@ -888,7 +887,7 @@ onUnmounted(()=>{
     <div v-if="loading || failed" class="gallery-loading" role="status">{{failed?'3D ցուցադրությունը հասանելի չէ․ գործերը կարող ես դիտել ներքևում։':'Բացվում են արվեստի սրահները…'}}</div>
     <div v-if="!failed" class="gallery-hud">
       <span class="gallery-room-label">{{galleryRooms[activeRoom]?.name||galleryBranchName(activeRoom)||`Պատկերասրահի նոր սրահ ${activeRoom-5}`}}</span>
-      <span class="gallery-controls-hint">{{mobile?'Կրկնակի հպվիր հատակին կամ պատին՝ մոտենալու համար · քաշիր՝ նայելու համար':'Կրկնակի սեղմիր հատակին կամ պատին՝ մոտենալու համար · W A S D · քաշիր՝ նայելու համար'}}</span>
+      <span class="gallery-controls-hint">{{mobile?'Կրկնակի հպվիր՝ քայլելու համար · մեկ հպումով մոտեցիր նկարին':'Կրկնակի սեղմիր՝ քայլելու համար · մեկ սեղմումով մոտեցիր նկարին · W A S D'}}</span>
     </div>
     <div v-if="loupeImage&&!failed" ref="artworkLens" class="gallery-artwork-lens" :style="{backgroundImage:loupeBackground}" aria-hidden="true"/>
     <div v-if="focusedArtwork&&!failed" ref="artworkControls" class="gallery-artwork-controls" role="group" aria-label="Նկարը դիտել պատին">

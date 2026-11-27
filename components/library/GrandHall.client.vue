@@ -7,7 +7,7 @@ import type {BookObject} from '~/utils/library/createRoom'
 import {createBookPullout} from '~/utils/library/bookPullout'
 import {createLibraryRoom,shelfBookMatrix} from '~/utils/library/createRoom'
 import {libraryShelfEntries,shelfSlot,migrateLibraryShelfPlacement,type ShelfPlacements,SLOTS_PER_TOPIC} from '~/utils/library/shelfCatalog'
-import {constrainPosition,EYE_HEIGHT,shelfPoint,isWalkablePoint,findWalkPath,smoothJourneyProgress} from '~/utils/library/navigation'
+import {constrainPosition,EYE_HEIGHT,shelfPoint,isWalkablePoint,findWalkPath,smoothJourneyProgress,walkJourneyDuration} from '~/utils/library/navigation'
 const {library,toggleBook}=useProgress()
 const props=defineProps<{paused?:boolean;books:readonly LibraryBook[]}>()
 const initialView={x:0,z:5.2,pitch:.08}
@@ -46,7 +46,7 @@ function beginJourney(x:number,z:number,onArrive?:()=>void){
  keys.clear();walkVelocity.set(0,0);walking.value=true;targetHeight=EYE_HEIGHT;lookAt=undefined
  const points=[camera.position.clone(),...route.map(p=>new THREE.Vector3(p.x,EYE_HEIGHT,p.z))],lengths:number[]=[]
  let total=0;for(let i=1;i<points.length;i++){const a=points[i-1]!,b=points[i]!;const length=Math.hypot(b.x-a.x,b.z-a.z);lengths.push(length);total+=length}
- journey={points,lengths,total,started:performance.now(),duration:Math.max(.7,total/4.6)*1000,height:camera.position.y,onArrive}
+ journey={points,lengths,total,started:performance.now(),duration:walkJourneyDuration(total),height:camera.position.y,onArrive}
  touring.value=true;return true
 }
 function visit(shelf:number){
